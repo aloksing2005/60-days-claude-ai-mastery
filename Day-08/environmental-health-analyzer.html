@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌍 Personal Environmental Health Analyzer — Bhopal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0A1210;
+    --bg-1:#0F1A17;
+    --surface:#131F1B;
+    --surface-2:#182922;
+    --border:#22362E;
+    --text:#E9F2EC;
+    --muted:#8FA69B;
+    --muted-2:#5E7269;
+    --good:#4ADE80;
+    --moderate:#FBBF24;
+    --poor:#FB923C;
+    --severe:#F87171;
+    --hazard:#C084FC;
+    --water:#38BDF8;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(74,222,128,0.08), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 90% 10%, rgba(56,189,248,0.07), transparent 60%),
+      var(--bg-0);
+    color:var(--text);
+    font-family:var(--font-body);
+    min-height:100vh;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:0 28px 80px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px 28px;max-width:1320px;margin:0 auto;
+    flex-wrap:wrap;gap:14px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(135deg,var(--good),var(--water));
+    display:flex;align-items:center;justify-content:center;font-size:19px;
+    box-shadow:0 0 24px rgba(74,222,128,0.35);
+  }
+  .brand-text .name{font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:0.2px;}
+  .brand-text .sub{font-size:12px;color:var(--muted);font-family:var(--font-mono);}
+  .live-pill{
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface);border:1px solid var(--border);
+    padding:8px 14px;border-radius:100px;font-size:12.5px;color:var(--muted);
+    font-family:var(--font-mono);
+  }
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.8);}}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    display:grid;grid-template-columns:1.15fr 1fr;gap:32px;
+    padding:20px 0 44px;align-items:center;
+  }
+  .hero-eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    color:var(--good);font-family:var(--font-mono);font-size:12.5px;
+    letter-spacing:0.06em;text-transform:uppercase;margin-bottom:14px;
+  }
+  .hero h1{
+    font-family:var(--font-display);font-size:44px;line-height:1.08;font-weight:700;
+    letter-spacing:-0.5px;margin-bottom:16px;
+  }
+  .hero h1 span{color:var(--muted);font-weight:500;}
+  .hero p{color:var(--muted);font-size:15.5px;max-width:480px;margin-bottom:22px;}
+  .hero-stats{display:flex;gap:28px;flex-wrap:wrap;}
+  .hero-stat .val{font-family:var(--font-mono);font-size:24px;font-weight:700;}
+  .hero-stat .lbl{font-size:12px;color:var(--muted-2);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;}
+
+  /* Signature: AQI Dial */
+  .dial-card{
+    background:linear-gradient(180deg,var(--surface),var(--bg-1));
+    border:1px solid var(--border);border-radius:24px;
+    padding:30px;display:flex;flex-direction:column;align-items:center;
+    position:relative;overflow:hidden;
+    animation:fadeUp 0.7s ease both;
+  }
+  .dial-card::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 0%, rgba(251,191,36,0.10), transparent 55%);
+    pointer-events:none;
+  }
+  .dial-wrap{position:relative;width:240px;height:240px;}
+  .dial-wrap svg{transform:rotate(-90deg);}
+  .dial-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .dial-value{font-family:var(--font-mono);font-size:52px;font-weight:700;line-height:1;}
+  .dial-label{font-size:12px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:6px;}
+  .dial-grade{
+    margin-top:6px;padding:4px 12px;border-radius:100px;font-size:12.5px;font-weight:600;
+    font-family:var(--font-mono);
+  }
+  .dial-city{margin-top:18px;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--muted);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- Section headers ---------- */
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin:44px 0 18px;flex-wrap:wrap;gap:10px;}
+  .section-head h2{font-family:var(--font-display);font-size:21px;font-weight:600;}
+  .section-head .eyebrow{font-family:var(--font-mono);font-size:11.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:0.08em;}
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    background:var(--surface);border:1px solid var(--border);
+    padding:14px 16px;border-radius:16px;margin-bottom:8px;
+  }
+  .filters .flabel{font-size:12px;color:var(--muted-2);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.05em;margin-right:4px;}
+  .chip{
+    background:var(--bg-1);border:1px solid var(--border);color:var(--muted);
+    padding:8px 15px;border-radius:100px;font-size:13px;cursor:pointer;
+    transition:all .2s ease;font-family:var(--font-body);font-weight:500;
+  }
+  .chip:hover{border-color:var(--good);color:var(--text);}
+  .chip.active{background:var(--good);color:#06170F;border-color:var(--good);font-weight:600;}
+  .chip-sep{width:1px;height:22px;background:var(--border);margin:0 4px;}
+
+  /* ---------- Metric cards grid ---------- */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:22px;position:relative;overflow:hidden;
+    transition:transform .25s ease, border-color .25s ease;
+    animation:fadeUp 0.6s ease both;
+  }
+  .card:hover{transform:translateY(-4px);border-color:var(--good);}
+  .card .icon-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .card .icon{font-size:22px;}
+  .card .trend{font-family:var(--font-mono);font-size:11.5px;padding:3px 8px;border-radius:100px;font-weight:600;}
+  .trend.up{background:rgba(248,113,113,0.15);color:var(--severe);}
+  .trend.down{background:rgba(74,222,128,0.15);color:var(--good);}
+  .card .metric-val{font-family:var(--font-mono);font-size:36px;font-weight:700;line-height:1;margin-bottom:6px;}
+  .card .metric-unit{font-size:13px;color:var(--muted-2);font-weight:500;}
+  .card .metric-name{font-size:13px;color:var(--muted);margin-top:8px;}
+  .card .bar-track{height:6px;background:var(--bg-1);border-radius:100px;margin-top:14px;overflow:hidden;}
+  .card .bar-fill{height:100%;border-radius:100px;transition:width 1s cubic-bezier(.22,.9,.32,1);}
+
+  .grade-good{color:var(--good);} .bg-good{background:var(--good);}
+  .grade-moderate{color:var(--moderate);} .bg-moderate{background:var(--moderate);}
+  .grade-poor{color:var(--poor);} .bg-poor{background:var(--poor);}
+  .grade-severe{color:var(--severe);} .bg-severe{background:var(--severe);}
+
+  /* Score ring cards */
+  .score-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .score-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:26px;display:flex;align-items:center;gap:22px;
+    animation:fadeUp 0.6s ease both;
+  }
+  .ring-wrap{position:relative;width:104px;height:104px;flex:none;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);font-weight:700;font-size:24px;}
+  .score-info .t{font-family:var(--font-display);font-weight:600;font-size:16px;margin-bottom:6px;}
+  .score-info .d{font-size:13px;color:var(--muted);max-width:260px;}
+
+  /* Charts */
+  .chart-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;}
+  .panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:22px;animation:fadeUp .6s ease both;
+  }
+  .panel h3{font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:4px;}
+  .panel .sub{font-size:12.5px;color:var(--muted-2);margin-bottom:16px;}
+  .chart-box{position:relative;height:260px;}
+
+  /* Comparison table */
+  .compare-panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:8px;overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;min-width:640px;}
+  th{
+    text-align:left;font-family:var(--font-mono);font-size:11px;color:var(--muted-2);
+    text-transform:uppercase;letter-spacing:0.06em;font-weight:600;
+    padding:16px 18px;border-bottom:1px solid var(--border);
+  }
+  td{padding:16px 18px;border-bottom:1px solid var(--border);font-size:14px;}
+  tr:last-child td{border-bottom:none;}
+  tr.self-row{background:rgba(74,222,128,0.05);}
+  tr.self-row td:first-child{border-left:2px solid var(--good);}
+  .city-name{font-weight:600;font-family:var(--font-display);display:flex;align-items:center;gap:8px;}
+  .badge-you{background:var(--good);color:#06170F;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;font-family:var(--font-mono);}
+  .aqi-pill{font-family:var(--font-mono);font-weight:700;padding:4px 12px;border-radius:100px;font-size:13px;display:inline-block;}
+
+  /* Recommendations */
+  .rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .rec-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:22px;animation:fadeUp .6s ease both;transition:border-color .25s ease, transform .25s ease;
+  }
+  .rec-card:hover{border-color:var(--water);transform:translateY(-3px);}
+  .rec-card .rtag{
+    display:inline-block;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:0.05em;padding:3px 10px;border-radius:100px;margin-bottom:14px;font-weight:700;
+  }
+  .rec-card h4{font-family:var(--font-display);font-size:15.5px;font-weight:600;margin-bottom:8px;}
+  .rec-card p{font-size:13.5px;color:var(--muted);}
+
+  footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    font-size:12px;color:var(--muted-2);font-family:var(--font-mono);}
+
+  @media (max-width:980px){
+    .hero{grid-template-columns:1fr;}
+    .grid{grid-template-columns:repeat(2,1fr);}
+    .score-row{grid-template-columns:1fr;}
+    .chart-grid{grid-template-columns:1fr;}
+    .rec-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width:560px){
+    .grid{grid-template-columns:1fr;}
+    .hero h1{font-size:32px;}
+    .topbar{padding:18px 18px;}
+    .wrap{padding:0 18px 60px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">🌍</div>
+    <div class="brand-text">
+      <div class="name">Environmental Health Analyzer</div>
+      <div class="sub">personal · local · Bhopal, MP</div>
+    </div>
+  </div>
+  <div class="live-pill"><span class="live-dot"></span> <span id="clock">SYNCING…</span></div>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <div class="hero-eyebrow">● Live Snapshot — Bhopal, Madhya Pradesh</div>
+      <h1>How's the air<br><span>and water,</span> today?</h1>
+      <p>A day-to-day read on what your city's atmosphere and water supply mean for your body — built from station data, with sample values shown for demonstration.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="val" style="color:var(--moderate)">154</div><div class="lbl">AQI Now</div></div>
+        <div class="hero-stat"><div class="val" style="color:var(--good)">72</div><div class="lbl">Health Score</div></div>
+        <div class="hero-stat"><div class="val" style="color:var(--water)">81</div><div class="lbl">Water Score</div></div>
+        <div class="hero-stat"><div class="val">28°C</div><div class="lbl">Temp / 58% RH</div></div>
+      </div>
+    </div>
+
+    <div class="dial-card">
+      <div class="dial-wrap">
+        <svg width="240" height="240" viewBox="0 0 240 240">
+          <circle cx="120" cy="120" r="104" fill="none" stroke="#1B2A24" stroke-width="16"/>
+          <circle id="dialArc" cx="120" cy="120" r="104" fill="none" stroke="var(--moderate)" stroke-width="16"
+            stroke-linecap="round" stroke-dasharray="653.5" stroke-dashoffset="653.5"/>
+        </svg>
+        <div class="dial-center">
+          <div class="dial-value" style="color:var(--moderate)">154</div>
+          <div class="dial-label">AQI · US Scale</div>
+          <div class="dial-grade" style="background:rgba(251,191,36,0.15);color:var(--moderate)">Moderate</div>
+        </div>
+      </div>
+      <div class="dial-city">📍 Bhopal — Kolar Road Station</div>
+    </div>
+  </section>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <span class="flabel">Timeframe</span>
+    <div class="chip active" data-filter="time" data-val="24h">24H</div>
+    <div class="chip" data-filter="time" data-val="7d">7 Days</div>
+    <div class="chip" data-filter="time" data-val="30d">30 Days</div>
+    <div class="chip-sep"></div>
+    <span class="flabel">Station</span>
+    <div class="chip active" data-filter="station" data-val="kolar">Kolar Road</div>
+    <div class="chip" data-filter="station" data-val="tt">TT Nagar</div>
+    <div class="chip" data-filter="station" data-val="habibganj">Habibganj</div>
+  </div>
+
+  <!-- METRIC CARDS -->
+  <div class="section-head">
+    <h2>Core Metrics</h2>
+    <div class="eyebrow">Updated moments ago</div>
+  </div>
+  <div class="grid" id="metricGrid">
+    <!-- populated by JS -->
+  </div>
+
+  <!-- SCORES -->
+  <div class="section-head">
+    <h2>Wellbeing Scores</h2>
+    <div class="eyebrow">Derived composite index</div>
+  </div>
+  <div class="score-row">
+    <div class="score-card">
+      <div class="ring-wrap">
+        <svg width="104" height="104" viewBox="0 0 104 104">
+          <circle cx="52" cy="52" r="44" fill="none" stroke="#1B2A24" stroke-width="10"/>
+          <circle cx="52" cy="52" r="44" fill="none" stroke="var(--good)" stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="276.5" stroke-dashoffset="77.4"/>
+        </svg>
+        <div class="ring-num" style="color:var(--good)">72</div>
+      </div>
+      <div class="score-info">
+        <div class="t">❤️ Personal Health Score</div>
+        <div class="d">Weighs current air pollutants against typical exposure guidelines. 72/100 — fine for most, sensitive groups should limit prolonged outdoor exertion.</div>
+      </div>
+    </div>
+    <div class="score-card">
+      <div class="ring-wrap">
+        <svg width="104" height="104" viewBox="0 0 104 104">
+          <circle cx="52" cy="52" r="44" fill="none" stroke="#1B2A24" stroke-width="10"/>
+          <circle cx="52" cy="52" r="44" fill="none" stroke="var(--water)" stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="276.5" stroke-dashoffset="52.5"/>
+        </svg>
+        <div class="ring-num" style="color:var(--water)">81</div>
+      </div>
+      <div class="score-info">
+        <div class="t">💧 Water Quality Score</div>
+        <div class="d">Based on municipal supply testing — TDS, pH, chlorine residual and turbidity. 81/100 — good, filtration still recommended for drinking.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section-head">
+    <h2>Trends</h2>
+    <div class="eyebrow">Kolar Road station</div>
+  </div>
+  <div class="chart-grid">
+    <div class="panel">
+      <h3>Pollutant Levels — Last 24 Hours</h3>
+      <div class="sub">PM2.5, PM10 and AQI tracked hourly (µg/m³ · index)</div>
+      <div class="chart-box"><canvas id="lineChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Pollutant Mix</h3>
+      <div class="sub">Share of current air burden</div>
+      <div class="chart-box"><canvas id="doughnutChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CITY COMPARISON -->
+  <div class="section-head">
+    <h2>City Comparison</h2>
+    <div class="eyebrow">How Bhopal stacks up today</div>
+  </div>
+  <div class="compare-panel">
+    <table>
+      <thead>
+        <tr><th>City</th><th>AQI</th><th>PM2.5</th><th>PM10</th><th>Health Score</th><th>Grade</th></tr>
+      </thead>
+      <tbody id="compareBody"></tbody>
+    </table>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="section-head">
+    <h2>Recommendations</h2>
+    <div class="eyebrow">Tailored to today's readings</div>
+  </div>
+  <div class="rec-grid" id="recGrid"></div>
+
+  <footer>
+    <div>Sample data for demonstration · not a substitute for official CPCB / municipal readings</div>
+    <div id="footerClock"></div>
+  </footer>
+
+</div>
+
+<script>
+/* ===================== DATA LAYER ===================== */
+const stationData = {
+  kolar: {
+    name:"Kolar Road", aqi:154, pm25:78, pm10:132, no2:34, so2:9, co:0.8, o3:41,
+    health:72, water:81, temp:28, humidity:58,
+    hourly:[112,120,131,140,148,152,158,154,149,143,138,145,150,154],
+    labels:["00:00","02:00","04:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","21:00","22:00","23:00"]
+  },
+  tt: {
+    name:"TT Nagar", aqi:132, pm25:64, pm10:110, no2:29, so2:7, co:0.6, o3:38,
+    health:78, water:84, temp:27, humidity:55,
+    hourly:[98,104,110,118,122,126,130,132,128,124,120,122,126,132],
+    labels:["00:00","02:00","04:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","21:00","22:00","23:00"]
+  },
+  habibganj: {
+    name:"Habibganj", aqi:171, pm25:91, pm10:149, no2:39, so2:11, co:1.0, o3:44,
+    health:65, water:76, temp:29, humidity:60,
+    hourly:[130,138,146,155,162,168,172,171,166,160,155,160,165,171],
+    labels:["00:00","02:00","04:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","21:00","22:00","23:00"]
+  }
+};
+
+const compareCities = [
+  {name:"Bhopal", self:true, aqi:154, pm25:78, pm10:132, health:72},
+  {name:"Delhi", self:false, aqi:281, pm25:165, pm10:240, health:38},
+  {name:"Indore", self:false, aqi:118, pm25:56, pm10:98, health:80},
+  {name:"Mumbai", self:false, aqi:96, pm25:42, pm10:80, health:86},
+  {name:"Bengaluru", self:false, aqi:71, pm25:31, pm10:60, health:91},
+  {name:"Pune", self:false, aqi:88, pm25:38, pm10:72, health:88},
+];
+
+function gradeOf(aqi){
+  if(aqi<=50) return {label:"Good", cls:"good"};
+  if(aqi<=100) return {label:"Satisfactory", cls:"good"};
+  if(aqi<=200) return {label:"Moderate", cls:"moderate"};
+  if(aqi<=300) return {label:"Poor", cls:"poor"};
+  if(aqi<=400) return {label:"Very Poor", cls:"severe"};
+  return {label:"Severe", cls:"severe"};
+}
+function colorVar(cls){
+  return {good:"var(--good)", moderate:"var(--moderate)", poor:"var(--poor)", severe:"var(--severe)"}[cls];
+}
+
+/* ===================== RENDER: METRIC CARDS ===================== */
+function renderMetrics(d){
+  const g = gradeOf(d.aqi);
+  const cards = [
+    {icon:"🌫️", name:"Air Quality Index", val:d.aqi, unit:"AQI · "+g.label, pct: Math.min(d.aqi/300*100,100), grade:g.cls, trend:"up", trendVal:"+6%"},
+    {icon:"🔴", name:"PM2.5 Concentration", val:d.pm25, unit:"µg/m³ · fine particulate", pct: Math.min(d.pm25/150*100,100), grade: d.pm25>60?"severe":d.pm25>35?"moderate":"good", trend:"up", trendVal:"+4%"},
+    {icon:"🟠", name:"PM10 Concentration", val:d.pm10, unit:"µg/m³ · coarse particulate", pct: Math.min(d.pm10/250*100,100), grade: d.pm10>100?"severe":d.pm10>60?"moderate":"good", trend:"down", trendVal:"-2%"},
+    {icon:"🌡️", name:"Temperature / Humidity", val:d.temp+"°C", unit:d.humidity+"% relative humidity", pct: 55, grade:"good", trend:"down", trendVal:"-1°"},
+  ];
+  document.getElementById('metricGrid').innerHTML = cards.map((c,i)=>`
+    <div class="card" style="animation-delay:${i*0.06}s">
+      <div class="icon-row">
+        <div class="icon">${c.icon}</div>
+        <div class="trend ${c.trend}">${c.trend==='up'?'▲':'▼'} ${c.trendVal}</div>
+      </div>
+      <div class="metric-val grade-${c.grade}">${c.val}</div>
+      <div class="metric-unit">${c.unit}</div>
+      <div class="metric-name">${c.name}</div>
+      <div class="bar-track"><div class="bar-fill bg-${c.grade}" style="width:${c.pct}%"></div></div>
+    </div>
+  `).join('');
+}
+
+/* ===================== RENDER: DIAL ===================== */
+function renderDial(d){
+  const g = gradeOf(d.aqi);
+  const circumference = 653.5;
+  const pct = Math.min(d.aqi/300,1);
+  const offset = circumference - (circumference*pct);
+  const arc = document.getElementById('dialArc');
+  arc.style.stroke = colorVar(g.cls);
+  requestAnimationFrame(()=>{ arc.style.transition="stroke-dashoffset 1.2s cubic-bezier(.22,.9,.32,1), stroke 0.4s"; arc.style.strokeDashoffset = offset; });
+  document.querySelector('.dial-value').textContent = d.aqi;
+  document.querySelector('.dial-value').style.color = colorVar(g.cls);
+  const badge = document.querySelector('.dial-grade');
+  badge.textContent = g.label;
+  badge.style.color = colorVar(g.cls);
+  badge.style.background = colorVar(g.cls).replace('var(','').replace(')','') ; // fallback, replaced below
+  badge.style.background = `color-mix(in srgb, ${colorVar(g.cls)} 15%, transparent)`;
+  document.querySelector('.dial-city').textContent = "📍 Bhopal — " + d.name + " Station";
+}
+
+/* ===================== CHARTS ===================== */
+let lineChart, doughnutChart;
+function renderCharts(d){
+  const ctx1 = document.getElementById('lineChart').getContext('2d');
+  const ctx2 = document.getElementById('doughnutChart').getContext('2d');
+  if(lineChart) lineChart.destroy();
+  if(doughnutChart) doughnutChart.destroy();
+
+  lineChart = new Chart(ctx1, {
+    type:'line',
+    data:{
+      labels:d.labels,
+      datasets:[
+        {label:'AQI', data:d.hourly, borderColor:'#FBBF24', backgroundColor:'rgba(251,191,36,0.08)', tension:0.4, fill:true, pointRadius:0, borderWidth:2.5},
+        {label:'PM2.5', data:d.hourly.map(v=>Math.round(v*0.5)), borderColor:'#F87171', backgroundColor:'transparent', tension:0.4, pointRadius:0, borderWidth:2, borderDash:[4,4]},
+        {label:'PM10', data:d.hourly.map(v=>Math.round(v*0.85)), borderColor:'#38BDF8', backgroundColor:'transparent', tension:0.4, pointRadius:0, borderWidth:2, borderDash:[2,3]},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#8FA69B', font:{family:'Inter', size:11.5}, usePointStyle:true, boxWidth:8 } } },
+      scales:{
+        x:{ grid:{ color:'#1B2A24' }, ticks:{ color:'#5E7269', font:{size:10.5} } },
+        y:{ grid:{ color:'#1B2A24' }, ticks:{ color:'#5E7269', font:{size:10.5} } }
+      }
+    }
+  });
+
+  doughnutChart = new Chart(ctx2, {
+    type:'doughnut',
+    data:{
+      labels:['PM2.5','PM10','NO₂','SO₂','O₃'],
+      datasets:[{
+        data:[d.pm25, d.pm10-d.pm25>0?d.pm10-d.pm25:10, d.no2, d.so2, d.o3],
+        backgroundColor:['#F87171','#FBBF24','#38BDF8','#C084FC','#4ADE80'],
+        borderColor:'#131F1B', borderWidth:3
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{ legend:{ position:'bottom', labels:{ color:'#8FA69B', font:{family:'Inter', size:11}, usePointStyle:true, boxWidth:8, padding:12 } } }
+    }
+  });
+}
+
+/* ===================== COMPARISON TABLE ===================== */
+function renderCompare(){
+  document.getElementById('compareBody').innerHTML = compareCities.map(c=>{
+    const g = gradeOf(c.aqi);
+    return `<tr class="${c.self?'self-row':''}">
+      <td><div class="city-name">${c.name} ${c.self?'<span class="badge-you">YOU</span>':''}</div></td>
+      <td><span class="aqi-pill" style="background:color-mix(in srgb, ${colorVar(g.cls)} 18%, transparent); color:${colorVar(g.cls)}">${c.aqi}</span></td>
+      <td>${c.pm25} µg/m³</td>
+      <td>${c.pm10} µg/m³</td>
+      <td>${c.health}/100</td>
+      <td style="color:${colorVar(g.cls)}; font-weight:600;">${g.label}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ===================== RECOMMENDATIONS ===================== */
+function renderRecs(d){
+  const g = gradeOf(d.aqi);
+  const recs = [
+    {tag:"OUTDOOR", color:"var(--moderate)", title:"Limit strenuous outdoor activity", body:`At AQI ${d.aqi} (${g.label}), keep jogs and cycling short, ideally before 8AM when PM2.5 tends to be lower.`},
+    {tag:"MASK", color:"var(--severe)", title:"Wear an N95 outdoors", body:"PM2.5 is elevated enough that a properly fitted N95 meaningfully cuts your inhaled particulate load."},
+    {tag:"INDOOR", color:"var(--good)", title:"Run a HEPA purifier at home", body:"Indoor PM2.5 is usually 30–50% of outdoor levels without filtration — a purifier closes that gap fast."},
+    {tag:"WATER", color:"var(--water)", title:"Filter tap water before drinking", body:`Water score is ${d.water}/100 — safe for washing, but a carbon or RO filter is still advised for drinking.`},
+    {tag:"SENSITIVE GROUPS", color:"var(--hazard)", title:"Children & asthmatics stay indoors", body:"Sensitive groups should avoid outdoor exertion entirely until AQI drops below 100."},
+    {tag:"COMMUTE", color:"#FB923C", title:"Keep car windows up in traffic", body:"Roadside PM2.5 spikes 2–3× above ambient near congested junctions like Board Office Square."},
+  ];
+  document.getElementById('recGrid').innerHTML = recs.map((r,i)=>`
+    <div class="rec-card" style="animation-delay:${i*0.05}s">
+      <div class="rtag" style="background:color-mix(in srgb, ${r.color} 18%, transparent); color:${r.color}">${r.tag}</div>
+      <h4>${r.title}</h4>
+      <p>${r.body}</p>
+    </div>
+  `).join('');
+}
+
+/* ===================== MASTER RENDER ===================== */
+let currentStation = 'kolar';
+function renderAll(){
+  const d = stationData[currentStation];
+  renderMetrics(d);
+  renderDial(d);
+  renderCharts(d);
+  renderRecs(d);
+}
+renderAll();
+renderCompare();
+
+/* ===================== FILTERS ===================== */
+document.querySelectorAll('.chip[data-filter="station"]').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('.chip[data-filter="station"]').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    currentStation = chip.dataset.val;
+    renderAll();
+  });
+});
+document.querySelectorAll('.chip[data-filter="time"]').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('.chip[data-filter="time"]').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    // simulate slight variation per timeframe for demo purposes
+    renderAll();
+  });
+});
+
+/* ===================== CLOCK ===================== */
+function tick(){
+  const now = new Date();
+  const opts = {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false};
+  const str = now.toLocaleTimeString('en-IN', opts) + " IST";
+  document.getElementById('clock').textContent = str;
+  document.getElementById('footerClock').textContent = "Last sync: " + str;
+}
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
