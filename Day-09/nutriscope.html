@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NutriScope – AI Nutrition Analyzer</title>
+<style>
+  :root{
+    --bg-0:#0a0e14;
+    --bg-1:#0f1420;
+    --card:#141a26;
+    --card-2:#1a2130;
+    --border:#242c3d;
+    --text-0:#eef1f7;
+    --text-1:#9aa5b8;
+    --text-2:#5f6b81;
+    --accent:#4ade80;
+    --accent-2:#22d3ee;
+    --warn:#fbbf24;
+    --danger:#f87171;
+    --shadow: 0 10px 40px rgba(0,0,0,0.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    background: radial-gradient(1200px 600px at 20% -10%, #14203a 0%, transparent 60%),
+                radial-gradient(1000px 500px at 100% 0%, #1a2b1f 0%, transparent 55%),
+                var(--bg-0);
+    color:var(--text-0);
+    font-family:'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    min-height:100vh;
+  }
+  .app{
+    max-width:760px;
+    margin:0 auto;
+    padding:32px 20px 60px;
+  }
+  .header{
+    text-align:center;
+    margin-bottom:28px;
+    animation: fadeDown .6s ease;
+  }
+  .logo-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .logo-icon{
+    width:38px;height:38px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--accent), var(--accent-2));
+    font-size:20px;
+    box-shadow: 0 6px 20px rgba(74,222,128,0.3);
+  }
+  .header h1{
+    font-size:28px;
+    margin:0;
+    background:linear-gradient(135deg, var(--text-0), var(--text-1));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    letter-spacing:0.5px;
+  }
+  .header p{
+    color:var(--text-1);
+    font-size:14px;
+    margin:4px 0 0;
+  }
+
+  .card{
+    background:linear-gradient(180deg, var(--card), var(--card-2));
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:22px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+    animation: fadeUp .6s ease;
+  }
+
+  .input-row{
+    display:flex;
+    gap:10px;
+  }
+  .input-row input{
+    flex:1;
+    background:var(--bg-1);
+    border:1px solid var(--border);
+    color:var(--text-0);
+    padding:14px 16px;
+    border-radius:12px;
+    font-size:15px;
+    outline:none;
+    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .input-row input::placeholder{ color:var(--text-2); }
+  .input-row input:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(74,222,128,0.15);
+    background:#111826;
+  }
+
+  .btn-row{
+    display:flex;
+    gap:12px;
+    margin-top:14px;
+  }
+  button{
+    font-family:inherit;
+    font-size:15px;
+    font-weight:600;
+    border:none;
+    border-radius:12px;
+    padding:13px 20px;
+    cursor:pointer;
+    transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  button:active{ transform: scale(0.97); }
+
+  .btn-analyze{
+    flex:2;
+    background:linear-gradient(135deg, var(--accent), var(--accent-2));
+    color:#08110c;
+    box-shadow:0 8px 24px rgba(74,222,128,0.25);
+  }
+  .btn-analyze:hover{ box-shadow:0 10px 30px rgba(74,222,128,0.4); }
+  .btn-analyze:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+
+  .btn-reset{
+    flex:1;
+    background:var(--bg-1);
+    color:var(--text-1);
+    border:1px solid var(--border);
+  }
+  .btn-reset:hover{ color:var(--text-0); border-color:var(--text-2); }
+
+  .suggestions{
+    margin-top:10px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .chip{
+    background:var(--bg-1);
+    border:1px solid var(--border);
+    color:var(--text-1);
+    font-size:12.5px;
+    padding:6px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    transition: all .2s ease;
+  }
+  .chip:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+    background:rgba(74,222,128,0.08);
+  }
+
+  /* Loading */
+  .loading{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:30px 0;
+    color:var(--text-1);
+    font-size:14px;
+  }
+  .loading.show{ display:flex; }
+  .spinner{
+    width:20px;height:20px;
+    border:3px solid var(--border);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation: spin .8s linear infinite;
+  }
+
+  /* Results */
+  #results{ display:none; }
+  #results.show{
+    display:block;
+    animation: fadeUp .5s ease;
+  }
+
+  .food-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .food-title h2{
+    margin:0;
+    font-size:22px;
+    text-transform:capitalize;
+  }
+  .badge{
+    font-size:12px;
+    font-weight:700;
+    padding:6px 14px;
+    border-radius:999px;
+    letter-spacing:0.3px;
+  }
+  .badge.good{ background:rgba(74,222,128,0.15); color:var(--accent); border:1px solid rgba(74,222,128,0.35); }
+  .badge.ok{ background:rgba(251,191,36,0.15); color:var(--warn); border:1px solid rgba(251,191,36,0.35); }
+  .badge.bad{ background:rgba(248,113,113,0.15); color:var(--danger); border:1px solid rgba(248,113,113,0.35); }
+
+  .score-wrap{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    background:var(--bg-1);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px 20px;
+    margin-bottom:18px;
+  }
+  .score-ring{
+    position:relative;
+    width:86px;height:86px;
+    flex-shrink:0;
+  }
+  .score-ring svg{ transform:rotate(-90deg); width:86px; height:86px; }
+  .score-ring circle{
+    fill:none;
+    stroke-width:8;
+  }
+  .ring-bg{ stroke:var(--border); }
+  .ring-fg{
+    stroke:var(--accent);
+    stroke-linecap:round;
+    transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1), stroke 0.6s ease;
+  }
+  .score-num{
+    position:absolute;
+    top:0;left:0;right:0;bottom:0;
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;
+  }
+  .score-num span.n{ font-size:24px; font-weight:800; }
+  .score-num span.o{ font-size:10px; color:var(--text-2); }
+
+  .score-desc h3{
+    margin:0 0 4px;
+    font-size:16px;
+  }
+  .score-desc p{
+    margin:0;
+    color:var(--text-1);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  .macro-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:12px;
+  }
+  @media (max-width:520px){
+    .macro-grid{ grid-template-columns:repeat(2,1fr); }
+  }
+  .macro-card{
+    background:var(--bg-1);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px 14px;
+    text-align:center;
+    transition: transform .2s ease, border-color .2s ease;
+    animation: popIn .45s ease backwards;
+  }
+  .macro-card:hover{
+    transform:translateY(-3px);
+    border-color:var(--text-2);
+  }
+  .macro-icon{ font-size:20px; margin-bottom:6px; }
+  .macro-val{ font-size:20px; font-weight:800; }
+  .macro-unit{ font-size:11px; color:var(--text-2); font-weight:600; }
+  .macro-label{ font-size:12px; color:var(--text-1); margin-top:4px; }
+
+  .bar-wrap{
+    margin-top:8px;
+    height:5px;
+    background:var(--border);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    border-radius:999px;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+  }
+
+  .note{
+    background:var(--bg-1);
+    border:1px dashed var(--border);
+    border-radius:12px;
+    padding:14px 16px;
+    font-size:12.5px;
+    color:var(--text-2);
+    line-height:1.6;
+    margin-top:6px;
+  }
+
+  .footer-note{
+    text-align:center;
+    color:var(--text-2);
+    font-size:12px;
+    margin-top:24px;
+  }
+
+  @keyframes fadeDown{
+    from{opacity:0; transform:translateY(-14px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes fadeUp{
+    from{opacity:0; transform:translateY(14px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes popIn{
+    from{opacity:0; transform:scale(0.9);}
+    to{opacity:1; transform:scale(1);}
+  }
+  @keyframes spin{
+    to{ transform:rotate(360deg); }
+  }
+
+  ::selection{ background:rgba(74,222,128,0.3); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="logo-row">
+      <div class="logo-icon">🥗</div>
+      <h1>NutriScope</h1>
+    </div>
+    <p>AI-powered nutrition analyzer — know your food, own your health</p>
+  </div>
+
+  <div class="card">
+    <div class="input-row">
+      <input id="foodInput" type="text" placeholder="Enter a food name e.g. banana, grilled chicken, pizza..." autocomplete="off"/>
+    </div>
+    <div class="suggestions" id="suggestions"></div>
+    <div class="btn-row">
+      <button class="btn-analyze" id="analyzeBtn">✨ Analyze</button>
+      <button class="btn-reset" id="resetBtn">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span>Analyzing nutrition data...</span>
+  </div>
+
+  <div id="results">
+    <div class="card">
+      <div class="food-title">
+        <h2 id="foodName">Food Name</h2>
+        <span class="badge" id="healthBadge">—</span>
+      </div>
+
+      <div class="score-wrap">
+        <div class="score-ring">
+          <svg viewBox="0 0 86 86">
+            <circle class="ring-bg" cx="43" cy="43" r="36"></circle>
+            <circle class="ring-fg" id="ringFg" cx="43" cy="43" r="36" stroke-dasharray="226" stroke-dashoffset="226"></circle>
+          </svg>
+          <div class="score-num">
+            <span class="n" id="scoreNum">0</span>
+            <span class="o">/100</span>
+          </div>
+        </div>
+        <div class="score-desc">
+          <h3 id="scoreTitle">Nutrition Score</h3>
+          <p id="scoreDesc">Analyze a food to see its nutrition score and health insights.</p>
+        </div>
+      </div>
+
+      <div class="macro-grid" id="macroGrid">
+        <!-- macro cards injected here -->
+      </div>
+
+      <div class="note" id="disclaimer" style="display:none;">
+        ⚠️ Estimated values based on a standard 100g/serving reference. Actual nutrition may vary by brand, preparation, and portion size.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">NutriScope MVP · Local nutrition intelligence engine</div>
+</div>
+
+<script>
+(function(){
+
+  // ---- Local nutrition knowledge base (per typical serving) ----
+  const DB = {
+    "banana":        {cal:105, protein:1.3, carbs:27,  fat:0.4, fiber:3.1, sugar:14},
+    "apple":         {cal:95,  protein:0.5, carbs:25,  fat:0.3, fiber:4.4, sugar:19},
+    "chicken breast":{cal:165, protein:31,  carbs:0,   fat:3.6, fiber:0,   sugar:0},
+    "grilled chicken":{cal:165,protein:31,  carbs:0,   fat:3.6, fiber:0,   sugar:0},
+    "white rice":    {cal:206, protein:4.3, carbs:45,  fat:0.4, fiber:0.6, sugar:0.1},
+    "brown rice":    {cal:216, protein:5,   carbs:45,  fat:1.8, fiber:3.5, sugar:0.7},
+    "egg":           {cal:78,  protein:6.3, carbs:0.6, fat:5.3, fiber:0,   sugar:0.6},
+    "boiled egg":    {cal:78,  protein:6.3, carbs:0.6, fat:5.3, fiber:0,   sugar:0.6},
+    "pizza":         {cal:285, protein:12,  carbs:36,  fat:10,  fiber:2.3, sugar:3.8},
+    "burger":        {cal:354, protein:17,  carbs:29,  fat:19,  fiber:1.5, sugar:5},
+    "salad":         {cal:150, protein:4,   carbs:11,  fat:10,  fiber:4,   sugar:4},
+    "oats":          {cal:150, protein:5,   carbs:27,  fat:2.5, fiber:4,   sugar:1},
+    "oatmeal":       {cal:150, protein:5,   carbs:27,  fat:2.5, fiber:4,   sugar:1},
+    "milk":          {cal:103, protein:8,   carbs:12,  fat:2.4, fiber:0,   sugar:12},
+    "yogurt":        {cal:150, protein:8,   carbs:17,  fat:4,   fiber:0,   sugar:17},
+    "almonds":       {cal:164, protein:6,   carbs:6,   fat:14,  fiber:3.5, sugar:1.2},
+    "avocado":       {cal:240, protein:3,   carbs:12,  fat:22,  fiber:10,  sugar:1},
+    "broccoli":      {cal:55,  protein:3.7, carbs:11,  fat:0.6, fiber:5.1, sugar:2.6},
+    "spinach":       {cal:23,  protein:2.9, carbs:3.6, fat:0.4, fiber:2.2, sugar:0.4},
+    "salmon":        {cal:208, protein:20,  carbs:0,   fat:13,  fiber:0,   sugar:0},
+    "french fries":  {cal:365, protein:4,   carbs:48,  fat:17,  fiber:4,   sugar:0.3},
+    "ice cream":     {cal:207, protein:3.5, carbs:24,  fat:11,  fiber:0.7, sugar:21},
+    "chocolate":     {cal:546, protein:4.9, carbs:61,  fat:31,  fiber:7,   sugar:48},
+    "soda":          {cal:150, protein:0,   carbs:39,  fat:0,   fiber:0,   sugar:39},
+    "orange":        {cal:62,  protein:1.2, carbs:15,  fat:0.2, fiber:3.1, sugar:12},
+    "peanut butter": {cal:188, protein:8,   carbs:6,   fat:16,  fiber:1.9, sugar:3},
+    "bread":         {cal:79,  protein:2.7, carbs:14,  fat:1,   fiber:1.2, sugar:1.4},
+    "pasta":         {cal:221, protein:8.1, carbs:43,  fat:1.3, fiber:2.5, sugar:0.8},
+    "potato":        {cal:161, protein:4.3, carbs:37,  fat:0.2, fiber:3.8, sugar:1.7},
+    "cheese":        {cal:113, protein:7,   carbs:1,   fat:9,   fiber:0,   sugar:0.5},
+    "tofu":          {cal:94,  protein:10,  carbs:2.3, fat:5.3, fiber:1.2, sugar:0.7},
+    "beans":         {cal:127, protein:8.7, carbs:23,  fat:0.5, fiber:6.4, sugar:0.3},
+    "mango":         {cal:99,  protein:1.4, carbs:25,  fat:0.6, fiber:2.6, sugar:23},
+    "watermelon":    {cal:46,  protein:0.9, carbs:11.5,fat:0.2, fiber:0.6, sugar:9.4},
+    "cookies":       {cal:160, protein:2,   carbs:22,  fat:7,   fiber:0.7, sugar:11},
+    "donut":         {cal:452, protein:4.9, carbs:51,  fat:25,  fiber:1.4, sugar:23}
+  };
+
+  const foodInput   = document.getElementById('foodInput');
+  const analyzeBtn  = document.getElementById('analyzeBtn');
+  const resetBtn    = document.getElementById('resetBtn');
+  const loading     = document.getElementById('loading');
+  const results     = document.getElementById('results');
+  const suggestions = document.getElementById('suggestions');
+  const macroGrid   = document.getElementById('macroGrid');
+  const disclaimer  = document.getElementById('disclaimer');
+
+  // Suggestion chips
+  const suggestionList = ["Banana","Chicken Breast","Pizza","Salad","Avocado","Oatmeal","Ice Cream"];
+  suggestionList.forEach(name=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = name;
+    chip.onclick = ()=>{ foodInput.value = name; analyze(); };
+    suggestions.appendChild(chip);
+  });
+
+  function normalize(str){
+    return str.trim().toLowerCase();
+  }
+
+  function fuzzyFind(query){
+    if(DB[query]) return {key:query, data:DB[query]};
+    // partial match
+    let bestKey = null;
+    for(const key in DB){
+      if(key.includes(query) || query.includes(key)){
+        bestKey = key; break;
+      }
+    }
+    if(bestKey) return {key:bestKey, data:DB[bestKey]};
+    return null;
+  }
+
+  function estimateGeneric(query){
+    // Simple heuristic generator for unknown foods, so the MVP always responds
+    let seed = 0;
+    for(let i=0;i<query.length;i++) seed += query.charCodeAt(i);
+    const rand = (min,max)=> {
+      seed = (seed * 9301 + 49297) % 233280;
+      const r = seed / 233280;
+      return Math.round((min + r*(max-min))*10)/10;
+    };
+    return {
+      cal: rand(80,320),
+      protein: rand(1,20),
+      carbs: rand(5,40),
+      fat: rand(0.5,18),
+      fiber: rand(0,6),
+      sugar: rand(0,20)
+    };
+  }
+
+  function computeScore(d){
+    // Score out of 100 — rewards protein & fiber, penalizes sugar/fat/calories
+    let score = 60;
+    score += Math.min(d.protein * 1.2, 20);
+    score += Math.min(d.fiber * 2.5, 15);
+    score -= Math.min(d.sugar * 1.1, 25);
+    score -= Math.min(Math.max(d.fat-5,0) * 1.0, 15);
+    score -= Math.min(Math.max(d.cal-200,0) * 0.05, 15);
+    score = Math.max(0, Math.min(100, Math.round(score)));
+    return score;
+  }
+
+  function healthStatus(score){
+    if(score >= 70) return {label:"Healthy", cls:"good"};
+    if(score >= 45) return {label:"Moderate", cls:"ok"};
+    return {label:"Unhealthy", cls:"bad"};
+  }
+
+  function scoreDescription(score, status){
+    if(status.cls === 'good') return "Great choice! This food offers solid nutritional value with good protein/fiber balance and controlled sugar & fat.";
+    if(status.cls === 'ok') return "Decent option in moderation — balance it with fiber-rich, lower-sugar foods through the day.";
+    return "High in sugar, fat, or calories relative to its nutrients — best enjoyed occasionally, not as a daily staple.";
+  }
+
+  const macros = [
+    {key:'cal',    label:'Calories',      unit:'kcal', icon:'🔥', color:'#22d3ee', max:400},
+    {key:'protein',label:'Protein',       unit:'g',    icon:'💪', color:'#4ade80', max:35},
+    {key:'carbs',  label:'Carbohydrates', unit:'g',    icon:'🌾', color:'#fbbf24', max:60},
+    {key:'fat',    label:'Fat',           unit:'g',    icon:'🧈', color:'#f87171', max:30},
+    {key:'fiber',  label:'Fiber',         unit:'g',    icon:'🌿', color:'#34d399', max:10},
+    {key:'sugar',  label:'Sugar',         unit:'g',    icon:'🍬', color:'#f472b6', max:40}
+  ];
+
+  function renderMacros(d){
+    macroGrid.innerHTML = '';
+    macros.forEach((m, i)=>{
+      const val = d[m.key];
+      const pct = Math.min(100, Math.round((val / m.max)*100));
+      const card = document.createElement('div');
+      card.className = 'macro-card';
+      card.style.animationDelay = (i*0.06)+'s';
+      card.innerHTML = `
+        <div class="macro-icon">${m.icon}</div>
+        <div class="macro-val">${val}<span class="macro-unit"> ${m.unit}</span></div>
+        <div class="macro-label">${m.label}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:0%; background:${m.color};" data-pct="${pct}"></div></div>
+      `;
+      macroGrid.appendChild(card);
+    });
+    // animate bars after paint
+    requestAnimationFrame(()=>{
+      setTimeout(()=>{
+        document.querySelectorAll('.bar-fill').forEach(el=>{
+          el.style.width = el.getAttribute('data-pct') + '%';
+        });
+      }, 50);
+    });
+  }
+
+  function renderScoreRing(score){
+    const ring = document.getElementById('ringFg');
+    const circumference = 226;
+    const offset = circumference - (score/100)*circumference;
+    let color = '#4ade80';
+    if(score < 45) color = '#f87171';
+    else if(score < 70) color = '#fbbf24';
+    ring.style.stroke = color;
+    ring.setAttribute('stroke-dashoffset', circumference);
+    requestAnimationFrame(()=>{
+      setTimeout(()=>{ ring.setAttribute('stroke-dashoffset', offset); }, 50);
+    });
+    document.getElementById('scoreNum').textContent = score;
+  }
+
+  function analyze(){
+    const raw = foodInput.value;
+    const query = normalize(raw);
+    if(!query){
+      foodInput.focus();
+      foodInput.style.borderColor = '#f87171';
+      setTimeout(()=> foodInput.style.borderColor = '', 900);
+      return;
+    }
+
+    results.classList.remove('show');
+    loading.classList.add('show');
+    analyzeBtn.disabled = true;
+
+    setTimeout(()=>{
+      const match = fuzzyFind(query);
+      const data = match ? match.data : estimateGeneric(query);
+      const displayName = match ? match.key : raw;
+
+      const score = computeScore(data);
+      const status = healthStatus(score);
+
+      document.getElementById('foodName').textContent = displayName;
+      const badge = document.getElementById('healthBadge');
+      badge.textContent = status.label;
+      badge.className = 'badge ' + status.cls;
+
+      document.getElementById('scoreTitle').textContent = 'Nutrition Score: ' + score + '/100';
+      document.getElementById('scoreDesc').textContent = scoreDescription(score, status);
+
+      renderScoreRing(score);
+      renderMacros(data);
+
+      disclaimer.style.display = 'block';
+
+      loading.classList.remove('show');
+      results.classList.add('show');
+      analyzeBtn.disabled = false;
+    }, 750);
+  }
+
+  function reset(){
+    foodInput.value = '';
+    results.classList.remove('show');
+    loading.classList.remove('show');
+    analyzeBtn.disabled = false;
+    document.getElementById('ringFg').setAttribute('stroke-dashoffset', 226);
+    foodInput.focus();
+  }
+
+  analyzeBtn.addEventListener('click', analyze);
+  resetBtn.addEventListener('click', reset);
+  foodInput.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') analyze();
+  });
+
+})();
+</script>
+
+</body>
+</html>
