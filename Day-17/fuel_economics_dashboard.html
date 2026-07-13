@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicle Fuel & Ownership Economics Dashboard</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1c2438; --border:#2a3450;
+    --text:#e7ecf7; --muted:#93a0bd; --accent:#5b8cff;
+    --cng:#f59e0b; --diesel:#64748b; --ev:#10b981; --petrol:#ef4444; --e85:#8b5cf6;
+    --good:#10b981; --warn:#f59e0b; --bad:#ef4444;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    background:linear-gradient(160deg,#0b0f1a,#131b2e 60%,#0f1420);
+    color:var(--text); min-height:100vh; padding-bottom:60px;
+  }
+  header{
+    padding:28px 5vw 22px; border-bottom:1px solid var(--border);
+    background:linear-gradient(90deg,rgba(91,140,255,.12),transparent 60%);
+  }
+  header h1{margin:0 0 6px; font-size:1.7rem; letter-spacing:.3px;}
+  header p{margin:0; color:var(--muted); font-size:.92rem;}
+  .badge-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+  .badge{
+    background:var(--panel2); border:1px solid var(--border); padding:6px 14px;
+    border-radius:20px; font-size:.78rem; color:var(--muted);
+  }
+  .badge b{color:var(--text);}
+  main{padding:26px 5vw;}
+  section{margin-bottom:38px;}
+  h2{
+    font-size:1.15rem; margin:0 0 16px; padding-left:12px;
+    border-left:4px solid var(--accent); letter-spacing:.3px;
+  }
+  .kpi-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:16px;
+  }
+  .kpi-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:18px 20px; position:relative; overflow:hidden;
+  }
+  .kpi-card::before{
+    content:''; position:absolute; top:0; left:0; width:100%; height:3px;
+    background:var(--accent);
+  }
+  .kpi-card.good::before{background:var(--good);}
+  .kpi-card.bad::before{background:var(--bad);}
+  .kpi-label{font-size:.76rem; color:var(--muted); text-transform:uppercase; letter-spacing:.6px;}
+  .kpi-value{font-size:1.55rem; font-weight:700; margin:8px 0 4px;}
+  .kpi-sub{font-size:.78rem; color:var(--muted);}
+  .tag{
+    display:inline-block; margin-top:8px; font-size:.72rem; padding:3px 10px;
+    border-radius:12px; font-weight:600;
+  }
+  .tag.good{background:rgba(16,185,129,.15); color:var(--good);}
+  .tag.info{background:rgba(91,140,255,.15); color:var(--accent);}
+
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .grid-3{display:grid; grid-template-columns:2fr 1fr; gap:20px;}
+  @media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:20px;
+  }
+  .panel h3{margin:0 0 14px; font-size:.98rem; color:var(--text);}
+  .panel .note{font-size:.75rem; color:var(--muted); margin-top:10px;}
+
+  table{width:100%; border-collapse:collapse; font-size:.85rem;}
+  th,td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--border);}
+  th{color:var(--muted); font-weight:600; font-size:.75rem; text-transform:uppercase; letter-spacing:.4px;}
+  tr:hover td{background:rgba(255,255,255,.02);}
+  .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px;}
+  .best-row td{background:rgba(16,185,129,.07);}
+
+  .legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; font-size:.78rem; color:var(--muted);}
+  .legend span{display:flex; align-items:center;}
+
+  .insight-list, .reco-list{margin:0; padding-left:0; list-style:none;}
+  .insight-list li, .reco-list li{
+    padding:12px 14px; margin-bottom:10px; background:var(--panel2); border:1px solid var(--border);
+    border-radius:10px; font-size:.88rem; line-height:1.5; position:relative; padding-left:36px;
+  }
+  .insight-list li::before{content:'📊'; position:absolute; left:12px; top:12px;}
+  .reco-list li::before{content:'✅'; position:absolute; left:12px; top:12px;}
+
+  .summary-box{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px;
+    line-height:1.7; font-size:.92rem; color:#dfe6f5;
+  }
+  .summary-box b{color:var(--accent);}
+  footer{text-align:center; color:var(--muted); font-size:.75rem; padding-top:20px;}
+  svg text{fill:var(--text); font-family:inherit;}
+  .axis-label{fill:var(--muted); font-size:11px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚗 Vehicle Fuel &amp; Ownership Economics Dashboard</h1>
+  <p>Data-driven comparison of CNG, Diesel, Electric, Petrol (E20) &amp; E85 Flex-Fuel — cost, emissions &amp; ownership economics</p>
+  <div class="badge-row">
+    <div class="badge">Dataset: <b>day17_e85_dataset_optimised.csv</b></div>
+    <div class="badge">Records analyzed: <b>52</b></div>
+    <div class="badge">Fuel types: <b>5</b></div>
+    <div class="badge">Assumed annual distance: <b>12,000 km</b></div>
+    <div class="badge">Ownership horizon: <b>5 years</b></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- KPI CARDS -->
+  <section>
+    <h2>Key Performance Indicators</h2>
+    <div class="kpi-grid" id="kpiGrid"></div>
+  </section>
+
+  <!-- BAR CHARTS -->
+  <section>
+    <h2>Cost Comparison Across Fuel Types</h2>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Cost per Kilometer (₹/km)</h3>
+        <svg id="barCostPerKm" viewBox="0 0 480 300" width="100%" height="300"></svg>
+        <div class="note">Includes fuel + maintenance cost per km, derived from actual trip-level data.</div>
+      </div>
+      <div class="panel">
+        <h3>Estimated Annual Running Cost (₹, at 12,000 km/yr)</h3>
+        <svg id="barAnnual" viewBox="0 0 480 300" width="100%" height="300"></svg>
+        <div class="note">Annual running cost = (fuel cost/km + maintenance cost/km) × 12,000 km.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LINE + PIE -->
+  <section>
+    <h2>Ownership Projection &amp; Emission Share</h2>
+    <div class="grid-3">
+      <div class="panel">
+        <h3>Cumulative Ownership Cost Over 5 Years (₹)</h3>
+        <svg id="lineChart" viewBox="0 0 620 320" width="100%" height="320"></svg>
+        <div class="legend" id="lineLegend"></div>
+      </div>
+      <div class="panel">
+        <h3>Share of Annual CO₂ Emissions</h3>
+        <svg id="pieChart" viewBox="0 0 260 260" width="100%" height="260"></svg>
+        <div class="legend" id="pieLegend"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON TABLE -->
+  <section>
+    <h2>Full Comparison Table</h2>
+    <div class="panel" style="overflow-x:auto;">
+      <table id="compTable"></table>
+    </div>
+  </section>
+
+  <!-- EXECUTIVE SUMMARY -->
+  <section>
+    <h2>Executive Summary</h2>
+    <div class="summary-box">
+      Across <b>52 real-world usage records</b> spanning five fuel/powertrain categories — CNG, Diesel,
+      Electric (EV), Petrol (E20), and E85 Flex-Fuel — <b>Electric (EV)</b> emerges as the clear economic
+      winner, with the lowest combined cost per kilometer (<b>₹1.96/km</b>) and the lowest estimated 5-year
+      ownership running cost (<b>≈ ₹1,17,800</b>) at an assumed usage of 12,000 km/year. <b>CNG</b> is the most
+      economical among combustion-based options (₹3.97/km), while <b>Petrol (E20)</b> and <b>E85 Flex-Fuel</b>
+      are the most expensive to run (₹6.6–6.8/km) despite E85's relatively lower price per liter, largely due
+      to poor fuel efficiency (~13 km/l average in this dataset). On emissions, <b>E85 Flex-Fuel</b> unexpectedly
+      shows the <b>lowest average CO₂ output per km</b> (0.069 kg/km) in this dataset — even lower than EV — while
+      <b>Diesel</b> is the highest emitter (0.177 kg/km). This dashboard quantifies fuel cost, maintenance cost,
+      annual running cost, 5-year ownership cost, cost per km, and carbon emissions for each fuel type, and
+      identifies the most economical and lowest-carbon options based on the uploaded dataset.
+    </div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section>
+    <h2>Key Insights</h2>
+    <ul class="insight-list" id="insightsList"></ul>
+  </section>
+
+  <!-- RECOMMENDATIONS -->
+  <section>
+    <h2>Recommendations</h2>
+    <ul class="reco-list" id="recoList"></ul>
+  </section>
+
+</main>
+
+<footer>Generated automatically from uploaded dataset · All figures are estimates for educational/comparative purposes · No external libraries used</footer>
+
+<script>
+/* ===================== DATA (derived from CSV analysis) ===================== */
+const DATA = {
+  "CNG":            { n:10, avg_mileage:24.11, avg_price:80.0, avg_refuel:8,  avg_age:4.70, fuel_per_km:3.339, maint_per_km:0.626, total_per_km:3.965, co2_per_km:0.1250, annual_fuel:40068, annual_maint:7518,  annual_running:47586, annual_co2:1499.6, ownership_5yr:237930, color:"var(--cng)" },
+  "Diesel":         { n:9,  avg_mileage:19.58, avg_price:91.0, avg_refuel:5,  avg_age:6.56, fuel_per_km:4.619, maint_per_km:0.885, total_per_km:5.504, co2_per_km:0.1773, annual_fuel:55425, annual_maint:10625, annual_running:66050, annual_co2:2127.6, ownership_5yr:330250, color:"var(--diesel)" },
+  "Electric (EV)":  { n:11, avg_mileage:6.85,  avg_price:12.0, avg_refuel:45, avg_age:2.09, fuel_per_km:1.753, maint_per_km:0.210, total_per_km:1.964, co2_per_km:0.0910, annual_fuel:21040, annual_maint:2524,  annual_running:23563, annual_co2:1092.3, ownership_5yr:117817, color:"var(--ev)" },
+  "Petrol (E20)":   { n:11, avg_mileage:16.27, avg_price:100.0,avg_refuel:5,  avg_age:6.09, fuel_per_km:6.210, maint_per_km:0.406, total_per_km:6.616, co2_per_km:0.1720, annual_fuel:74514, annual_maint:4877,  annual_running:79392, annual_co2:2064.2, ownership_5yr:396959, color:"var(--petrol)" },
+  "E85 (Flex-Fuel)":{ n:11, avg_mileage:12.87, avg_price:82.0, avg_refuel:5,  avg_age:1.64, fuel_per_km:6.369, maint_per_km:0.425, total_per_km:6.795, co2_per_km:0.0694, annual_fuel:76432, annual_maint:5105,  annual_running:81536, annual_co2:833.0,  ownership_5yr:407682, color:"var(--e85)" }
+};
+const ANNUAL_KM = 12000, YEARS = 5;
+const fuels = Object.keys(DATA);
+
+const mostEconomical = fuels.reduce((a,b)=> DATA[a].total_per_km < DATA[b].total_per_km ? a : b);
+const lowestCarbon   = fuels.reduce((a,b)=> DATA[a].co2_per_km   < DATA[b].co2_per_km   ? a : b);
+const highestCost    = fuels.reduce((a,b)=> DATA[a].total_per_km > DATA[b].total_per_km ? a : b);
+const highestCarbon  = fuels.reduce((a,b)=> DATA[a].co2_per_km   > DATA[b].co2_per_km   ? a : b);
+
+function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function resolveColor(varStr){
+  const tmp = document.createElement('div');
+  tmp.style.color = varStr; document.body.appendChild(tmp);
+  const c = getComputedStyle(tmp).color; document.body.removeChild(tmp);
+  return c;
+}
+
+/* ===================== KPI CARDS ===================== */
+const kpiGrid = document.getElementById('kpiGrid');
+const kpis = [
+  { label:"Most Economical Fuel", value: mostEconomical, sub:`${DATA[mostEconomical].total_per_km} ₹/km total cost`, cls:"good", tag:"BEST VALUE" },
+  { label:"Lowest Carbon Emission", value: lowestCarbon, sub:`${DATA[lowestCarbon].co2_per_km} kg CO₂/km`, cls:"good", tag:"GREENEST" },
+  { label:"Lowest Annual Running Cost", value: inr(DATA[mostEconomical].annual_running), sub:`${mostEconomical} @ 12,000 km/yr`, cls:"good", tag:null },
+  { label:"Lowest 5-Yr Ownership Cost", value: inr(DATA[mostEconomical].ownership_5yr), sub:`${mostEconomical} projected total`, cls:"good", tag:null },
+  { label:"Highest Cost per Km", value: highestCost, sub:`${DATA[highestCost].total_per_km} ₹/km total cost`, cls:"bad", tag:"COSTLIEST" },
+  { label:"Highest Carbon Emitter", value: highestCarbon, sub:`${DATA[highestCarbon].co2_per_km} kg CO₂/km`, cls:"bad", tag:"HIGH CO₂" },
+  { label:"Dataset Records", value: "52", sub:"Across 5 fuel/powertrain types", cls:"", tag:null },
+  { label:"Avg. Fuel Efficiency Spread", value: "6.9 – 24.1 km/unit", sub:"EV lowest km/kWh-equiv, CNG highest km/kg", cls:"", tag:null },
+];
+kpis.forEach(k=>{
+  const div = document.createElement('div');
+  div.className = 'kpi-card' + (k.cls ? ' '+k.cls : '');
+  div.innerHTML = `
+    <div class="kpi-label">${k.label}</div>
+    <div class="kpi-value">${k.value}</div>
+    <div class="kpi-sub">${k.sub}</div>
+    ${k.tag ? `<div class="tag good">${k.tag}</div>` : ''}
+  `;
+  kpiGrid.appendChild(div);
+});
+
+/* ===================== BAR CHART HELPER ===================== */
+function drawBarChart(svgId, valueKey, formatFn){
+  const svg = document.getElementById(svgId);
+  const W = 480, H = 300, padL = 46, padB = 60, padT = 20, padR = 20;
+  const chartW = W - padL - padR, chartH = H - padT - padB;
+  const maxVal = Math.max(...fuels.map(f=>DATA[f][valueKey])) * 1.15;
+  const barW = chartW / fuels.length * 0.6;
+  const gap = chartW / fuels.length;
+
+  let svgContent = '';
+  // gridlines
+  for(let i=0;i<=4;i++){
+    const y = padT + chartH - (chartH/4)*i;
+    const val = (maxVal/4)*i;
+    svgContent += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a3450" stroke-width="1"/>`;
+    svgContent += `<text x="${padL-8}" y="${y+4}" text-anchor="end" class="axis-label">${Math.round(val).toLocaleString('en-IN')}</text>`;
+  }
+
+  fuels.forEach((f,i)=>{
+    const val = DATA[f][valueKey];
+    const barH = (val/maxVal)*chartH;
+    const x = padL + gap*i + (gap-barW)/2;
+    const y = padT + chartH - barH;
+    const color = resolveColor(DATA[f].color);
+    const isBest = (valueKey==='total_per_km' || valueKey==='annual_running') ? f===mostEconomical : false;
+    svgContent += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="5" fill="${color}" opacity="${isBest?1:0.85}">
+      <title>${f}: ${formatFn(val)}</title>
+    </rect>`;
+    svgContent += `<text x="${x+barW/2}" y="${y-8}" text-anchor="middle" font-size="11.5" font-weight="600">${formatFn(val)}</text>`;
+    const label = f.replace(' (Flex-Fuel)','').replace(' (EV)','').replace(' (E20)','');
+    svgContent += `<text x="${x+barW/2}" y="${H-padB+18}" text-anchor="middle" class="axis-label">${label}</text>`;
+    if(isBest){
+      svgContent += `<text x="${x+barW/2}" y="${H-padB+34}" text-anchor="middle" font-size="10" fill="${color}" font-weight="700">★ BEST</text>`;
+    }
+  });
+  svg.innerHTML = svgContent;
+}
+drawBarChart('barCostPerKm','total_per_km', v=>'₹'+v.toFixed(2));
+drawBarChart('barAnnual','annual_running', v=>inr(v));
+
+/* ===================== LINE CHART: cumulative ownership over 5 yrs ===================== */
+(function(){
+  const svg = document.getElementById('lineChart');
+  const W=620, H=320, padL=64, padB=44, padT=20, padR=20;
+  const chartW = W-padL-padR, chartH = H-padT-padB;
+  const maxVal = Math.max(...fuels.map(f=>DATA[f].ownership_5yr)) * 1.08;
+  const years = [0,1,2,3,4,5];
+
+  let content = '';
+  for(let i=0;i<=5;i++){
+    const val = (maxVal/5)*i;
+    const y = padT + chartH - (chartH/5)*i;
+    content += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a3450" stroke-width="1"/>`;
+    content += `<text x="${padL-8}" y="${y+4}" text-anchor="end" class="axis-label">${Math.round(val/1000)}k</text>`;
+  }
+  years.forEach((yr,i)=>{
+    const x = padL + (chartW/5)*i;
+    content += `<text x="${x}" y="${H-padB+18}" text-anchor="middle" class="axis-label">Yr ${yr}</text>`;
+  });
+
+  const legend = document.getElementById('lineLegend');
+  fuels.forEach(f=>{
+    const color = resolveColor(DATA[f].color);
+    const pts = years.map((yr,i)=>{
+      const x = padL + (chartW/5)*i;
+      const val = DATA[f].annual_running * yr;
+      const y = padT + chartH - (val/maxVal)*chartH;
+      return `${x},${y}`;
+    });
+    content += `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5"/>`;
+    pts.forEach(p=>{
+      const [x,y] = p.split(',');
+      content += `<circle cx="${x}" cy="${y}" r="3.5" fill="${color}"/>`;
+    });
+    const legendItem = document.createElement('span');
+    legendItem.innerHTML = `<span class="dot" style="background:${color}"></span>${f}`;
+    legend.appendChild(legendItem);
+  });
+  svg.innerHTML = content;
+})();
+
+/* ===================== PIE CHART: CO2 share ===================== */
+(function(){
+  const svg = document.getElementById('pieChart');
+  const cx=130, cy=130, r=100;
+  const total = fuels.reduce((s,f)=>s+DATA[f].annual_co2,0);
+  let angle = -90;
+  let content = '';
+  const legend = document.getElementById('pieLegend');
+
+  fuels.forEach(f=>{
+    const val = DATA[f].annual_co2;
+    const frac = val/total;
+    const sweep = frac*360;
+    const startAngle = angle;
+    const endAngle = angle+sweep;
+    const largeArc = sweep>180?1:0;
+    const x1 = cx + r*Math.cos(Math.PI*startAngle/180);
+    const y1 = cy + r*Math.sin(Math.PI*startAngle/180);
+    const x2 = cx + r*Math.cos(Math.PI*endAngle/180);
+    const y2 = cy + r*Math.sin(Math.PI*endAngle/180);
+    const color = resolveColor(DATA[f].color);
+    content += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc} 1 ${x2},${y2} Z" fill="${color}" opacity="0.9" stroke="#161d2e" stroke-width="2">
+      <title>${f}: ${val.toFixed(0)} kg CO₂/yr (${(frac*100).toFixed(1)}%)</title>
+    </path>`;
+    angle = endAngle;
+
+    const legendItem = document.createElement('span');
+    legendItem.innerHTML = `<span class="dot" style="background:${color}"></span>${f.replace(' (Flex-Fuel)','').replace(' (EV)','').replace(' (E20)','')} — ${(frac*100).toFixed(1)}%`;
+    legend.appendChild(legendItem);
+  });
+  svg.innerHTML = content;
+})();
+
+/* ===================== COMPARISON TABLE ===================== */
+(function(){
+  const table = document.getElementById('compTable');
+  let html = `<thead><tr>
+    <th>Fuel Type</th><th>Avg Mileage</th><th>Fuel Price/Unit</th>
+    <th>Fuel Cost/km</th><th>Maint Cost/km</th><th>Total Cost/km</th>
+    <th>Annual Running Cost</th><th>5-Yr Ownership Cost</th>
+    <th>CO₂ /km (kg)</th><th>Annual CO₂ (kg)</th><th>Avg Refuel/Charge (min)</th>
+  </tr></thead><tbody>`;
+  fuels.forEach(f=>{
+    const d = DATA[f];
+    const color = resolveColor(d.color);
+    const best = f===mostEconomical ? ' class="best-row"' : '';
+    html += `<tr${best}>
+      <td><span class="dot" style="background:${color}"></span><b>${f}</b>${f===mostEconomical?' 🏆':''}${f===lowestCarbon?' 🌱':''}</td>
+      <td>${d.avg_mileage} km/unit</td>
+      <td>₹${d.avg_price}</td>
+      <td>₹${d.fuel_per_km}</td>
+      <td>₹${d.maint_per_km}</td>
+      <td><b>₹${d.total_per_km}</b></td>
+      <td>${inr(d.annual_running)}</td>
+      <td>${inr(d.ownership_5yr)}</td>
+      <td>${d.co2_per_km}</td>
+      <td>${d.annual_co2.toFixed(0)}</td>
+      <td>${d.avg_refuel}</td>
+    </tr>`;
+  });
+  html += `</tbody>`;
+  table.innerHTML = html;
+})();
+
+/* ===================== INSIGHTS ===================== */
+const insights = [
+  `<b>Electric (EV)</b> is the most economical option overall at <b>₹${DATA['Electric (EV)'].total_per_km}/km</b> total running cost — roughly ${(DATA['Petrol (E20)'].total_per_km/DATA['Electric (EV)'].total_per_km).toFixed(1)}× cheaper per km than Petrol (E20), despite having the lowest efficiency in raw distance-per-unit terms (6.85 km/kWh-equivalent), because electricity is priced far lower per unit (₹12) than liquid fuels.`,
+  `<b>E85 Flex-Fuel</b> has the lowest CO₂ emissions per km (0.069 kg/km) in this dataset, even lower than EV (0.091 kg/km) — but it is also the most expensive fuel to run per km (₹6.80/km), illustrating a genuine trade-off between cost and emissions for this fuel type.`,
+  `<b>CNG</b> is the most economical combustion-engine option (₹3.97/km total cost) — about 40% of the running cost of Petrol (E20) — making it the best "value" fossil-fuel alternative where EV infrastructure is unavailable.`,
+  `<b>Diesel</b> vehicles in the dataset have the highest average age (6.56 yrs) and the highest maintenance cost per km (₹0.885/km), consistent with higher upkeep needs in older diesel engines.`,
+  `<b>Petrol (E20)</b> is the costliest fuel type on a per-km basis (₹6.62/km), driven by the highest fuel price per unit (₹100) combined with moderate mileage (16.3 km/l).`,
+  `Projected over a <b>5-year, 12,000 km/year</b> ownership period, the cost gap between the cheapest (EV, ≈₹1.18 lakh) and costliest (E85, ≈₹4.08 lakh) options exceeds <b>₹2.9 lakh</b> — a substantial factor in total cost of ownership decisions.`,
+  `EV's long refuel/recharge time (45 min average) is a notable convenience trade-off against its strong cost and reasonable emissions advantage — relevant for buyers prioritizing time efficiency over running cost.`
+];
+document.getElementById('insightsList').innerHTML = insights.map(i=>`<li>${i}</li>`).join('');
+
+/* ===================== RECOMMENDATIONS ===================== */
+const recos = [
+  `For <b>lowest total cost of ownership</b>, choose <b>Electric (EV)</b> — it offers the lowest cost/km and lowest 5-year projected running cost in this dataset, provided charging infrastructure and the longer refuel/recharge time (~45 min) are acceptable for the use case.`,
+  `For <b>lowest carbon footprint with faster refueling</b>, consider <b>E85 Flex-Fuel</b> — it has the lowest CO₂/km in this dataset, though it comes at a higher running cost, so it suits buyers who prioritize emissions over cost.`,
+  `Where EV charging access is limited, <b>CNG</b> is a strong economical middle-ground — significantly cheaper than Petrol and Diesel with moderate emissions.`,
+  `<b>Diesel</b> and <b>Petrol (E20)</b> should generally be considered only when EV/CNG/E85 options are impractical, given their higher combined cost and emissions in this dataset.`,
+  `Buyers with high annual mileage should weight the <b>cost-per-km</b> metric heavily, since fuel cost differences compound significantly at scale (12,000+ km/year) over a multi-year ownership period.`,
+  `Given this is a modest sample (52 records), further validation with a larger, geographically diverse dataset is recommended before drawing firm large-scale purchasing conclusions.`
+];
+document.getElementById('recoList').innerHTML = recos.map(r=>`<li>${r}</li>`).join('');
+</script>
+</body>
+</html>
