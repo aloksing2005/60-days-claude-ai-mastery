@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Privacy Intelligence Dashboard — Case File DF-2026-0721</title>
+<style>
+  :root{
+    --ink:#0d1012;
+    --panel:#161a1c;
+    --panel-2:#1c2124;
+    --panel-3:#20262a;
+    --line:#2b3236;
+    --line-soft:#22282c;
+    --text:#e9e6de;
+    --text-dim:#9aa1a7;
+    --text-faint:#5c646a;
+    --amber:#e2a63b;
+    --amber-dim:#8a6a2e;
+    --red:#e2554a;
+    --red-dim:#7a3530;
+    --teal:#49d1b3;
+    --teal-dim:#2d6e5f;
+    --blue:#6c93e8;
+    --paper:#f4f1e9;
+    --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(ellipse at top left, rgba(226,166,59,0.05), transparent 45%),
+      radial-gradient(ellipse at bottom right, rgba(108,147,232,0.05), transparent 45%),
+      var(--ink);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:var(--blue); }
+
+  ::selection{ background:var(--amber); color:#1a1300; }
+
+  /* ---------- scrollbar (subtle) ---------- */
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:var(--ink); }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:6px; }
+
+  /* ============ COVER / HEADER ============ */
+  .cover{
+    position:relative;
+    border-bottom:1px solid var(--line);
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px),
+      var(--panel);
+    padding:38px clamp(18px, 5vw, 64px) 28px;
+    overflow:hidden;
+  }
+  .cover::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 38px 38px;
+    opacity:0.35;
+    pointer-events:none;
+    mask-image: radial-gradient(ellipse at top, black, transparent 75%);
+  }
+  .cover-top{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:20px;
+    position:relative; z-index:1; flex-wrap:wrap;
+  }
+  .case-meta{ font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; color:var(--text-dim); text-transform:uppercase; }
+  .case-meta div{ margin-bottom:3px; }
+  .case-meta b{ color:var(--amber); font-weight:600; }
+
+  .stamp{
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:0.08em;
+    color:var(--red);
+    border:2px solid var(--red);
+    border-radius:3px;
+    padding:8px 14px;
+    transform:rotate(-6deg);
+    text-transform:uppercase;
+    white-space:nowrap;
+    position:relative;
+    background:rgba(226,85,74,0.06);
+    box-shadow: 0 0 0 1px rgba(226,85,74,0.15) inset;
+  }
+  .stamp::before, .stamp::after{
+    content:""; position:absolute; border:1px solid var(--red); opacity:0.5;
+  }
+  .stamp::before{ inset:3px; border-radius:2px; }
+
+  h1.title{
+    font-family:var(--font-mono);
+    font-size:clamp(24px, 4vw, 40px);
+    letter-spacing:-0.01em;
+    margin:22px 0 6px;
+    color:var(--text);
+    position:relative; z-index:1;
+    font-weight:700;
+  }
+  h1.title .accent{ color:var(--amber); }
+  .subtitle{
+    max-width:760px; color:var(--text-dim); font-size:15px;
+    position:relative; z-index:1;
+  }
+
+  .disclaimer-banner{
+    margin-top:20px;
+    display:flex; gap:12px; align-items:flex-start;
+    background:rgba(226,166,59,0.07);
+    border:1px solid var(--amber-dim);
+    border-left:3px solid var(--amber);
+    padding:12px 16px;
+    border-radius:4px;
+    font-size:13px;
+    color:var(--text-dim);
+    max-width:900px;
+    position:relative; z-index:1;
+  }
+  .disclaimer-banner b{ color:var(--amber); }
+
+  /* ============ NAV ============ */
+  nav.tabs{
+    position:sticky; top:0; z-index:50;
+    display:flex; gap:2px; flex-wrap:wrap;
+    background:var(--panel-2);
+    border-bottom:1px solid var(--line);
+    padding:0 clamp(18px,5vw,64px);
+    backdrop-filter: blur(6px);
+  }
+  nav.tabs button{
+    font-family:var(--font-mono);
+    background:transparent; border:none; cursor:pointer;
+    color:var(--text-dim);
+    font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
+    padding:14px 16px 12px;
+    border-bottom:2px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+    position:relative; top:1px;
+  }
+  nav.tabs button:hover{ color:var(--text); }
+  nav.tabs button.active{ color:var(--amber); border-bottom-color:var(--amber); }
+
+  main{ padding:32px clamp(18px,5vw,64px) 80px; max-width:1360px; margin:0 auto; }
+  section.tabpanel{ display:none; animation:fadein .25s ease; }
+  section.tabpanel.active{ display:block; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  .section-label{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--text-faint); margin:0 0 6px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-label::after{ content:""; flex:1; height:1px; background:var(--line); }
+  h2.section-title{ font-size:20px; margin:0 0 4px; color:var(--text); font-weight:650; }
+  p.section-desc{ color:var(--text-dim); font-size:13.5px; margin:0 0 22px; max-width:760px; }
+
+  /* ============ KPI CARDS ============ */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px,1fr));
+    gap:12px;
+    margin-bottom:34px;
+  }
+  .kpi-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:16px 16px 14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .kpi-card::before{
+    content:attr(data-idx);
+    position:absolute; top:8px; right:10px;
+    font-family:var(--font-mono); font-size:10px; color:var(--text-faint);
+  }
+  .kpi-label{
+    font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--text-dim); margin-bottom:10px; max-width:85%;
+  }
+  .kpi-value{ font-family:var(--font-mono); font-size:30px; font-weight:700; color:var(--text); line-height:1; }
+  .kpi-value .unit{ font-size:14px; color:var(--text-dim); font-weight:500; margin-left:2px; }
+  .kpi-bar{ height:4px; border-radius:2px; background:var(--line-soft); margin-top:12px; overflow:hidden; }
+  .kpi-bar > div{ height:100%; border-radius:2px; }
+  .kpi-note{ font-size:11px; color:var(--text-faint); margin-top:8px; }
+
+  .risk-low{ color:var(--teal); } .fill-low{ background:var(--teal); }
+  .risk-med{ color:var(--amber); } .fill-med{ background:var(--amber); }
+  .risk-high{ color:var(--red); } .fill-high{ background:var(--red); }
+
+  /* ============ PANELS / GRID ============ */
+  .grid-2{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; margin-bottom:16px; }
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width: 880px){ .grid-2, .grid-3{ grid-template-columns:1fr; } }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px;
+  }
+  .panel h3{ margin:0 0 12px; font-size:14px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.06em; color:var(--text); }
+  .panel h3 .tag{ font-size:10px; color:var(--text-faint); text-transform:none; letter-spacing:0; margin-left:8px; }
+
+  .summary-list{ list-style:none; margin:0; padding:0; }
+  .summary-list li{
+    display:flex; justify-content:space-between; gap:12px;
+    padding:9px 0; border-bottom:1px dashed var(--line-soft); font-size:13px; color:var(--text-dim);
+  }
+  .summary-list li:last-child{ border-bottom:none; }
+  .summary-list b{ color:var(--text); font-weight:600; }
+  .summary-list .val{ font-family:var(--font-mono); color:var(--text); }
+
+  /* ============ VALIDATION / COLUMN CHIPS ============ */
+  .chip-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .chip{
+    font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim);
+    border:1px solid var(--line); background:var(--panel-2); padding:4px 9px; border-radius:100px;
+  }
+  .chip.ok{ color:var(--teal); border-color:var(--teal-dim); }
+
+  /* ============ TABLE ============ */
+  .table-controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .table-controls select, .table-controls input{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    font-family:var(--font-mono); font-size:12px; padding:8px 10px; border-radius:4px;
+  }
+  .table-controls input{ min-width:200px; }
+  .table-controls .count{ margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--text-faint); }
+
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:6px; }
+  table.rank-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:820px; }
+  table.rank-table thead th{
+    text-align:left; font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em;
+    color:var(--text-dim); background:var(--panel-2); padding:11px 12px; border-bottom:1px solid var(--line);
+    cursor:pointer; user-select:none; white-space:nowrap;
+    position:sticky; top:0;
+  }
+  table.rank-table thead th:hover{ color:var(--amber); }
+  table.rank-table thead th.sorted::after{ content:" ▾"; color:var(--amber); }
+  table.rank-table tbody td{ padding:10px 12px; border-bottom:1px solid var(--line-soft); color:var(--text-dim); vertical-align:middle; }
+  table.rank-table tbody tr:hover{ background:var(--panel-2); }
+  table.rank-table tbody tr:last-child td{ border-bottom:none; }
+  .svc-name{ color:var(--text); font-weight:600; }
+  .svc-cat{ font-size:10.5px; color:var(--text-faint); display:block; margin-top:1px; }
+  .rank-num{ font-family:var(--font-mono); color:var(--text-faint); }
+
+  .badge{
+    font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.04em;
+    padding:3px 8px; border-radius:100px; border:1px solid;
+    display:inline-block; white-space:nowrap;
+  }
+  .badge.low{ color:var(--teal); border-color:var(--teal-dim); background:rgba(73,209,179,0.08); }
+  .badge.med{ color:var(--amber); border-color:var(--amber-dim); background:rgba(226,166,59,0.08); }
+  .badge.high{ color:var(--red); border-color:var(--red-dim); background:rgba(226,85,74,0.08); }
+  .badge.crit{ color:#fff; border-color:var(--red); background:var(--red); }
+
+  /* ---- redaction reveal bar (signature element) ---- */
+  .redact-cell{ width:180px; }
+  .redact-wrap{
+    position:relative; height:20px; width:160px; border-radius:3px; overflow:hidden;
+    background:var(--panel-3); border:1px solid var(--line);
+  }
+  .redact-fill{ position:absolute; inset:0; border-radius:2px; }
+  .redact-fill > div{ height:100%; border-radius:2px; transition:width .5s ease; }
+  .redact-score{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:flex-end;
+    padding-right:6px; font-family:var(--font-mono); font-size:10.5px; color:#0d1012; font-weight:700;
+    text-shadow:0 0 2px rgba(255,255,255,0.4);
+  }
+  .redact-block{
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(135deg, #16191b, #16191b 6px, #101314 6px, #101314 12px);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:9px; letter-spacing:0.12em; color:#6a6a6a;
+    transition:transform .45s cubic-bezier(.6,0,.2,1), opacity .3s ease;
+    border-left:2px solid #000;
+  }
+  tr:hover .redact-block, tr:focus-within .redact-block{ transform:translateX(100%); opacity:0; }
+
+  /* ============ CHARTS ============ */
+  .chart-panel{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px; }
+  .chart-panel h3{ margin:0 0 4px; font-size:14px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.06em;}
+  .chart-panel .chart-desc{ font-size:12px; color:var(--text-faint); margin:0 0 14px; }
+  .chart-row{ display:grid; grid-template-columns:1.4fr 1fr; gap:16px; margin-bottom:16px; }
+  @media (max-width:960px){ .chart-row{ grid-template-columns:1fr; } }
+
+  svg.viz{ width:100%; height:auto; display:block; overflow:visible; }
+  .bar-track{ fill:var(--panel-3); }
+  .bar-fill{ transition:opacity .15s ease; cursor:pointer; }
+  .bar-fill:hover{ opacity:0.75; }
+  .bar-label{ font-family:var(--font-mono); font-size:10.5px; fill:var(--text-dim); }
+  .bar-value{ font-family:var(--font-mono); font-size:10.5px; fill:var(--text); font-weight:600; }
+  .axis-line{ stroke:var(--line); stroke-width:1; }
+
+  .pie-slice{ cursor:pointer; transition:transform .15s ease, opacity .15s ease; transform-origin:center; }
+  .pie-slice:hover{ opacity:0.85; }
+  .pie-slice.selected{ transform:scale(1.035); }
+  .pie-legend{ display:flex; flex-direction:column; gap:7px; margin-top:14px; max-height:220px; overflow-y:auto; padding-right:4px; }
+  .pie-legend-item{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--text-dim); cursor:pointer; padding:3px 4px; border-radius:4px; }
+  .pie-legend-item:hover{ background:var(--panel-2); }
+  .pie-legend-item .sw{ width:9px; height:9px; border-radius:2px; flex:none; }
+  .pie-legend-item .pct{ margin-left:auto; font-family:var(--font-mono); color:var(--text-faint); }
+
+  .radar-grid{ stroke:var(--line); stroke-width:1; fill:none; }
+  .radar-axis-label{ font-family:var(--font-mono); font-size:10px; fill:var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
+  .radar-shape-avg{ fill:rgba(108,147,232,0.12); stroke:var(--blue); stroke-width:1.6; }
+  .radar-shape-sel{ fill:rgba(226,166,59,0.14); stroke:var(--amber); stroke-width:1.8; }
+  .radar-dot{ fill:var(--ink); stroke-width:1.6; }
+
+  .legend-inline{ display:flex; gap:18px; margin-top:12px; flex-wrap:wrap; font-size:11.5px; color:var(--text-dim); }
+  .legend-inline .sw{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px; }
+  select.company-select{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text); font-family:var(--font-mono);
+    font-size:11.5px; padding:6px 10px; border-radius:4px; margin-top:8px;
+  }
+
+  .tooltip{
+    position:fixed; pointer-events:none; z-index:200;
+    background:#0a0c0d; border:1px solid var(--amber-dim); color:var(--text);
+    font-family:var(--font-mono); font-size:11px; padding:8px 10px; border-radius:5px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5); max-width:220px;
+    opacity:0; transform:translateY(4px); transition:opacity .12s ease, transform .12s ease;
+  }
+  .tooltip.show{ opacity:1; transform:none; }
+  .tooltip b{ color:var(--amber); }
+
+  /* ============ DIGITAL TWIN ============ */
+  .twin-wrap{ display:grid; grid-template-columns:0.9fr 1.1fr; gap:20px; }
+  @media (max-width:900px){ .twin-wrap{ grid-template-columns:1fr; } }
+  .twin-gauge-wrap{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:12px 0; }
+  .twin-pct{ font-family:var(--font-mono); font-size:15px; color:var(--text-dim); margin-top:10px; }
+  .twin-pct b{ font-size:34px; color:var(--amber); display:block; font-weight:700; }
+
+  .datatype-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:8px; margin-top:6px; }
+  .dt-item{
+    font-family:var(--font-mono); font-size:11px; padding:7px 9px; border-radius:4px;
+    border:1px solid var(--line); color:var(--text-faint); background:var(--panel-2);
+    display:flex; align-items:center; gap:7px;
+  }
+  .dt-item.covered{ color:var(--text); border-color:var(--teal-dim); background:rgba(73,209,179,0.06); }
+  .dt-dot{ width:6px; height:6px; border-radius:50%; background:var(--line); flex:none; }
+  .dt-item.covered .dt-dot{ background:var(--teal); }
+
+  .flag-box{
+    margin-top:16px; padding:12px 14px; border-radius:5px; border:1px solid var(--red-dim);
+    background:rgba(226,85,74,0.07); font-size:12.5px; color:var(--text-dim);
+  }
+  .flag-box b{ color:var(--red); }
+
+  /* ============ RECOMMENDATIONS ============ */
+  .rec-list{ display:flex; flex-direction:column; gap:10px; }
+  .rec-item{
+    display:flex; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    padding:14px 16px; align-items:flex-start;
+  }
+  .rec-icon{
+    flex:none; width:26px; height:26px; border-radius:5px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:12px; font-weight:700; margin-top:1px;
+  }
+  .rec-icon.p1{ background:rgba(226,85,74,0.12); color:var(--red); border:1px solid var(--red-dim); }
+  .rec-icon.p2{ background:rgba(226,166,59,0.12); color:var(--amber); border:1px solid var(--amber-dim); }
+  .rec-icon.p3{ background:rgba(73,209,179,0.12); color:var(--teal); border:1px solid var(--teal-dim); }
+  .rec-body b{ color:var(--text); font-size:13.5px; }
+  .rec-body p{ margin:4px 0 0; font-size:12.5px; color:var(--text-dim); }
+  .rec-tag{ font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint); margin-left:8px; }
+
+  footer{
+    border-top:1px solid var(--line); padding:24px clamp(18px,5vw,64px) 40px;
+    color:var(--text-faint); font-size:11.5px; font-family:var(--font-mono);
+  }
+  footer b{ color:var(--amber); }
+
+  @media (max-width:600px){
+    .kpi-value{ font-size:24px; }
+    .stamp{ font-size:10.5px; padding:6px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-top">
+    <div class="case-meta">
+      <div>Case File: <b>DF-2026-0721</b></div>
+      <div>Classification: <b>Estimate / Non-Attributed</b></div>
+      <div>Analyst: <b>Automated Intelligence Pipeline</b></div>
+      <div>Generated: <b>18 July 2026</b></div>
+    </div>
+    <div class="stamp">Synthetic Data<br>Educational Use Only</div>
+  </div>
+  <h1 class="title">Digital Privacy <span class="accent">Intelligence</span> Dashboard</h1>
+  <p class="subtitle">A modeled analysis of estimated exposure across 70 fictional digital services, built entirely from a synthetically generated dataset. Every score on this page is a computed estimate, not a measurement of any real person, account, or company.</p>
+  <div class="disclaimer-banner">
+    <span>⚠</span>
+    <div><b>Read before interpreting any figure below:</b> This dashboard analyzes a <b>randomly generated, fictional</b> dataset created for training and demonstration purposes. Service names are invented and do not represent real companies. No real personal data, browsing activity, or account information was collected, accessed, or analyzed to produce this report. All scores are relative estimates derived from the sample data's own internal patterns.</div>
+  </div>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="overview" class="active">01 · Overview</button>
+  <button data-tab="rankings">02 · Rankings</button>
+  <button data-tab="charts">03 · Charts</button>
+  <button data-tab="twin">04 · Digital Twin</button>
+  <button data-tab="recs">05 · Recommendations</button>
+</nav>
+
+<main>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="tabpanel active" id="tab-overview">
+    <div class="section-label">Dataset Validation</div>
+    <h2 class="section-title">Intake &amp; Column Detection</h2>
+    <p class="section-desc">The dashboard parsed the uploaded CSV, validated row integrity, and auto-detected the following fields before running any calculation.</p>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Validation Summary</h3>
+        <ul class="summary-list" id="validation-list"></ul>
+      </div>
+      <div class="panel">
+        <h3>Detected Columns <span class="tag" id="col-count-tag"></span></h3>
+        <div class="chip-row" id="column-chips"></div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:34px;">Key Metrics</div>
+    <h2 class="section-title">Aggregate Exposure Indicators</h2>
+    <p class="section-desc">Dataset-wide averages across all analyzed services. Each metric is a normalized 0–100 estimate — higher means greater modeled exposure.</p>
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Risk Summary</h3>
+        <p id="risk-summary-text" style="font-size:13.5px; color:var(--text-dim); margin:0 0 14px;"></p>
+        <ul class="summary-list" id="risk-summary-list"></ul>
+      </div>
+      <div class="panel">
+        <h3>Category Footprint <span class="tag">by exposure share</span></h3>
+        <div id="mini-category-bars"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RANKINGS ============ -->
+  <section class="tabpanel" id="tab-rankings">
+    <div class="section-label">Company Ranking</div>
+    <h2 class="section-title">Services Ranked by Estimated Exposure</h2>
+    <p class="section-desc">Sorted by overall Exposure Score — a blended estimate across footprint size, privacy risk, data-collection likelihood, third-party sharing, and advertising profile strength. Hover a row to declassify its risk bar.</p>
+
+    <div class="table-controls">
+      <select id="filter-category"><option value="all">All categories</option></select>
+      <input id="search-box" type="text" placeholder="Search service name…">
+      <span class="count" id="result-count"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="rank-table" id="rank-table">
+        <thead>
+          <tr>
+            <th data-key="rank">#</th>
+            <th data-key="service_name">Service</th>
+            <th data-key="overall">Exposure Score</th>
+            <th data-key="footprint">Footprint</th>
+            <th data-key="risk">Privacy Risk</th>
+            <th data-key="thirdparty">3rd-Party Exp.</th>
+            <th data-key="ad">Ad Strength</th>
+            <th data-key="level">Level</th>
+          </tr>
+        </thead>
+        <tbody id="rank-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ CHARTS ============ -->
+  <section class="tabpanel" id="tab-charts">
+    <div class="section-label">Visual Analysis</div>
+    <h2 class="section-title">Interactive Charts</h2>
+    <p class="section-desc">Click a bar or pie slice to inspect a service or category in more detail; the radar chart updates to compare your selection against the dataset average.</p>
+
+    <div class="chart-row">
+      <div class="chart-panel">
+        <h3>Top Exposure — Bar Chart</h3>
+        <p class="chart-desc">Top 12 services by overall Exposure Score. Click a bar to select it for the radar comparison.</p>
+        <svg class="viz" id="bar-chart" viewBox="0 0 640 380"></svg>
+      </div>
+      <div class="chart-panel">
+        <h3>Category Distribution — Pie Chart</h3>
+        <p class="chart-desc">Share of total modeled exposure attributable to each service category.</p>
+        <svg class="viz" id="pie-chart" viewBox="0 0 300 300"></svg>
+        <div class="pie-legend" id="pie-legend"></div>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <h3>Risk Dimension Comparison — Radar Chart</h3>
+      <p class="chart-desc">Compares a selected service's five risk dimensions against the dataset-wide average.</p>
+      <select class="company-select" id="radar-select"></select>
+      <svg class="viz" id="radar-chart" viewBox="0 0 480 420" style="max-width:520px; margin:10px auto 0; display:block;"></svg>
+      <div class="legend-inline">
+        <span><span class="sw" style="background:var(--blue)"></span>Dataset average</span>
+        <span><span class="sw" style="background:var(--amber)"></span><span id="radar-sel-label">Selected service</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DIGITAL TWIN ============ -->
+  <section class="tabpanel" id="tab-twin">
+    <div class="section-label">Composite Profile</div>
+    <h2 class="section-title">Estimated Digital Twin Profile</h2>
+    <p class="section-desc">If every analyzed service's collected data were combined into a single composite profile, this estimates how complete that reconstructed "digital twin" could theoretically be — based purely on data-type overlap in the sample.</p>
+
+    <div class="twin-wrap">
+      <div class="panel twin-gauge-wrap">
+        <h3 style="align-self:flex-start;">Digital Twin Completeness</h3>
+        <svg id="twin-gauge" width="220" height="140" viewBox="0 0 220 140"></svg>
+        <div class="twin-pct"><b id="twin-pct-value">0%</b>of tracked data categories are covered by at least one analyzed service</div>
+        <div class="flag-box" id="twin-flag" style="display:none;"></div>
+      </div>
+      <div class="panel">
+        <h3>Data-Type Coverage Map</h3>
+        <p style="font-size:12px; color:var(--text-faint); margin:-4px 0 4px;">Green = at least one service in this sample collects this data type.</p>
+        <div class="datatype-grid" id="datatype-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RECOMMENDATIONS ============ -->
+  <section class="tabpanel" id="tab-recs">
+    <div class="section-label">Guidance</div>
+    <h2 class="section-title">Privacy Recommendations</h2>
+    <p class="section-desc">Generated from patterns detected in the sample dataset. These are general educational suggestions, not a substitute for professional security or legal advice.</p>
+    <div class="rec-list" id="rec-list"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div><b>⚠ Synthetic dataset notice:</b> All 70 records were programmatically generated for this exercise. Service names are fictional; no real companies, users, or personal data were involved. All scores are model estimates for educational purposes only, not verified facts about any real entity.</div>
+  <div style="margin-top:8px;">Digital Privacy Intelligence Dashboard · Built with HTML, CSS &amp; vanilla JavaScript · No external libraries or network requests.</div>
+</footer>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script type="application/json" id="dataset-json">[{"service_name": "TrendPress", "category": "News & Media", "monthly_active_users_millions": "376.0", "data_types_collected": "Device Identifiers|Approximate Location|Social Graph|Phone Number", "permissions_requested": "8", "third_party_trackers_detected": "7", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "6.9", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "2057", "login_frequency_per_month": "20.9", "avg_session_minutes": "70.9"}, {"service_name": "QuickCart", "category": "E-Commerce", "monthly_active_users_millions": "34.7", "data_types_collected": "Watch/Listen History|Biometric Data|Approximate Location|Payment Details|Browsing History|Precise Location|Device Identifiers", "permissions_requested": "20", "third_party_trackers_detected": "16", "data_shared_with_partners": "Yes", "known_data_breaches": "2", "encryption_level": "Strong", "privacy_policy_transparency_score": "7.0", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "138", "login_frequency_per_month": "22.3", "avg_session_minutes": "56.6"}, {"service_name": "PayNest", "category": "Finance", "monthly_active_users_millions": "64.0", "data_types_collected": "Payment Details|Full Name|Social Graph|Photos|Messages Content|Search History|Health Metrics", "permissions_requested": "18", "third_party_trackers_detected": "4", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "4.1", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1913", "login_frequency_per_month": "19.4", "avg_session_minutes": "63.0"}, {"service_name": "SnackRun", "category": "Food Delivery", "monthly_active_users_millions": "339.0", "data_types_collected": "Contacts|Health Metrics|Approximate Location|Photos|Email|Payment Details|Calendar Data|IP Address|Phone Number|Messages Content|Social Graph", "permissions_requested": "4", "third_party_trackers_detected": "8", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.1", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1249", "login_frequency_per_month": "21.6", "avg_session_minutes": "52.7"}, {"service_name": "TuneStream", "category": "Streaming", "monthly_active_users_millions": "414.0", "data_types_collected": "Approximate Location|Social Graph|Contacts|Full Name", "permissions_requested": "10", "third_party_trackers_detected": "7", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "6.4", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "2275", "login_frequency_per_month": "1.1", "avg_session_minutes": "15.4"}, {"service_name": "UrbanBuy", "category": "E-Commerce", "monthly_active_users_millions": "17.5", "data_types_collected": "Messages Content|Approximate Location|Payment Details|Full Name|Social Graph|Health Metrics|Photos|Watch/Listen History|Device Identifiers", "permissions_requested": "7", "third_party_trackers_detected": "11", "data_shared_with_partners": "Yes", "known_data_breaches": "2", "encryption_level": "Strong", "privacy_policy_transparency_score": "3.5", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "948", "login_frequency_per_month": "22.8", "avg_session_minutes": "11.3"}, {"service_name": "StreamVibe", "category": "Streaming", "monthly_active_users_millions": "393.8", "data_types_collected": "Photos|Browsing History|Search History|Phone Number|Watch/Listen History|Contacts|Purchase History|Biometric Data|Social Graph", "permissions_requested": "10", "third_party_trackers_detected": "9", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "6.3", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "52", "login_frequency_per_month": "14.6", "avg_session_minutes": "62.5"}, {"service_name": "DeviceHub", "category": "Smart Home / IoT", "monthly_active_users_millions": "58.6", "data_types_collected": "Voice Recordings|Calendar Data|Messages Content|Biometric Data|Purchase History|Email|Search History", "permissions_requested": "10", "third_party_trackers_detected": "11", "data_shared_with_partners": "Yes", "known_data_breaches": "2", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.2", "ad_personalization_enabled": "No", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1133", "login_frequency_per_month": "9.0", "avg_session_minutes": "49.0"}, {"service_name": "HomeSync", "category": "Smart Home / IoT", "monthly_active_users_millions": "53.6", "data_types_collected": "Full Name|Biometric Data|Email|Voice Recordings|Messages Content|Phone Number|Health Metrics", "permissions_requested": "15", "third_party_trackers_detected": "11", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "None", "privacy_policy_transparency_score": "4.6", "ad_personalization_enabled": "No", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1325", "login_frequency_per_month": "26.5", "avg_session_minutes": "41.6"}, {"service_name": "Buzzgram", "category": "Social Media", "monthly_active_users_millions": "298.9", "data_types_collected": "Photos|Approximate Location|Contacts|Browsing History|Precise Location|Social Graph|Watch/Listen History|Messages Content", "permissions_requested": "16", "third_party_trackers_detected": "9", "data_shared_with_partners": "No", "known_data_breaches": "2", "encryption_level": "Strong", "privacy_policy_transparency_score": "2.4", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1225", "login_frequency_per_month": "8.9", "avg_session_minutes": "19.4"}, {"service_name": "StudyLoop", "category": "Education", "monthly_active_users_millions": "10.0", "data_types_collected": "Approximate Location|Device Identifiers|Search History|Watch/Listen History|Phone Number", "permissions_requested": "13", "third_party_trackers_detected": "2", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "6.9", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "730", "login_frequency_per_month": "11.2", "avg_session_minutes": "55.2"}, {"service_name": "DealNest", "category": "E-Commerce", "monthly_active_users_millions": "24.9", "data_types_collected": "Messages Content|IP Address|Payment Details|Photos|Social Graph|Search History", "permissions_requested": "5", "third_party_trackers_detected": "18", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "3.9", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "750", "login_frequency_per_month": "14.3", "avg_session_minutes": "47.5"}, {"service_name": "IoTLink", "category": "Smart Home / IoT", "monthly_active_users_millions": "52.5", "data_types_collected": "Full Name|Search History|Calendar Data|Voice Recordings|Purchase History|Messages Content", "permissions_requested": "11", "third_party_trackers_detected": "3", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "3.9", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1808", "login_frequency_per_month": "26.4", "avg_session_minutes": "74.7"}, {"service_name": "MapTrail", "category": "Navigation", "monthly_active_users_millions": "155.9", "data_types_collected": "Search History|Calendar Data|Approximate Location|Email|Photos|Messages Content|Social Graph", "permissions_requested": "16", "third_party_trackers_detected": "6", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.3", "ad_personalization_enabled": "No", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "2480", "login_frequency_per_month": "14.7", "avg_session_minutes": "41.6"}, {"service_name": "NaviGo", "category": "Navigation", "monthly_active_users_millions": "300.8", "data_types_collected": "Device Identifiers|Precise Location|Biometric Data|Full Name|Phone Number|Photos|Voice Recordings|Calendar Data", "permissions_requested": "11", "third_party_trackers_detected": "8", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "5.4", "ad_personalization_enabled": "No", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "972", "login_frequency_per_month": "4.5", "avg_session_minutes": "35.8"}, {"service_name": "MealNest", "category": "Food Delivery", "monthly_active_users_millions": "152.7", "data_types_collected": "Browsing History|Messages Content|Email|Social Graph|Precise Location|Health Metrics|Watch/Listen History|Search History|Payment Details", "permissions_requested": "22", "third_party_trackers_detected": "6", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "7.5", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "2578", "login_frequency_per_month": "17.5", "avg_session_minutes": "71.4"}, {"service_name": "SmartNest", "category": "Smart Home / IoT", "monthly_active_users_millions": "82.4", "data_types_collected": "Purchase History|Browsing History|IP Address|Calendar Data|Watch/Listen History|Photos|Approximate Location|Contacts|Search History|Messages Content", "permissions_requested": "5", "third_party_trackers_detected": "4", "data_shared_with_partners": "No", "known_data_breaches": "2", "encryption_level": "Basic", "privacy_policy_transparency_score": "7.2", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "2543", "login_frequency_per_month": "2.4", "avg_session_minutes": "32.6"}, {"service_name": "Trendly", "category": "Social Media", "monthly_active_users_millions": "82.5", "data_types_collected": "Social Graph|Health Metrics|Browsing History|Calendar Data|IP Address|Full Name|Purchase History|Voice Recordings|Biometric Data|Approximate Location|Phone Number|Contacts|Search History|Device Identifiers", "permissions_requested": "11", "third_party_trackers_detected": "8", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.1", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1379", "login_frequency_per_month": "14.1", "avg_session_minutes": "50.0"}, {"service_name": "PathFinderPlus", "category": "Navigation", "monthly_active_users_millions": "266.9", "data_types_collected": "Email|Watch/Listen History|Phone Number|Biometric Data|Social Graph|Photos|Search History|Payment Details", "permissions_requested": "15", "third_party_trackers_detected": "9", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "3.8", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "202", "login_frequency_per_month": "5.7", "avg_session_minutes": "63.1"}, {"service_name": "WorkSuite", "category": "Productivity", "monthly_active_users_millions": "229.4", "data_types_collected": "Precise Location|Phone Number|Biometric Data|Device Identifiers|Search History|Voice Recordings|Watch/Listen History", "permissions_requested": "9", "third_party_trackers_detected": "6", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "6.6", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "917", "login_frequency_per_month": "10.0", "avg_session_minutes": "28.7"}, {"service_name": "ShopEase", "category": "E-Commerce", "monthly_active_users_millions": "273.1", "data_types_collected": "Health Metrics|Email|Voice Recordings|Watch/Listen History|Full Name|Payment Details", "permissions_requested": "9", "third_party_trackers_detected": "7", "data_shared_with_partners": "Yes", "known_data_breaches": "2", "encryption_level": "Basic", "privacy_policy_transparency_score": "5.1", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "712", "login_frequency_per_month": "18.2", "avg_session_minutes": "74.9"}, {"service_name": "SkillNest", "category": "Education", "monthly_active_users_millions": "347.3", "data_types_collected": "Biometric Data|Payment Details|Health Metrics|Messages Content", "permissions_requested": "16", "third_party_trackers_detected": "7", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "5.9", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "126", "login_frequency_per_month": "28.3", "avg_session_minutes": "31.1"}, {"service_name": "HeartLink", "category": "Dating", "monthly_active_users_millions": "162.4", "data_types_collected": "Photos|Browsing History|Messages Content|Search History|Approximate Location|Full Name|Precise Location|Biometric Data|Email", "permissions_requested": "4", "third_party_trackers_detected": "5", "data_shared_with_partners": "No", "known_data_breaches": "2", "encryption_level": "Strong", "privacy_policy_transparency_score": "3.6", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1958", "login_frequency_per_month": "26.6", "avg_session_minutes": "42.6"}, {"service_name": "NewsPulse", "category": "News & Media", "monthly_active_users_millions": "323.3", "data_types_collected": "Photos|Watch/Listen History|Full Name|Purchase History|Precise Location", "permissions_requested": "13", "third_party_trackers_detected": "11", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "5.5", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "687", "login_frequency_per_month": "11.8", "avg_session_minutes": "9.3"}, {"service_name": "CoinSecure", "category": "Finance", "monthly_active_users_millions": "287.1", "data_types_collected": "Phone Number|Browsing History|Email|Health Metrics|IP Address|Messages Content|Voice Recordings|Watch/Listen History", "permissions_requested": "11", "third_party_trackers_detected": "5", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "3.1", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "Yes", "cross_platform_linking": "Yes", "account_age_days": "1692", "login_frequency_per_month": "10.3", "avg_session_minutes": "14.7"}, {"service_name": "ArcadeHub", "category": "Gaming", "monthly_active_users_millions": "436.5", "data_types_collected": "Contacts|IP Address|Precise Location|Voice Recordings|Watch/Listen History|Browsing History", "permissions_requested": "6", "third_party_trackers_detected": "7", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "8.1", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1048", "login_frequency_per_month": "11.1", "avg_session_minutes": "55.3"}, {"service_name": "GeoLoop", "category": "Navigation", "monthly_active_users_millions": "371.3", "data_types_collected": "Device Identifiers|Search History|Messages Content|Precise Location|Purchase History|Email", "permissions_requested": "16", "third_party_trackers_detected": "10", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "4.6", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1645", "login_frequency_per_month": "21.7", "avg_session_minutes": "19.2"}, {"service_name": "WalletWise", "category": "Finance", "monthly_active_users_millions": "140.3", "data_types_collected": "Social Graph|Contacts|Calendar Data|Device Identifiers|Approximate Location|Biometric Data|Watch/Listen History", "permissions_requested": "17", "third_party_trackers_detected": "2", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "2.1", "ad_personalization_enabled": "No", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "2009", "login_frequency_per_month": "8.4", "avg_session_minutes": "66.7"}, {"service_name": "BankLink", "category": "Finance", "monthly_active_users_millions": "128.3", "data_types_collected": "IP Address|Social Graph|Precise Location|Biometric Data|Payment Details|Email", "permissions_requested": "3", "third_party_trackers_detected": "1", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "6.8", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "Yes", "cross_platform_linking": "Yes", "account_age_days": "1397", "login_frequency_per_month": "17.4", "avg_session_minutes": "72.7"}, {"service_name": "LoveLoop", "category": "Dating", "monthly_active_users_millions": "70.5", "data_types_collected": "Purchase History|Photos|Browsing History|Precise Location|Health Metrics|Messages Content|Email|Phone Number|Biometric Data", "permissions_requested": "17", "third_party_trackers_detected": "12", "data_shared_with_partners": "Yes", "known_data_breaches": "2", "encryption_level": "Basic", "privacy_policy_transparency_score": "5.7", "ad_personalization_enabled": "No", "location_tracking": "Yes", "biometric_data_collected": "Yes", "cross_platform_linking": "No", "account_age_days": "847", "login_frequency_per_month": "13.8", "avg_session_minutes": "49.1"}, {"service_name": "ConnectDate", "category": "Dating", "monthly_active_users_millions": "196.6", "data_types_collected": "Email|Photos|Watch/Listen History|IP Address|Messages Content|Search History|Precise Location|Contacts|Device Identifiers|Calendar Data|Payment Details|Browsing History", "permissions_requested": "4", "third_party_trackers_detected": "9", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "8.0", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "2127", "login_frequency_per_month": "27.0", "avg_session_minutes": "41.6"}, {"service_name": "MarketLoop", "category": "E-Commerce", "monthly_active_users_millions": "253.2", "data_types_collected": "Voice Recordings|IP Address|Calendar Data|Phone Number|Search History|Full Name|Purchase History|Payment Details|Social Graph", "permissions_requested": "11", "third_party_trackers_detected": "15", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.3", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1414", "login_frequency_per_month": "23.3", "avg_session_minutes": "63.0"}, {"service_name": "ConnectSphere", "category": "Social Media", "monthly_active_users_millions": "373.2", "data_types_collected": "Contacts|Messages Content|Social Graph|Precise Location|Health Metrics|Payment Details|Search History|Full Name|Purchase History|Calendar Data|Biometric Data", "permissions_requested": "10", "third_party_trackers_detected": "11", "data_shared_with_partners": "Yes", "known_data_breaches": "2", "encryption_level": "Basic", "privacy_policy_transparency_score": "1", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "544", "login_frequency_per_month": "7.0", "avg_session_minutes": "67.2"}, {"service_name": "TripNest", "category": "Travel", "monthly_active_users_millions": "32.9", "data_types_collected": "Browsing History|Social Graph|Email|Precise Location|Watch/Listen History|Biometric Data|Health Metrics|Approximate Location|Voice Recordings", "permissions_requested": "18", "third_party_trackers_detected": "6", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "3.2", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "246", "login_frequency_per_month": "3.3", "avg_session_minutes": "31.8"}, {"service_name": "FeedLine", "category": "News & Media", "monthly_active_users_millions": "91.1", "data_types_collected": "Watch/Listen History|Photos|Messages Content|Voice Recordings|Payment Details", "permissions_requested": "16", "third_party_trackers_detected": "20", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "5.4", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1368", "login_frequency_per_month": "1.8", "avg_session_minutes": "60.9"}, {"service_name": "FlyPath", "category": "Travel", "monthly_active_users_millions": "358.9", "data_types_collected": "Calendar Data|Watch/Listen History|Photos|IP Address|Purchase History|Social Graph|Voice Recordings|Browsing History", "permissions_requested": "21", "third_party_trackers_detected": "7", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "3.9", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "Yes", "cross_platform_linking": "No", "account_age_days": "262", "login_frequency_per_month": "22.8", "avg_session_minutes": "16.9"}, {"service_name": "CineFlow", "category": "Streaming", "monthly_active_users_millions": "258.9", "data_types_collected": "Search History|Voice Recordings|Photos|Purchase History|Precise Location|Payment Details|Phone Number|Calendar Data", "permissions_requested": "22", "third_party_trackers_detected": "5", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "1.2", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1697", "login_frequency_per_month": "3.2", "avg_session_minutes": "9.2"}, {"service_name": "FoodDash", "category": "Food Delivery", "monthly_active_users_millions": "234.1", "data_types_collected": "Social Graph|Phone Number|Photos|Purchase History|Approximate Location|Contacts|Precise Location|Voice Recordings|Email", "permissions_requested": "19", "third_party_trackers_detected": "8", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "6.0", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1793", "login_frequency_per_month": "25.1", "avg_session_minutes": "16.5"}, {"service_name": "PulseHealth", "category": "Health & Fitness", "monthly_active_users_millions": "320.4", "data_types_collected": "Watch/Listen History|Biometric Data|IP Address|Browsing History|Photos|Full Name|Social Graph|Device Identifiers|Calendar Data|Email", "permissions_requested": "21", "third_party_trackers_detected": "10", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "7.6", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "Yes", "cross_platform_linking": "No", "account_age_days": "1730", "login_frequency_per_month": "23.3", "avg_session_minutes": "74.8"}, {"service_name": "TaskFlow", "category": "Productivity", "monthly_active_users_millions": "194.2", "data_types_collected": "Social Graph|Contacts|Voice Recordings|Calendar Data|Browsing History", "permissions_requested": "19", "third_party_trackers_detected": "2", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "4.3", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1925", "login_frequency_per_month": "23.7", "avg_session_minutes": "64.1"}, {"service_name": "QuickBite", "category": "Food Delivery", "monthly_active_users_millions": "211.9", "data_types_collected": "Device Identifiers|Payment Details|Email|Watch/Listen History|Browsing History|Search History|Voice Recordings|Phone Number|Biometric Data", "permissions_requested": "3", "third_party_trackers_detected": "5", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.1", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "830", "login_frequency_per_month": "5.7", "avg_session_minutes": "4.3"}, {"service_name": "DailyLoop", "category": "News & Media", "monthly_active_users_millions": "338.0", "data_types_collected": "Payment Details|Social Graph|Email|Watch/Listen History|Approximate Location|Search History|Device Identifiers", "permissions_requested": "22", "third_party_trackers_detected": "18", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "5.7", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1349", "login_frequency_per_month": "0.9", "avg_session_minutes": "54.0"}, {"service_name": "AutoHome", "category": "Smart Home / IoT", "monthly_active_users_millions": "446.7", "data_types_collected": "Payment Details|Voice Recordings|Biometric Data|Watch/Listen History|Browsing History|Precise Location|Messages Content|Phone Number|Email", "permissions_requested": "20", "third_party_trackers_detected": "5", "data_shared_with_partners": "No", "known_data_breaches": "2", "encryption_level": "Strong", "privacy_policy_transparency_score": "8.9", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "2522", "login_frequency_per_month": "18.0", "avg_session_minutes": "41.0"}, {"service_name": "PlayArena", "category": "Gaming", "monthly_active_users_millions": "445.4", "data_types_collected": "Photos|Payment Details|Messages Content|Voice Recordings|Email|Social Graph|Contacts|Health Metrics|Approximate Location", "permissions_requested": "6", "third_party_trackers_detected": "15", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "7.7", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "715", "login_frequency_per_month": "24.5", "avg_session_minutes": "37.1"}, {"service_name": "StayFinder", "category": "Travel", "monthly_active_users_millions": "26.5", "data_types_collected": "Approximate Location|Watch/Listen History|Device Identifiers|Browsing History|Health Metrics|Calendar Data|Precise Location|Contacts|IP Address|Voice Recordings", "permissions_requested": "3", "third_party_trackers_detected": "11", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "1", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1389", "login_frequency_per_month": "17.7", "avg_session_minutes": "43.0"}, {"service_name": "FinTrust", "category": "Finance", "monthly_active_users_millions": "403.1", "data_types_collected": "Calendar Data|Email|Search History|Messages Content|Payment Details|Phone Number", "permissions_requested": "22", "third_party_trackers_detected": "5", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "5.1", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "2093", "login_frequency_per_month": "26.8", "avg_session_minutes": "47.8"}, {"service_name": "DineFast", "category": "Food Delivery", "monthly_active_users_millions": "399.2", "data_types_collected": "Purchase History|Voice Recordings|Watch/Listen History|Health Metrics|Approximate Location|Contacts|Precise Location", "permissions_requested": "8", "third_party_trackers_detected": "4", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "2.4", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1333", "login_frequency_per_month": "9.0", "avg_session_minutes": "39.3"}, {"service_name": "EduTrack", "category": "Education", "monthly_active_users_millions": "277.2", "data_types_collected": "Search History|Phone Number|Purchase History|Device Identifiers|Payment Details|Watch/Listen History", "permissions_requested": "14", "third_party_trackers_detected": "8", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "8.7", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "2299", "login_frequency_per_month": "23.6", "avg_session_minutes": "34.0"}, {"service_name": "CoursePath", "category": "Education", "monthly_active_users_millions": "263.6", "data_types_collected": "Purchase History|Health Metrics|Precise Location|Device Identifiers|Approximate Location", "permissions_requested": "16", "third_party_trackers_detected": "1", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.9", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "421", "login_frequency_per_month": "17.2", "avg_session_minutes": "37.8"}, {"service_name": "NoteVault", "category": "Productivity", "monthly_active_users_millions": "147.7", "data_types_collected": "Health Metrics|Contacts|Approximate Location|Photos", "permissions_requested": "21", "third_party_trackers_detected": "3", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "8.1", "ad_personalization_enabled": "No", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1567", "login_frequency_per_month": "13.2", "avg_session_minutes": "63.3"}, {"service_name": "GoTrail", "category": "Travel", "monthly_active_users_millions": "122.2", "data_types_collected": "Payment Details|Watch/Listen History|Purchase History|Precise Location|Messages Content|Calendar Data|Health Metrics|Social Graph|Phone Number|Contacts", "permissions_requested": "19", "third_party_trackers_detected": "7", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "10", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "163", "login_frequency_per_month": "13.8", "avg_session_minutes": "49.3"}, {"service_name": "LearnHub", "category": "Education", "monthly_active_users_millions": "130.2", "data_types_collected": "Health Metrics|IP Address|Photos|Biometric Data|Device Identifiers|Purchase History|Email", "permissions_requested": "10", "third_party_trackers_detected": "3", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "7.2", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "2403", "login_frequency_per_month": "16.9", "avg_session_minutes": "6.1"}, {"service_name": "PixelFeed", "category": "Social Media", "monthly_active_users_millions": "407.4", "data_types_collected": "Photos|Messages Content|Biometric Data|Email|Contacts|Approximate Location|Health Metrics|Precise Location|Full Name|Calendar Data|Purchase History", "permissions_requested": "11", "third_party_trackers_detected": "21", "data_shared_with_partners": "No", "known_data_breaches": "3", "encryption_level": "Strong", "privacy_policy_transparency_score": "5.8", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "Yes", "cross_platform_linking": "Yes", "account_age_days": "608", "login_frequency_per_month": "25.4", "avg_session_minutes": "22.7"}, {"service_name": "RoamEasy", "category": "Travel", "monthly_active_users_millions": "112.7", "data_types_collected": "Browsing History|Watch/Listen History|Calendar Data|Full Name|Voice Recordings|Contacts|Biometric Data", "permissions_requested": "7", "third_party_trackers_detected": "6", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "6.4", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "715", "login_frequency_per_month": "12.3", "avg_session_minutes": "53.1"}, {"service_name": "PixelRealm", "category": "Gaming", "monthly_active_users_millions": "72.8", "data_types_collected": "Purchase History|Photos|Biometric Data|Browsing History|Watch/Listen History|Search History", "permissions_requested": "8", "third_party_trackers_detected": "13", "data_shared_with_partners": "Yes", "known_data_breaches": "2", "encryption_level": "Basic", "privacy_policy_transparency_score": "3.7", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1982", "login_frequency_per_month": "10.8", "avg_session_minutes": "29.4"}, {"service_name": "RouteWise", "category": "Navigation", "monthly_active_users_millions": "383.8", "data_types_collected": "IP Address|Full Name|Browsing History|Contacts|Biometric Data|Device Identifiers|Email|Approximate Location", "permissions_requested": "19", "third_party_trackers_detected": "10", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "5.6", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "719", "login_frequency_per_month": "19.0", "avg_session_minutes": "44.5"}, {"service_name": "ChatWave", "category": "Social Media", "monthly_active_users_millions": "335.7", "data_types_collected": "Contacts|Watch/Listen History|IP Address|Precise Location|Phone Number|Approximate Location|Voice Recordings|Full Name|Messages Content|Health Metrics|Photos", "permissions_requested": "10", "third_party_trackers_detected": "20", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "8.6", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1698", "login_frequency_per_month": "21.2", "avg_session_minutes": "20.4"}, {"service_name": "SleepWell", "category": "Health & Fitness", "monthly_active_users_millions": "394.2", "data_types_collected": "Calendar Data|Browsing History|IP Address|Messages Content|Precise Location|Health Metrics|Contacts|Full Name|Approximate Location|Purchase History|Email", "permissions_requested": "8", "third_party_trackers_detected": "2", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "7.8", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1002", "login_frequency_per_month": "25.5", "avg_session_minutes": "70.8"}, {"service_name": "QuestBox", "category": "Gaming", "monthly_active_users_millions": "423.3", "data_types_collected": "Browsing History|Phone Number|Watch/Listen History|Purchase History|Voice Recordings|Precise Location|Full Name|Photos|Payment Details|Health Metrics", "permissions_requested": "14", "third_party_trackers_detected": "14", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "7.9", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "758", "login_frequency_per_month": "29.5", "avg_session_minutes": "8.8"}, {"service_name": "PlayLoop", "category": "Streaming", "monthly_active_users_millions": "235.8", "data_types_collected": "Voice Recordings|Payment Details|Calendar Data|Biometric Data|IP Address|Full Name", "permissions_requested": "7", "third_party_trackers_detected": "11", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.9", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1012", "login_frequency_per_month": "23.0", "avg_session_minutes": "35.0"}, {"service_name": "GameVerse", "category": "Gaming", "monthly_active_users_millions": "94.6", "data_types_collected": "Calendar Data|Social Graph|Phone Number|Browsing History|IP Address|Device Identifiers|Approximate Location|Full Name", "permissions_requested": "13", "third_party_trackers_detected": "5", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "3.5", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "1437", "login_frequency_per_month": "20.5", "avg_session_minutes": "17.4"}, {"service_name": "FitTrack", "category": "Health & Fitness", "monthly_active_users_millions": "103.0", "data_types_collected": "Contacts|Phone Number|Photos|Search History|Payment Details|Browsing History|Approximate Location|Voice Recordings", "permissions_requested": "15", "third_party_trackers_detected": "2", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "4.8", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "Yes", "cross_platform_linking": "No", "account_age_days": "2323", "login_frequency_per_month": "11.8", "avg_session_minutes": "58.3"}, {"service_name": "VitalSync", "category": "Health & Fitness", "monthly_active_users_millions": "210.6", "data_types_collected": "Calendar Data|IP Address|Watch/Listen History|Full Name|Precise Location|Phone Number|Search History|Health Metrics", "permissions_requested": "3", "third_party_trackers_detected": "4", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "7.8", "ad_personalization_enabled": "No", "location_tracking": "Yes", "biometric_data_collected": "Yes", "cross_platform_linking": "No", "account_age_days": "1903", "login_frequency_per_month": "27.3", "avg_session_minutes": "17.6"}, {"service_name": "DocSync", "category": "Productivity", "monthly_active_users_millions": "37.3", "data_types_collected": "Contacts|Search History|Payment Details|Voice Recordings|Purchase History|Biometric Data|Approximate Location", "permissions_requested": "7", "third_party_trackers_detected": "2", "data_shared_with_partners": "Yes", "known_data_breaches": "0", "encryption_level": "Strong", "privacy_policy_transparency_score": "9.7", "ad_personalization_enabled": "No", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "2244", "login_frequency_per_month": "22.5", "avg_session_minutes": "66.1"}, {"service_name": "SoulSync", "category": "Dating", "monthly_active_users_millions": "237.8", "data_types_collected": "Watch/Listen History|Email|Contacts|Browsing History|Full Name|Phone Number|Calendar Data|Purchase History|Photos|Voice Recordings|Precise Location", "permissions_requested": "6", "third_party_trackers_detected": "6", "data_shared_with_partners": "Yes", "known_data_breaches": "2", "encryption_level": "Basic", "privacy_policy_transparency_score": "6.4", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "Yes", "cross_platform_linking": "Yes", "account_age_days": "805", "login_frequency_per_month": "1.1", "avg_session_minutes": "19.6"}, {"service_name": "CloudDesk", "category": "Productivity", "monthly_active_users_millions": "433.7", "data_types_collected": "Browsing History|Voice Recordings|Precise Location|Contacts|Payment Details", "permissions_requested": "7", "third_party_trackers_detected": "4", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "9.5", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "1433", "login_frequency_per_month": "7.7", "avg_session_minutes": "66.7"}, {"service_name": "MediCarePlus", "category": "Health & Fitness", "monthly_active_users_millions": "68.8", "data_types_collected": "Messages Content|Full Name|Contacts|Social Graph|Payment Details|Photos|IP Address|Purchase History|Search History|Phone Number", "permissions_requested": "6", "third_party_trackers_detected": "8", "data_shared_with_partners": "No", "known_data_breaches": "0", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.7", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "Yes", "cross_platform_linking": "Yes", "account_age_days": "1669", "login_frequency_per_month": "15.6", "avg_session_minutes": "15.9"}, {"service_name": "WatchNow", "category": "Streaming", "monthly_active_users_millions": "296.9", "data_types_collected": "Biometric Data|Contacts|Health Metrics|Approximate Location", "permissions_requested": "8", "third_party_trackers_detected": "6", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "5.5", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "2474", "login_frequency_per_month": "22.8", "avg_session_minutes": "64.0"}, {"service_name": "MatchWave", "category": "Dating", "monthly_active_users_millions": "363.3", "data_types_collected": "Approximate Location|Health Metrics|Precise Location|Browsing History|IP Address|Phone Number|Payment Details|Messages Content|Full Name|Purchase History|Watch/Listen History|Photos|Device Identifiers", "permissions_requested": "3", "third_party_trackers_detected": "5", "data_shared_with_partners": "Yes", "known_data_breaches": "1", "encryption_level": "Basic", "privacy_policy_transparency_score": "4.9", "ad_personalization_enabled": "Yes", "location_tracking": "Yes", "biometric_data_collected": "No", "cross_platform_linking": "Yes", "account_age_days": "752", "login_frequency_per_month": "25.3", "avg_session_minutes": "38.4"}, {"service_name": "InfoWave", "category": "News & Media", "monthly_active_users_millions": "48.8", "data_types_collected": "Social Graph|Email|Watch/Listen History|Contacts|Precise Location|Messages Content|Device Identifiers", "permissions_requested": "10", "third_party_trackers_detected": "17", "data_shared_with_partners": "No", "known_data_breaches": "1", "encryption_level": "Strong", "privacy_policy_transparency_score": "6.3", "ad_personalization_enabled": "Yes", "location_tracking": "No", "biometric_data_collected": "No", "cross_platform_linking": "No", "account_age_days": "2554", "login_frequency_per_month": "28.5", "avg_session_minutes": "17.3"}]</script>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     1. LOAD + VALIDATE DATASET
+  ========================================================== */
+  const RAW = JSON.parse(document.getElementById('dataset-json').textContent);
+
+  const EXPECTED_COLUMNS = [
+    "service_name","category","monthly_active_users_millions","data_types_collected",
+    "permissions_requested","third_party_trackers_detected","data_shared_with_partners",
+    "known_data_breaches","encryption_level","privacy_policy_transparency_score",
+    "ad_personalization_enabled","location_tracking","biometric_data_collected",
+    "cross_platform_linking","account_age_days","login_frequency_per_month","avg_session_minutes"
+  ];
+
+  const DATA_TYPE_POOL = [
+    "Email","Phone Number","Full Name","Precise Location","Approximate Location",
+    "Contacts","Photos","Browsing History","Search History","Purchase History",
+    "Payment Details","Biometric Data","Voice Recordings","Health Metrics",
+    "Device Identifiers","IP Address","Social Graph","Calendar Data",
+    "Messages Content","Watch/Listen History"
+  ];
+
+  function validateDataset(rows){
+    const issues = [];
+    const detectedCols = rows.length ? Object.keys(rows[0]) : [];
+    const missing = EXPECTED_COLUMNS.filter(c => !detectedCols.includes(c));
+    if(missing.length) issues.push("Missing expected columns: " + missing.join(", "));
+    let malformed = 0;
+    rows.forEach(r => { if(!r.service_name || !r.category) malformed++; });
+    if(malformed) issues.push(malformed + " row(s) missing service_name/category");
+    return { detectedCols, missing, malformed, valid: issues.length === 0, issues };
+  }
+
+  const validation = validateDataset(RAW);
+
+  /* =========================================================
+     2. NORMALIZATION HELPERS + PER-ROW METRIC COMPUTATION
+  ========================================================== */
+  const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+  const yn = v => (String(v).trim().toLowerCase() === "yes") ? 1 : 0;
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+
+  // Dynamic max bounds (auto-detected from data rather than hardcoded)
+  const maxTrackers = Math.max(...RAW.map(r => num(r.third_party_trackers_detected)), 1);
+  const maxPerms = Math.max(...RAW.map(r => num(r.permissions_requested)), 1);
+  const maxBreaches = Math.max(...RAW.map(r => num(r.known_data_breaches)), 1);
+  const maxLogin = Math.max(...RAW.map(r => num(r.login_frequency_per_month)), 1);
+  const maxSession = Math.max(...RAW.map(r => num(r.avg_session_minutes)), 1);
+  const maxMAU = Math.max(...RAW.map(r => num(r.monthly_active_users_millions)), 1);
+
+  const encScoreMap = { "None": 0, "Basic": 0.5, "Strong": 1 };
+
+  function computeRow(r, idx){
+    const dataTypes = (r.data_types_collected || "").split("|").map(s=>s.trim()).filter(Boolean);
+    const dtypeNorm = clamp01(dataTypes.length / DATA_TYPE_POOL.length);
+    const trackerNorm = clamp01(num(r.third_party_trackers_detected) / maxTrackers);
+    const permNorm = clamp01(num(r.permissions_requested) / maxPerms);
+    const breachNorm = clamp01(num(r.known_data_breaches) / maxBreaches);
+    const engagementNorm = clamp01(
+      0.5 * (num(r.login_frequency_per_month) / maxLogin) +
+      0.5 * (num(r.avg_session_minutes) / maxSession)
+    );
+    const encScore = encScoreMap[r.encryption_level] ?? 0.5;
+    const transparency = clamp01(num(r.privacy_policy_transparency_score) / 10);
+    const adFlag = yn(r.ad_personalization_enabled);
+    const shareFlag = yn(r.data_shared_with_partners);
+    const locFlag = yn(r.location_tracking);
+    const bioFlag = yn(r.biometric_data_collected);
+    const crossFlag = yn(r.cross_platform_linking);
+    const mauNorm = clamp01(num(r.monthly_active_users_millions) / maxMAU);
+
+    const footprint = 100 * clamp01(
+      0.30*dtypeNorm + 0.20*permNorm + 0.15*trackerNorm + 0.15*crossFlag + 0.20*engagementNorm
+    );
+    const risk = 100 * clamp01(
+      0.20*trackerNorm + 0.15*shareFlag + 0.15*breachNorm + 0.10*adFlag +
+      0.10*bioFlag + 0.10*locFlag + 0.10*(1-encScore) + 0.10*(1-transparency)
+    );
+    const collection = 100 * clamp01(
+      0.30*permNorm + 0.30*dtypeNorm + 0.25*engagementNorm + 0.15*crossFlag
+    );
+    const thirdParty = 100 * clamp01(
+      0.40*trackerNorm + 0.30*shareFlag + 0.30*crossFlag
+    );
+    const adStrength = 100 * clamp01(
+      0.35*adFlag + 0.25*trackerNorm + 0.20*dtypeNorm + 0.20*crossFlag
+    );
+    const overall = (footprint + risk + collection + thirdParty + adStrength) / 5;
+
+    return {
+      idx,
+      service_name: r.service_name,
+      category: r.category,
+      mau: num(r.monthly_active_users_millions),
+      mauNorm,
+      dataTypes,
+      dataTypesCount: dataTypes.length,
+      encryption_level: r.encryption_level,
+      breaches: num(r.known_data_breaches),
+      transparency: num(r.privacy_policy_transparency_score),
+      adFlag, shareFlag, locFlag, bioFlag, crossFlag,
+      footprint, risk, collection, thirdParty, adStrength, overall
+    };
+  }
+
+  const ROWS = RAW.map(computeRow);
+
+  function levelOf(score){
+    if(score >= 75) return "crit";
+    if(score >= 55) return "high";
+    if(score >= 32) return "med";
+    return "low";
+  }
+  const levelLabel = { crit:"Critical", high:"High", med:"Moderate", low:"Low" };
+
+  /* =========================================================
+     3. AGGREGATES
+  ========================================================== */
+  const avg = arr => arr.reduce((a,b)=>a+b,0) / (arr.length || 1);
+
+  const agg = {
+    footprint: avg(ROWS.map(r=>r.footprint)),
+    risk: avg(ROWS.map(r=>r.risk)),
+    collection: avg(ROWS.map(r=>r.collection)),
+    thirdParty: avg(ROWS.map(r=>r.thirdParty)),
+    adStrength: avg(ROWS.map(r=>r.adStrength)),
+    overall: avg(ROWS.map(r=>r.overall)),
+  };
+
+  // Ecosystem Concentration (Herfindahl-Hirschman style index over category share of total overall exposure)
+  const categories = [...new Set(ROWS.map(r=>r.category))];
+  const catTotals = categories.map(cat => ({
+    category: cat,
+    count: ROWS.filter(r=>r.category===cat).length,
+    sumOverall: ROWS.filter(r=>r.category===cat).reduce((a,r)=>a+r.overall,0)
+  }));
+  const grandTotal = catTotals.reduce((a,c)=>a+c.sumOverall,0) || 1;
+  catTotals.forEach(c => c.share = c.sumOverall / grandTotal);
+  const hhi = catTotals.reduce((a,c)=>a + c.share*c.share, 0); // 0 - 1
+  const ecosystemConcentration = hhi * 100; // scaled 0-100
+  const topCategory = [...catTotals].sort((a,b)=>b.share-a.share)[0];
+
+  // Digital Twin Completeness: union of data types across all rows / pool size
+  const unionTypes = new Set();
+  ROWS.forEach(r => r.dataTypes.forEach(dt => unionTypes.add(dt)));
+  const twinCompleteness = (unionTypes.size / DATA_TYPE_POOL.length) * 100;
+
+  // Sensitive combination flag: services that collect Biometric + (Precise or Approximate Location) + Payment Details
+  const sensitiveCombo = ROWS.filter(r => {
+    const dt = r.dataTypes;
+    const hasBio = dt.includes("Biometric Data");
+    const hasLoc = dt.includes("Precise Location") || dt.includes("Approximate Location");
+    const hasPay = dt.includes("Payment Details");
+    return hasBio && hasLoc && hasPay;
+  });
+
+  /* =========================================================
+     4. RENDER — OVERVIEW
+  ========================================================== */
+  function renderValidation(){
+    const list = document.getElementById('validation-list');
+    const items = [
+      ["Rows parsed", RAW.length],
+      ["Rows passing integrity check", (RAW.length - validation.malformed)],
+      ["Columns detected", validation.detectedCols.length],
+      ["Missing expected columns", validation.missing.length ? validation.missing.join(", ") : "None"],
+      ["Overall validation", validation.valid ? "✓ Passed" : "⚠ Passed with notes"],
+    ];
+    list.innerHTML = items.map(([k,v]) => `<li><span>${k}</span><span class="val">${v}</span></li>`).join('');
+
+    const chipRow = document.getElementById('column-chips');
+    chipRow.innerHTML = validation.detectedCols.map(c => `<span class="chip ok">${c}</span>`).join('');
+    document.getElementById('col-count-tag').textContent = `${validation.detectedCols.length} fields auto-detected`;
+  }
+
+  function fmtScore(v){ return v.toFixed(1); }
+
+  function riskClass(score){
+    const lvl = levelOf(score);
+    return lvl === 'crit' ? 'risk-high' : (lvl === 'high' ? 'risk-high' : (lvl === 'med' ? 'risk-med' : 'risk-low'));
+  }
+  function fillClass(score){
+    const lvl = levelOf(score);
+    return lvl === 'crit' ? 'fill-high' : (lvl === 'high' ? 'fill-high' : (lvl === 'med' ? 'fill-med' : 'fill-low'));
+  }
+
+  function renderKPIs(){
+    const cards = [
+      { idx:"01", label:"Avg. Digital Footprint Score", value: agg.footprint, note:"Breadth of data exposed per service" },
+      { idx:"02", label:"Avg. Privacy Risk Score", value: agg.risk, note:"Composite risk across all dimensions" },
+      { idx:"03", label:"Avg. Data Collection Likelihood", value: agg.collection, note:"Estimated propensity to collect data" },
+      { idx:"04", label:"Ecosystem Concentration", value: ecosystemConcentration, note:`Top category: ${topCategory.category}` },
+      { idx:"05", label:"Avg. Third-Party Exposure", value: agg.thirdParty, note:"Tracker + partner-sharing estimate" },
+      { idx:"06", label:"Avg. Advertising Profile Strength", value: agg.adStrength, note:"Estimated ad-targeting depth" },
+      { idx:"07", label:"Digital Twin Completeness", value: twinCompleteness, note:`${unionTypes.size} of ${DATA_TYPE_POOL.length} data types covered` },
+      { idx:"08", label:"Services Analyzed", value: null, raw: `${ROWS.length}`, unit:`across ${categories.length} categories`, note:"Sample size for this report" },
+    ];
+    const grid = document.getElementById('kpi-grid');
+    grid.innerHTML = cards.map(c => {
+      const isScore = c.value !== null;
+      const cls = isScore ? riskClass(c.value) : '';
+      const fillCls = isScore ? fillClass(c.value) : 'fill-low';
+      const pct = isScore ? c.value : 100;
+      const valueHtml = isScore
+        ? `<span class="${cls}">${fmtScore(c.value)}</span><span class="unit">/100</span>`
+        : `${c.raw}<span class="unit">${c.unit ? ' · ' + c.unit : ''}</span>`;
+      return `
+        <div class="kpi-card" data-idx="${c.idx}">
+          <div class="kpi-label">${c.label}</div>
+          <div class="kpi-value">${valueHtml}</div>
+          <div class="kpi-bar"><div class="${fillCls}" style="width:${Math.min(pct,100)}%"></div></div>
+          <div class="kpi-note">${c.note}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderRiskSummary(){
+    const overallLevel = levelOf(agg.overall);
+    const text = {
+      low: "Across this sample, the estimated average exposure is relatively contained — most services show limited tracker density and moderate data collection.",
+      med: "Across this sample, the estimated average exposure sits at a moderate level, driven mainly by widespread ad personalization and third-party data sharing.",
+      high: "Across this sample, the estimated average exposure is elevated — a majority of services combine multiple trackers, cross-platform linking, and broad data-type collection.",
+      crit: "Across this sample, the estimated average exposure is high across nearly every dimension measured, suggesting a densely interconnected and heavily monetized data ecosystem."
+    }[overallLevel];
+    document.getElementById('risk-summary-text').textContent = text;
+
+    const highRiskCount = ROWS.filter(r => levelOf(r.overall) === 'high' || levelOf(r.overall) === 'crit').length;
+    const noEncCount = ROWS.filter(r => r.encryption_level === 'None').length;
+    const adCount = ROWS.filter(r => r.adFlag === 1).length;
+
+    const list = [
+      ["Overall exposure level", `<span class="${riskClass(agg.overall)}">${levelLabel[overallLevel]}</span> (${fmtScore(agg.overall)}/100)`],
+      ["Services at High/Critical risk", `${highRiskCount} of ${ROWS.length} (${((highRiskCount/ROWS.length)*100).toFixed(0)}%)`],
+      ["Services with ad personalization on", `${adCount} of ${ROWS.length} (${((adCount/ROWS.length)*100).toFixed(0)}%)`],
+      ["Services with no encryption detected", `${noEncCount} of ${ROWS.length}`],
+      ["High-sensitivity combinations flagged", `${sensitiveCombo.length} service(s)`],
+    ];
+    document.getElementById('risk-summary-list').innerHTML =
+      list.map(([k,v]) => `<li><span>${k}</span><span class="val">${v}</span></li>`).join('');
+  }
+
+  function renderMiniCategoryBars(){
+    const sorted = [...catTotals].sort((a,b)=>b.share-a.share);
+    const max = sorted[0].share;
+    const html = sorted.map(c => `
+      <div style="margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--text-dim); margin-bottom:4px;">
+          <span>${c.category}</span><span style="font-family:var(--font-mono); color:var(--text-faint);">${(c.share*100).toFixed(1)}%</span>
+        </div>
+        <div style="height:6px; background:var(--panel-3); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:${(c.share/max*100).toFixed(1)}%; background:var(--blue); border-radius:3px;"></div>
+        </div>
+      </div>`).join('');
+    document.getElementById('mini-category-bars').innerHTML = html;
+  }
+
+  /* =========================================================
+     5. RENDER — RANKINGS TABLE
+  ========================================================== */
+  let sortKey = 'overall';
+  let sortDir = -1; // descending
+  let filterCat = 'all';
+  let searchTerm = '';
+
+  function populateCategoryFilter(){
+    const sel = document.getElementById('filter-category');
+    categories.sort().forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', e => { filterCat = e.target.value; renderTable(); });
+  }
+
+  function getSortValue(r, key){
+    switch(key){
+      case 'rank': return r.overall;
+      case 'service_name': return r.service_name.toLowerCase();
+      case 'overall': return r.overall;
+      case 'footprint': return r.footprint;
+      case 'risk': return r.risk;
+      case 'thirdparty': return r.thirdParty;
+      case 'ad': return r.adStrength;
+      case 'level': return r.overall;
+      default: return 0;
+    }
+  }
+
+  function renderTable(){
+    let filtered = ROWS.filter(r => (filterCat === 'all' || r.category === filterCat));
+    if(searchTerm.trim()){
+      const q = searchTerm.trim().toLowerCase();
+      filtered = filtered.filter(r => r.service_name.toLowerCase().includes(q));
+    }
+    filtered.sort((a,b) => {
+      const va = getSortValue(a, sortKey), vb = getSortValue(b, sortKey);
+      if(va < vb) return -1 * sortDir;
+      if(va > vb) return 1 * sortDir;
+      return 0;
+    });
+
+    document.getElementById('result-count').textContent = `${filtered.length} of ${ROWS.length} services`;
+
+    const tbody = document.getElementById('rank-tbody');
+    tbody.innerHTML = filtered.map((r, i) => {
+      const lvl = levelOf(r.overall);
+      return `
+      <tr>
+        <td class="rank-num">${i+1}</td>
+        <td><span class="svc-name">${r.service_name}</span><span class="svc-cat">${r.category}</span></td>
+        <td class="redact-cell">
+          <div class="redact-wrap">
+            <div class="redact-fill"><div class="${fillClass(r.overall)}" style="width:${r.overall.toFixed(1)}%"></div></div>
+            <div class="redact-score">${fmtScore(r.overall)}</div>
+            <div class="redact-block">CLASSIFIED</div>
+          </div>
+        </td>
+        <td>${fmtScore(r.footprint)}</td>
+        <td>${fmtScore(r.risk)}</td>
+        <td>${fmtScore(r.thirdParty)}</td>
+        <td>${fmtScore(r.adStrength)}</td>
+        <td><span class="badge ${lvl}">${levelLabel[lvl]}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function initTableEvents(){
+    document.querySelectorAll('#rank-table thead th').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if(sortKey === key){ sortDir *= -1; } else { sortKey = key; sortDir = -1; }
+        document.querySelectorAll('#rank-table thead th').forEach(t => t.classList.remove('sorted'));
+        th.classList.add('sorted');
+        renderTable();
+      });
+    });
+    document.getElementById('search-box').addEventListener('input', e => {
+      searchTerm = e.target.value; renderTable();
+    });
+  }
+
+  /* =========================================================
+     6. CHARTS — BAR
+  ========================================================== */
+  const tooltip = document.getElementById('tooltip');
+  function showTooltip(evt, html){
+    tooltip.innerHTML = html;
+    tooltip.style.left = (evt.clientX + 14) + 'px';
+    tooltip.style.top = (evt.clientY + 14) + 'px';
+    tooltip.classList.add('show');
+  }
+  function hideTooltip(){ tooltip.classList.remove('show'); }
+
+  let selectedServiceIdx = null;
+
+  function colorForLevel(score){
+    const lvl = levelOf(score);
+    return lvl === 'crit' ? '#e2554a' : lvl === 'high' ? '#e2554a' : lvl === 'med' ? '#e2a63b' : '#49d1b3';
+  }
+
+  function renderBarChart(){
+    const svg = document.getElementById('bar-chart');
+    const top = [...ROWS].sort((a,b)=>b.overall-a.overall).slice(0,12);
+    const W = 640, H = 380;
+    const padLeft = 130, padRight = 50, padTop = 10, padBottom = 20;
+    const chartW = W - padLeft - padRight;
+    const rowH = (H - padTop - padBottom) / top.length;
+    const maxVal = 100;
+
+    let svgHtml = `<line class="axis-line" x1="${padLeft}" y1="${padTop}" x2="${padLeft}" y2="${H-padBottom}"/>`;
+    top.forEach((r, i) => {
+      const y = padTop + i*rowH + rowH*0.2;
+      const barH = rowH*0.6;
+      const barW = (r.overall/maxVal) * chartW;
+      const color = colorForLevel(r.overall);
+      const selected = selectedServiceIdx === r.idx;
+      svgHtml += `
+        <rect class="bar-track" x="${padLeft}" y="${y}" width="${chartW}" height="${barH}" rx="3"></rect>
+        <rect class="bar-fill" data-idx="${r.idx}" x="${padLeft}" y="${y}" width="${barW}" height="${barH}" rx="3"
+          fill="${color}" opacity="${selected ? 1 : 0.88}" stroke="${selected ? '#fff' : 'none'}" stroke-width="${selected?1.5:0}"></rect>
+        <text class="bar-label" x="${padLeft-8}" y="${y+barH*0.65}" text-anchor="end">${r.service_name.length>14? r.service_name.slice(0,13)+'…' : r.service_name}</text>
+        <text class="bar-value" x="${padLeft+barW+8}" y="${y+barH*0.65}">${r.overall.toFixed(0)}</text>
+      `;
+    });
+    svg.innerHTML = svgHtml;
+
+    svg.querySelectorAll('.bar-fill').forEach(el => {
+      el.addEventListener('mousemove', e => {
+        const idx = parseInt(el.dataset.idx);
+        const r = ROWS.find(x=>x.idx===idx);
+        showTooltip(e, `<b>${r.service_name}</b><br>${r.category}<br>Exposure: ${r.overall.toFixed(1)}/100<br>Risk: ${r.risk.toFixed(1)} · 3rd-party: ${r.thirdParty.toFixed(1)}`);
+      });
+      el.addEventListener('mouseleave', hideTooltip);
+      el.addEventListener('click', () => {
+        selectedServiceIdx = parseInt(el.dataset.idx);
+        document.getElementById('radar-select').value = selectedServiceIdx;
+        renderBarChart(); renderRadarChart();
+      });
+    });
+  }
+
+  /* =========================================================
+     7. CHARTS — PIE
+  ========================================================== */
+  const PIE_COLORS = ["#e2a63b","#6c93e8","#49d1b3","#e2554a","#b98ae0","#e07b53","#5fb8d1","#c9c04a","#8a97e8","#5fd18f","#d16f9e","#9ba3ab","#e0c05f","#6ea87d"];
+  let selectedCategory = null;
+
+  function renderPieChart(){
+    const svg = document.getElementById('pie-chart');
+    const cx = 150, cy = 150, r = 120;
+    let angle = -Math.PI/2;
+    let html = '';
+    const sorted = [...catTotals].sort((a,b)=>b.share-a.share);
+
+    sorted.forEach((c, i) => {
+      const slice = c.share * Math.PI * 2;
+      const x1 = cx + r*Math.cos(angle);
+      const y1 = cy + r*Math.sin(angle);
+      const endAngle = angle + slice;
+      const x2 = cx + r*Math.cos(endAngle);
+      const y2 = cy + r*Math.sin(endAngle);
+      const largeArc = slice > Math.PI ? 1 : 0;
+      const selected = selectedCategory === c.category;
+      const color = PIE_COLORS[i % PIE_COLORS.length];
+      html += `<path class="pie-slice ${selected?'selected':''}" data-cat="${c.category}"
+        d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${largeArc} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z"
+        fill="${color}" stroke="var(--panel)" stroke-width="2"></path>`;
+      angle = endAngle;
+    });
+    // center hole for donut feel
+    html += `<circle cx="${cx}" cy="${cy}" r="52" fill="var(--panel)"></circle>
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" class="bar-value" style="font-size:13px;">${categories.length}</text>
+      <text x="${cx}" y="${cy+13}" text-anchor="middle" class="bar-label" style="font-size:9px;">categories</text>`;
+    svg.innerHTML = html;
+
+    svg.querySelectorAll('.pie-slice').forEach((el, i) => {
+      const c = sorted[i];
+      el.addEventListener('mousemove', e => {
+        showTooltip(e, `<b>${c.category}</b><br>${(c.share*100).toFixed(1)}% of total exposure<br>${c.count} service(s)`);
+      });
+      el.addEventListener('mouseleave', hideTooltip);
+      el.addEventListener('click', () => {
+        selectedCategory = selectedCategory === c.category ? null : c.category;
+        renderPieChart(); renderPieLegend();
+        document.getElementById('filter-category').value = selectedCategory || 'all';
+        filterCat = selectedCategory || 'all';
+        renderTable();
+      });
+    });
+
+    renderPieLegend();
+  }
+
+  function renderPieLegend(){
+    const sorted = [...catTotals].sort((a,b)=>b.share-a.share);
+    const legend = document.getElementById('pie-legend');
+    legend.innerHTML = sorted.map((c,i) => `
+      <div class="pie-legend-item" data-cat="${c.category}">
+        <span class="sw" style="background:${PIE_COLORS[i % PIE_COLORS.length]}"></span>
+        <span>${c.category}</span>
+        <span class="pct">${(c.share*100).toFixed(1)}%</span>
+      </div>`).join('');
+    legend.querySelectorAll('.pie-legend-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const cat = el.dataset.cat;
+        selectedCategory = selectedCategory === cat ? null : cat;
+        renderPieChart();
+      });
+    });
+  }
+
+  /* =========================================================
+     8. CHARTS — RADAR
+  ========================================================== */
+  const RADAR_AXES = [
+    { key:'footprint', label:'Footprint' },
+    { key:'risk', label:'Privacy Risk' },
+    { key:'collection', label:'Collection' },
+    { key:'thirdParty', label:'3rd-Party' },
+    { key:'adStrength', label:'Ad Strength' },
+  ];
+
+  function populateRadarSelect(){
+    const sel = document.getElementById('radar-select');
+    sel.innerHTML = `<option value="">— Select a service —</option>` +
+      [...ROWS].sort((a,b)=>a.service_name.localeCompare(b.service_name))
+        .map(r => `<option value="${r.idx}">${r.service_name} (${r.category})</option>`).join('');
+    sel.addEventListener('change', e => {
+      selectedServiceIdx = e.target.value === '' ? null : parseInt(e.target.value);
+      renderBarChart(); renderRadarChart();
+    });
+  }
+
+  function radarPoint(cx, cy, radius, angleIdx, total, value){
+    const angle = -Math.PI/2 + (angleIdx / total) * Math.PI * 2;
+    const dist = (value/100) * radius;
+    return { x: cx + dist*Math.cos(angle), y: cy + dist*Math.sin(angle), angle };
+  }
+
+  function renderRadarChart(){
+    const svg = document.getElementById('radar-chart');
+    const cx = 240, cy = 200, R = 140;
+    const total = RADAR_AXES.length;
+    let html = '';
+
+    // grid rings
+    [0.25,0.5,0.75,1].forEach(f => {
+      let pts = [];
+      for(let i=0;i<total;i++){
+        const p = radarPoint(cx,cy,R,i,total, f*100);
+        pts.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`);
+      }
+      html += `<polygon class="radar-grid" points="${pts.join(' ')}"></polygon>`;
+    });
+    // spokes + labels
+    RADAR_AXES.forEach((ax, i) => {
+      const p = radarPoint(cx,cy,R,i,total,100);
+      html += `<line class="radar-grid" x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}"></line>`;
+      const lp = radarPoint(cx,cy,R+22,i,total,100);
+      html += `<text class="radar-axis-label" x="${lp.x.toFixed(1)}" y="${lp.y.toFixed(1)}" text-anchor="middle">${ax.label}</text>`;
+    });
+
+    // average shape
+    const avgVals = RADAR_AXES.map(ax => agg[ax.key]);
+    let avgPts = RADAR_AXES.map((ax,i) => radarPoint(cx,cy,R,i,total, agg[ax.key]));
+    html += `<polygon class="radar-shape-avg" points="${avgPts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"></polygon>`;
+    avgPts.forEach(p => { html += `<circle class="radar-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" stroke="var(--blue)"></circle>`; });
+
+    // selected service shape
+    let selLabel = 'No service selected';
+    if(selectedServiceIdx !== null){
+      const r = ROWS.find(x=>x.idx===selectedServiceIdx);
+      if(r){
+        let selPts = RADAR_AXES.map((ax,i) => radarPoint(cx,cy,R,i,total, r[ax.key]));
+        html += `<polygon class="radar-shape-sel" points="${selPts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"></polygon>`;
+        selPts.forEach(p => { html += `<circle class="radar-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" stroke="var(--amber)"></circle>`; });
+        selLabel = `${r.service_name} (${r.category})`;
+      }
+    }
+    svg.innerHTML = html;
+    document.getElementById('radar-sel-label').textContent = selLabel;
+  }
+
+  /* =========================================================
+     9. DIGITAL TWIN PANEL
+  ========================================================== */
+  function renderTwinGauge(){
+    const svg = document.getElementById('twin-gauge');
+    const cx = 110, cy = 120, r = 90;
+    const startAngle = Math.PI, endAngle = 0; // semicircle top
+    const pct = clamp01(twinCompleteness/100);
+    const sweepAngle = Math.PI * (1 - pct);
+    function pointAt(angle){ return { x: cx + r*Math.cos(angle), y: cy - r*Math.sin(angle) }; }
+    const p0 = pointAt(Math.PI);
+    const p1 = pointAt(0);
+    const pMid = pointAt(sweepAngle);
+    const largeArc = pct > 0.5 ? 1 : 0;
+
+    const color = twinCompleteness > 65 ? '#e2554a' : twinCompleteness > 40 ? '#e2a63b' : '#49d1b3';
+
+    const html = `
+      <path d="M${p0.x},${p0.y} A${r},${r} 0 1 1 ${p1.x},${p1.y}" fill="none" stroke="var(--panel-3)" stroke-width="14" stroke-linecap="round"></path>
+      <path d="M${p0.x},${p0.y} A${r},${r} 0 ${largeArc} 1 ${pMid.x},${pMid.y}" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round"></path>
+    `;
+    svg.innerHTML = html;
+    document.getElementById('twin-pct-value').textContent = twinCompleteness.toFixed(0) + '%';
+  }
+
+  function renderDatatypeGrid(){
+    const grid = document.getElementById('datatype-grid');
+    grid.innerHTML = DATA_TYPE_POOL.map(dt => {
+      const covered = unionTypes.has(dt);
+      return `<div class="dt-item ${covered?'covered':''}"><span class="dt-dot"></span>${dt}</div>`;
+    }).join('');
+  }
+
+  function renderTwinFlag(){
+    const flag = document.getElementById('twin-flag');
+    if(sensitiveCombo.length > 0){
+      flag.style.display = 'block';
+      flag.innerHTML = `<b>High-sensitivity combination detected:</b> ${sensitiveCombo.length} service(s) in this sample simultaneously collect biometric data, location, and payment details — a combination that, if aggregated, could meaningfully strengthen real-world identity linkage.`;
+    } else {
+      flag.style.display = 'none';
+    }
+  }
+
+  /* =========================================================
+     10. RECOMMENDATIONS (dynamic, based on aggregate stats)
+  ========================================================== */
+  function renderRecommendations(){
+    const recs = [];
+    const noEncCount = ROWS.filter(r => r.encryption_level === 'None').length;
+    const adCount = ROWS.filter(r => r.adFlag === 1).length;
+    const shareCount = ROWS.filter(r => r.shareFlag === 1).length;
+    const crossCount = ROWS.filter(r => r.crossFlag === 1).length;
+    const highRiskCount = ROWS.filter(r => levelOf(r.overall)==='high'||levelOf(r.overall)==='crit').length;
+
+    if(highRiskCount > 0){
+      recs.push({ p:'p1', title:'Review High &amp; Critical exposure services first', tag:'Priority',
+        body:`${highRiskCount} of ${ROWS.length} services in this sample fall into the High or Critical exposure band. Start any privacy audit with those accounts — check their permission grants and disable optional tracking where possible.` });
+    }
+    if(sensitiveCombo.length > 0){
+      recs.push({ p:'p1', title:'Limit biometric + location + payment overlap', tag:'Priority',
+        body:`${sensitiveCombo.length} service(s) combine biometric data, location, and payment details. Where an app offers an alternative (e.g., PIN instead of biometric login, manual address entry instead of continuous location), the reduced-data option lowers linkage risk.` });
+    }
+    if(adCount / ROWS.length > 0.5){
+      recs.push({ p:'p2', title:'Turn off ad personalization where available', tag:'Recommended',
+        body:`${adCount} of ${ROWS.length} services have ad personalization enabled in this sample. Most platforms let you disable interest-based ads in account settings without losing core functionality.` });
+    }
+    if(shareCount / ROWS.length > 0.5){
+      recs.push({ p:'p2', title:'Check third-party data-sharing settings', tag:'Recommended',
+        body:`${shareCount} services show partner data-sharing enabled. Look for a "data sharing," "partners," or "affiliates" toggle in privacy settings, and opt out where the option exists.` });
+    }
+    if(crossCount / ROWS.length > 0.4){
+      recs.push({ p:'p2', title:'Reduce cross-platform account linking', tag:'Recommended',
+        body:`Cross-platform linking is common in this sample (${crossCount} services). Using separate logins instead of "Sign in with X" for unrelated services limits how easily activity can be joined across platforms.` });
+    }
+    if(noEncCount > 0){
+      recs.push({ p:'p1', title:'Avoid services reporting no encryption', tag:'Priority',
+        body:`${noEncCount} service(s) in this sample show no detected encryption layer. Prefer alternatives that state end-to-end or at-rest encryption in their security documentation.` });
+    }
+    recs.push({ p:'p3', title:'Do periodic permission audits', tag:'Ongoing habit',
+      body:`Revisit app and account permissions every few months. Revoke access for anything you no longer use — dormant integrations are a common source of unnoticed exposure.` });
+    recs.push({ p:'p3', title:'Use unique credentials per service', tag:'Ongoing habit',
+      body:`Unique passwords (ideally via a password manager) limit the blast radius if any single service in your footprint experiences a breach.` });
+    recs.push({ p:'p3', title:'Prefer data-minimizing alternatives', tag:'Ongoing habit',
+      body:`When choosing between comparable services, the one requesting fewer permissions and collecting fewer data types meaningfully reduces your aggregate digital footprint over time.` });
+
+    document.getElementById('rec-list').innerHTML = recs.map(r => `
+      <div class="rec-item">
+        <div class="rec-icon ${r.p}">${r.p === 'p1' ? '!' : r.p === 'p2' ? '△' : '✓'}</div>
+        <div class="rec-body">
+          <b>${r.title}</b><span class="rec-tag">${r.tag}</span>
+          <p>${r.body}</p>
+        </div>
+      </div>`).join('');
+  }
+
+  /* =========================================================
+     11. TABS
+  ========================================================== */
+  function initTabs(){
+    document.querySelectorAll('nav.tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('section.tabpanel').forEach(s=>s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        window.scrollTo({top:0, behavior:'instant'});
+      });
+    });
+  }
+
+  /* =========================================================
+     INIT
+  ========================================================== */
+  renderValidation();
+  renderKPIs();
+  renderRiskSummary();
+  renderMiniCategoryBars();
+  populateCategoryFilter();
+  renderTable();
+  initTableEvents();
+  renderBarChart();
+  renderPieChart();
+  populateRadarSelect();
+  renderRadarChart();
+  renderTwinGauge();
+  renderDatatypeGrid();
+  renderTwinFlag();
+  renderRecommendations();
+  initTabs();
+
+})();
+</script>
+
+</body>
+</html>
