@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Compass — Hospital / Healthcare</title>
+<style>
+  :root{
+    --bg1:#0b1220; --bg2:#0f1b2e; --bg3:#0a1420;
+    --glass:rgba(255,255,255,0.06); --glass-border:rgba(255,255,255,0.12);
+    --text:#eef1fb; --muted:#9aa5c0; --accent:#7c9cff; --accent2:#4fd1c5;
+    --good:#4fd1c5; --warn:#f6ad55; --bad:#f56565;
+    --shadow:0 20px 50px rgba(0,0,0,.45);
+    --r-nurse:#4fd1c5; --r-physician:#f56565; --r-pharmacist:#68d391;
+    --r-lab:#9f7aea; --r-radiology:#f6ad55; --r-chargenurse:#4299e1;
+    --r-admin:#ecc94b; --r-records:#63b3ed;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    color:var(--text); min-height:100vh;
+    background: linear-gradient(120deg, var(--bg1), var(--bg2), var(--bg3), var(--bg1));
+    background-size: 300% 300%;
+    animation: gradientShift 18s ease infinite;
+  }
+  @keyframes gradientShift{
+    0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;}
+  }
+  *{scrollbar-width:thin;}
+  .app{max-width:980px; margin:0 auto; padding:24px 16px 60px; min-height:100vh; display:flex; flex-direction:column;}
+
+  header.top{display:flex; flex-direction:column; gap:10px; margin-bottom:18px;}
+  .brandrow{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand .logo{width:44px; height:44px; border-radius:14px; display:grid; place-items:center; font-size:22px;
+    background:linear-gradient(135deg, var(--accent), var(--accent2)); box-shadow:var(--shadow);}
+  .brand h1{margin:0; font-size:22px; font-weight:800;}
+  .brand .sub{margin:0; font-size:12.5px; color:var(--muted);}
+  .hud{display:flex; gap:8px; flex-wrap:wrap;}
+  .pill{background:var(--glass); border:1px solid var(--glass-border); padding:6px 13px; border-radius:999px;
+    font-size:12.5px; color:var(--muted); font-weight:600; backdrop-filter: blur(8px);}
+
+  .progress-wrap{width:100%; background:var(--glass); border:1px solid var(--glass-border); border-radius:999px;
+    height:10px; overflow:hidden; backdrop-filter: blur(8px);}
+  .progress-bar{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width .6s cubic-bezier(.4,0,.2,1); border-radius:999px;}
+
+  .screen{display:none; animation: fadeUp .5s ease;}
+  .screen.active{display:block;}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+  @keyframes pop{from{opacity:0; transform:scale(.94);} to{opacity:1; transform:scale(1);}}
+  @keyframes floatIn{from{opacity:0; transform:translateY(10px) scale(.97);} to{opacity:1; transform:translateY(0) scale(1);}}
+
+  .glass{
+    background:var(--glass); border:1px solid var(--glass-border); border-radius:22px; padding:28px;
+    backdrop-filter: blur(16px); box-shadow:var(--shadow); animation:pop .5s ease;
+  }
+  h2{font-size:clamp(20px,3vw,27px); margin:0 0 8px; font-weight:800;}
+  h3{font-size:17px; margin:.3em 0; font-weight:700;}
+  p{color:var(--muted); line-height:1.6; margin:.4em 0;}
+  .lead{font-size:15.5px; max-width:640px;}
+
+  .btn{
+    appearance:none; border:none; cursor:pointer; padding:13px 24px; border-radius:14px; font-weight:700;
+    font-size:14.5px; color:#0b1220; background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:0 10px 24px rgba(124,156,255,.25); transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-3px); filter:brightness(1.08); box-shadow:0 14px 28px rgba(124,156,255,.35);}
+  .btn:active{transform:translateY(0);}
+  .btn.secondary{background:transparent; color:var(--text); border:1.5px solid var(--glass-border);}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none; filter:none; box-shadow:none;}
+  .row{display:flex; gap:12px; flex-wrap:wrap; margin-top:20px;}
+  .row.end{justify-content:flex-end;} .row.between{justify-content:space-between; align-items:center;}
+  .row.center{justify-content:center;}
+
+  .badge-stage{display:inline-block; font-size:11.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+    padding:5px 12px; border-radius:999px; background:rgba(124,156,255,.15); color:var(--accent); margin-bottom:10px;}
+
+  .ticket{
+    background:linear-gradient(135deg, rgba(124,156,255,.12), rgba(79,209,197,.08));
+    border:1.5px dashed var(--glass-border); border-radius:16px; padding:18px 20px; margin:16px 0;
+    font-size:15.5px; color:var(--text); position:relative; animation:floatIn .5s ease;
+  }
+  .ticket::before{content:"🎫"; position:absolute; top:-14px; left:16px; background:var(--bg2); padding:2px 8px;
+    border-radius:8px; font-size:14px; border:1px solid var(--glass-border);}
+
+  /* Role cards */
+  .role-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin:16px 0;}
+  .role-card{
+    background:rgba(255,255,255,.04); border:1.5px solid var(--glass-border); border-radius:16px; padding:14px 12px;
+    text-align:center; cursor:grab; user-select:none; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    animation: floatIn .4s ease; position:relative;
+  }
+  .role-card:hover{transform:translateY(-4px) scale(1.02); box-shadow:0 12px 24px rgba(0,0,0,.35);}
+  .role-card:active{cursor:grabbing;}
+  .role-card.dragging{opacity:.35;}
+  .role-card.used{opacity:.3; pointer-events:none;}
+  .role-card .r-icon{font-size:26px; display:block; margin-bottom:6px;}
+  .role-card .r-label{font-size:12.5px; font-weight:700;}
+  .role-card .r-bar{height:3px; border-radius:2px; margin-top:8px; opacity:.85;}
+  .role-card.selected{border-color:var(--accent); box-shadow:0 0 0 2px rgba(124,156,255,.35);}
+
+  .dropzone{
+    border:2px dashed var(--glass-border); border-radius:16px; padding:18px; min-height:86px;
+    display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px;
+    transition: border-color .2s ease, background .2s ease; background:rgba(255,255,255,.02); margin:14px 0;
+  }
+  .dropzone.dragover{border-color:var(--accent); background:rgba(124,156,255,.08);}
+  .dropzone .placeholder{color:var(--muted); font-size:13.5px; font-style:italic;}
+
+  .mini-card{
+    background:rgba(255,255,255,.07); border:1px solid var(--glass-border); border-radius:12px; padding:8px 14px;
+    display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:700; cursor:pointer; animation:pop .3s ease;
+  }
+  .mini-card .x{opacity:.6; font-weight:400; margin-left:4px;}
+
+  /* Stage2 slots */
+  .seq-slots{display:flex; flex-direction:column; gap:10px; margin:16px 0;}
+  .seq-slot{min-height:56px; border:1.5px dashed var(--glass-border); border-radius:14px; padding:10px 14px;
+    display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.02); transition:.2s ease;}
+  .seq-slot.dragover{border-color:var(--accent2); background:rgba(79,209,197,.08);}
+  .seq-slot .slot-num{width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0b1220; display:grid; place-items:center; font-size:12.5px; font-weight:800; flex-shrink:0;}
+  .seq-slot .placeholder{color:var(--muted); font-size:13px; font-style:italic;}
+  .seq-slot.filled{cursor:pointer;}
+  .seq-slot .chip-in-slot{display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px;}
+  .seq-slot.correct{border-color:var(--good); background:rgba(79,209,197,.1);}
+  .seq-slot.incorrect{border-color:var(--bad); background:rgba(245,101,101,.1);}
+
+  .track{position:relative; height:46px; margin:18px 0; background:rgba(255,255,255,.03); border-radius:12px;
+    border:1px solid var(--glass-border); overflow:hidden;}
+  .track-ticket{position:absolute; top:8px; left:6px; font-size:24px; transition: left 1.6s cubic-bezier(.4,0,.2,1);}
+
+  /* Feedback */
+  .feedback{border-radius:16px; padding:18px 20px; margin-top:18px; border:1.5px solid var(--glass-border);
+    background:rgba(255,255,255,.04); animation:floatIn .45s ease;}
+  .feedback h4{margin:0 0 6px; font-size:14.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--accent2);}
+  .feedback .owner-line{display:flex; align-items:center; gap:10px; font-size:16px; font-weight:800; margin-bottom:8px;}
+  .assist-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;}
+  .assist-chip{background:rgba(255,255,255,.06); border:1px solid var(--glass-border); border-radius:999px;
+    padding:4px 12px; font-size:12.5px; font-weight:600;}
+
+  .score-line{display:inline-flex; align-items:center; gap:8px; font-weight:800; font-size:13.5px; padding:6px 14px;
+    border-radius:999px; margin-top:10px;}
+  .score-line.great{background:rgba(79,209,197,.15); color:var(--good);}
+  .score-line.ok{background:rgba(246,173,85,.15); color:var(--warn);}
+  .score-line.low{background:rgba(245,101,101,.15); color:var(--bad);}
+
+  /* Results */
+  .bars{display:flex; flex-direction:column; gap:16px; margin:20px 0;}
+  .bar-row{display:flex; flex-direction:column; gap:6px;}
+  .bar-row .bar-label{display:flex; justify-content:space-between; font-size:13.5px; font-weight:700;}
+  .bar-track{height:16px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; border:1px solid var(--glass-border);}
+  .bar-fill{height:100%; width:0%; border-radius:999px; transition:width 1.2s cubic-bezier(.4,0,.2,1);}
+
+  .reflect-card{background:rgba(255,255,255,.04); border:1px solid var(--glass-border); border-radius:14px;
+    padding:16px 18px; margin-bottom:12px; animation:floatIn .4s ease;}
+  .reflect-card h4{margin:0 0 6px; font-size:14px; color:var(--accent2); text-transform:uppercase; letter-spacing:.4px;}
+
+  .confetti-wrap{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50;}
+  .confetti-piece{position:absolute; top:-30px; font-size:20px; animation-name:confettiFall; animation-timing-function:ease-in;
+    animation-fill-mode:forwards;}
+  @keyframes confettiFall{
+    0%{transform:translateY(0) rotate(0deg); opacity:1;}
+    100%{transform:translateY(105vh) rotate(360deg); opacity:0;}
+  }
+
+  footer{margin-top:auto; text-align:center; color:var(--muted); font-size:11.5px; padding-top:32px;}
+  .hidden{display:none !important;}
+
+  @media (max-width:600px){
+    .app{padding:16px 10px 40px;}
+    .glass{padding:18px;}
+    .role-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brandrow">
+      <div class="brand">
+        <div class="logo">🧭</div>
+        <div>
+          <h1>Task Compass</h1>
+          <p class="sub">Learn how work flows through real organizations — Hospital / Healthcare</p>
+        </div>
+      </div>
+      <div class="hud" id="hud"></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  </header>
+
+  <!-- WELCOME -->
+  <section class="screen active" id="screen-welcome">
+    <div class="glass">
+      <span class="badge-stage">Simulation Briefing</span>
+      <h2>Welcome to the Hospital Floor 🏥</h2>
+      <p class="lead">You're stepping into a hospital's daily operations. Across three stages you'll decide who owns incoming work, how tasks route between departments, and how teams collaborate on bigger challenges. This isn't a quiz about job titles — it's a look at how real healthcare teams actually get things done.</p>
+      <div class="row">
+        <button class="btn" onclick="startGame()">Enter the Hospital →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE 1 -->
+  <section class="screen" id="screen-stage1">
+    <div class="glass">
+      <span class="badge-stage" id="s1-badge">Stage 1 · Who Owns This?</span>
+      <h2>A task has come in.</h2>
+      <div class="ticket" id="s1-ticket"></div>
+      <p>Drag (or tap) the role you believe should <strong>primarily own</strong> this task into the slot below.</p>
+      <div class="dropzone" id="s1-slot"><span class="placeholder">Drop the owning role here</span></div>
+      <div class="role-grid" id="s1-roles"></div>
+      <div class="row between">
+        <span></span>
+        <button class="btn" id="s1-submit" onclick="submitStage1()" disabled>Confirm Owner →</button>
+      </div>
+      <div id="s1-feedback"></div>
+      <div class="row end hidden" id="s1-nextrow">
+        <button class="btn" id="s1-nextbtn" onclick="nextStage1Round()">Next Task →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE 2 -->
+  <section class="screen" id="screen-stage2">
+    <div class="glass">
+      <span class="badge-stage" id="s2-badge">Stage 2 · Task Routing</span>
+      <h2>Build the workflow.</h2>
+      <div class="ticket" id="s2-ticket"></div>
+      <p>Drag each role chip into order — tap a chip to auto-place it in the next open step, or drag it to a specific step.</p>
+      <div class="role-grid" id="s2-pool"></div>
+      <div class="seq-slots" id="s2-slots"></div>
+      <div class="track hidden" id="s2-track"><div class="track-ticket" id="s2-track-ticket">🎫</div></div>
+      <div class="row between">
+        <span></span>
+        <button class="btn" id="s2-submit" onclick="submitStage2()" disabled>Confirm Route →</button>
+      </div>
+      <div id="s2-feedback"></div>
+      <div class="row end hidden" id="s2-nextrow">
+        <button class="btn" id="s2-nextbtn" onclick="nextStage2Round()">Next Task →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE 3 -->
+  <section class="screen" id="screen-stage3">
+    <div class="glass">
+      <span class="badge-stage" id="s3-badge">Stage 3 · Collaboration Challenge</span>
+      <h2>A bigger situation has emerged.</h2>
+      <div class="ticket" id="s3-ticket"></div>
+      <p>Select up to <strong>four</strong> roles who should be involved. Tap the ⭐ on a selected card to mark it as the <strong>primary owner</strong>.</p>
+      <div class="role-grid" id="s3-pool"></div>
+      <h3 style="margin-top:18px;">Assigned Team</h3>
+      <div class="dropzone" id="s3-team"><span class="placeholder">Add up to 4 roles here</span></div>
+      <div class="row between">
+        <span></span>
+        <button class="btn" id="s3-submit" onclick="submitStage3()" disabled>Confirm Team →</button>
+      </div>
+      <div id="s3-feedback"></div>
+      <div class="row end hidden" id="s3-nextrow">
+        <button class="btn" id="s3-nextbtn" onclick="nextStage3Round()">Next Situation →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="screen" id="screen-results">
+    <div class="glass">
+      <span class="badge-stage">Debrief</span>
+      <h2>🎉 Simulation Complete</h2>
+      <p class="lead">Here's a look at your understanding — not as a score to judge you, but as a mirror of how you approached ownership, delegation, collaboration, and workflow.</p>
+      <div class="bars" id="resultBars"></div>
+      <div id="reflectionArea"></div>
+      <div class="row center">
+        <button class="btn" onclick="restartGame()">🔁 Run the Simulation Again</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>Task Compass — an educational management simulation. All scenarios and organizations are fictional.</footer>
+</div>
+
+<script>
+/* ============================================================
+   DATA
+============================================================ */
+const ROLES = {
+  nurse:       { label:"Nurse",                     icon:"🧑‍⚕️", color:"var(--r-nurse)" },
+  physician:   { label:"Physician",                 icon:"👨‍⚕️", color:"var(--r-physician)" },
+  pharmacist:  { label:"Pharmacist",                icon:"💊", color:"var(--r-pharmacist)" },
+  lab:         { label:"Lab Technician",            icon:"🧪", color:"var(--r-lab)" },
+  radiology:   { label:"Radiology Technician",      icon:"🩻", color:"var(--r-radiology)" },
+  chargenurse: { label:"Charge Nurse",              icon:"🗂️", color:"var(--r-chargenurse)" },
+  admin:       { label:"Hospital Administrator",    icon:"🏥", color:"var(--r-admin)" },
+  records:     { label:"Health Records / IT",       icon:"💻", color:"var(--r-records)" }
+};
+const ROLE_KEYS = Object.keys(ROLES);
+
+const STAGE1_POOL = [
+  { id:1, text:"A patient's morning medication was given late due to a mix-up on the chart.",
+    owner:"nurse", why:"Nurses administer medications directly and are responsible for following the schedule on the chart.",
+    assist:["pharmacist","chargenurse"] },
+  { id:2, text:"A patient's lab results show an unusual value that needs interpretation before treatment continues.",
+    owner:"physician", why:"Physicians interpret clinical results and decide how they change a patient's treatment plan.",
+    assist:["lab","nurse"] },
+  { id:3, text:"A blood sample dropped off at the lab was mislabeled.",
+    owner:"lab", why:"Lab technicians are responsible for accurately receiving, labeling, and processing samples.",
+    assist:["nurse","chargenurse"] },
+  { id:4, text:"A patient is prescribed two medications that may interact dangerously.",
+    owner:"pharmacist", why:"Pharmacists review prescriptions specifically to catch dangerous drug interactions before dispensing.",
+    assist:["physician","nurse"] },
+  { id:5, text:"An X-ray image uploaded to the system is too blurry to read.",
+    owner:"radiology", why:"Radiology technicians are responsible for capturing clear, diagnostically usable images.",
+    assist:["physician","records"] },
+  { id:6, text:"The electronic health record system won't load a patient's chart.",
+    owner:"records", why:"Health records / IT staff manage the systems that store and display patient charts.",
+    assist:["chargenurse","admin"] },
+  { id:7, text:"A nurse needs approval to change staffing coverage for the night shift.",
+    owner:"chargenurse", why:"Charge nurses manage shift staffing and day-to-day floor coverage.",
+    assist:["admin","nurse"] },
+  { id:8, text:"A patient's family is asking about a confusing charge on their bill.",
+    owner:"admin", why:"Hospital administrators oversee billing operations and resolve escalated financial questions.",
+    assist:["records","chargenurse"] }
+];
+
+const STAGE2_POOL = [
+  { id:1, text:"A patient reports chest pain during a routine check-up.",
+    order:["nurse","physician","lab","radiology"],
+    why:"A nurse is first to notice and escalate symptoms, the physician directs the diagnostic path, and lab work plus imaging gather the evidence needed for a diagnosis." },
+  { id:2, text:"A physician prescribes a new medication for a patient.",
+    order:["physician","pharmacist","nurse"],
+    why:"The physician prescribes, the pharmacist verifies safety and prepares the medication, and the nurse administers it to the patient." },
+  { id:3, text:"A patient raises a confusing charge on their hospital bill.",
+    order:["nurse","chargenurse","admin"],
+    why:"Concerns are often first heard by frontline staff, escalated through the charge nurse, and resolved by administration, which manages billing." },
+  { id:4, text:"A lab result comes back with an unexpected abnormal value.",
+    order:["lab","physician","pharmacist","nurse"],
+    why:"The lab flags the result, the physician decides how it changes treatment, the pharmacist updates medication, and the nurse delivers the updated care." },
+  { id:5, text:"A new patient is admitted and needs a full initial workup.",
+    order:["nurse","physician","lab","radiology","chargenurse"],
+    why:"Intake starts with a nurse, the physician orders necessary tests, lab and radiology gather diagnostic data, and the charge nurse coordinates the patient's bed and staffing." },
+  { id:6, text:"The electronic records system goes down, affecting patient charts.",
+    order:["records","chargenurse","admin"],
+    why:"IT/records staff fix the technical issue directly, the charge nurse manages the impact on patient care, and administration handles the wider response." }
+];
+
+const STAGE3_POOL = [
+  { id:1, text:"Patient satisfaction scores drop sharply across the hospital this quarter.",
+    primary:"admin", support:["chargenurse","nurse","physician"],
+    why:"Satisfaction reflects nearly every patient interaction, so administration typically leads the response while gathering input from staff closest to patients.",
+    flow:"Nurses & Physicians share frontline feedback → Charge Nurse compiles floor-level patterns → Administrator shapes hospital-wide changes." },
+  { id:2, text:"A sudden flu outbreak doubles emergency room volume overnight.",
+    primary:"chargenurse", support:["nurse","physician","admin"],
+    why:"The charge nurse manages the immediate staffing surge, physicians and nurses handle patient care directly, and administration secures extra resources.",
+    flow:"Charge Nurse assesses capacity → coordinates Nurses & Physicians on the floor → escalates resource needs to the Administrator." },
+  { id:3, text:"Several online reviews mention long wait times and confusing billing.",
+    primary:"admin", support:["chargenurse","records","nurse"],
+    why:"This issue touches both daily operations and billing systems, so administration typically coordinates a response using input from the floor and records data.",
+    flow:"Nurses report wait-time patterns → Records/IT provides billing data → Charge Nurse adds staffing context → Administrator sets the response plan." },
+  { id:4, text:"A new treatment protocol is delayed because of missing lab equipment.",
+    primary:"lab", support:["physician","admin","pharmacist"],
+    why:"The lab identifies the equipment gap directly, while physicians adjust care plans, pharmacists consider interim options, and administration handles procurement.",
+    flow:"Lab Technician flags the gap → Physician adjusts patient care → Pharmacist reviews interim options → Administrator orders new equipment." },
+  { id:5, text:"A medication mix-up leads to a patient safety incident.",
+    primary:"pharmacist", support:["nurse","physician","chargenurse"],
+    why:"The pharmacist reviews how the dispensing error occurred, while the prescribing physician, administering nurse, and charge nurse all help understand and prevent it.",
+    flow:"Nurse reports the incident → Pharmacist & Physician review what happened → Charge Nurse manages reporting and follow-up staffing." },
+  { id:6, text:"The hospital receives public recognition for excellent patient care.",
+    primary:"admin", support:["chargenurse","nurse","physician"],
+    why:"Positive outcomes are usually the product of many people's work, even though administration often represents the hospital publicly.",
+    flow:"Nurses & Physicians deliver day-to-day care → Charge Nurse supports consistent standards → Administrator shares recognition hospital-wide." }
+];
+
+const INSIGHTS = [
+  "Many real workplace problems are solved by teams rather than individuals.",
+  "Ownership and collaboration usually work together — someone leads, but few situations are handled entirely alone.",
+  "The 'correct' path through an organization often depends on how urgent or how complex a situation is.",
+  "Escalation isn't a failure — it's often the fastest way to get a problem to the right hands.",
+  "The same role can be the primary owner in one situation and a supporting voice in another."
+];
+
+/* ============================================================
+   STATE
+============================================================ */
+let game = null;
+function freshGame(){
+  return {
+    stage1Tasks: shuffle(STAGE1_POOL.slice()).slice(0,3),
+    stage2Tasks: shuffle(STAGE2_POOL.slice()).slice(0,3),
+    stage3Tasks: shuffle(STAGE3_POOL.slice()).slice(0,3),
+    s1round:0, s2round:0, s3round:0,
+    s1results:[], s2results:[], s3results:[],
+    s1selected:null,
+    s2slotState:[], // array of roleKey or null
+    s3selected:[], s3primary:null
+  };
+}
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+function totalRoundsDone(){
+  let s = 0;
+  s += game.s1results.length;
+  s += game.s2results.length;
+  s += game.s3results.length;
+  return s;
+}
+function updateProgress(){
+  const pct = Math.round((totalRoundsDone()/9)*100);
+  document.getElementById("progressBar").style.width = pct+"%";
+}
+function updateHud(){
+  const hud = document.getElementById("hud");
+  const stageNames = ["Ownership","Routing","Collaboration"];
+  let stageLabel = "";
+  if(!document.getElementById("screen-welcome").classList.contains("active") &&
+     !document.getElementById("screen-results").classList.contains("active")){
+    if(document.getElementById("screen-stage1").classList.contains("active")) stageLabel = `Stage 1 · Task ${game.s1round+1}/3`;
+    if(document.getElementById("screen-stage2").classList.contains("active")) stageLabel = `Stage 2 · Task ${game.s2round+1}/3`;
+    if(document.getElementById("screen-stage3").classList.contains("active")) stageLabel = `Stage 3 · Task ${game.s3round+1}/3`;
+  }
+  hud.innerHTML = stageLabel ? `<span class="pill">${stageLabel}</span>` : "";
+}
+
+/* ============================================================
+   SOUND (optional, tiny WebAudio blips)
+============================================================ */
+let audioCtx = null;
+function playTone(freq, dur){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+  }catch(e){ /* ignore audio errors silently */ }
+}
+function soundSnap(){ playTone(520, 0.12); }
+function soundGood(){ playTone(660, 0.18); }
+function soundStageDone(){ playTone(440,0.12); setTimeout(()=>playTone(660,0.18),120); }
+
+/* ============================================================
+   NAV
+============================================================ */
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo({top:0, behavior:"smooth"});
+  updateHud();
+}
+
+function startGame(){
+  game = freshGame();
+  showScreen("screen-stage1");
+  renderStage1Round();
+  updateProgress();
+}
+function restartGame(){
+  game = freshGame();
+  showScreen("screen-welcome");
+  updateProgress();
+}
+
+/* ============================================================
+   ROLE CARD BUILDER
+============================================================ */
+function makeRoleCard(key, opts){
+  opts = opts || {};
+  const r = ROLES[key];
+  const card = document.createElement("div");
+  card.className = "role-card";
+  card.draggable = true;
+  card.dataset.role = key;
+  card.innerHTML = `<span class="r-icon">${r.icon}</span><span class="r-label">${r.label}</span><div class="r-bar" style="background:${r.color}"></div>`;
+  card.addEventListener("dragstart", e=>{
+    e.dataTransfer.setData("text/plain", key);
+    setTimeout(()=>card.classList.add("dragging"),0);
+  });
+  card.addEventListener("dragend", ()=>card.classList.remove("dragging"));
+  if(opts.onClick) card.addEventListener("click", ()=>opts.onClick(key));
+  return card;
+}
+
+/* ============================================================
+   STAGE 1 — Who Owns This?
+============================================================ */
+function renderStage1Round(){
+  const task = game.stage1Tasks[game.s1round];
+  document.getElementById("s1-badge").textContent = `Stage 1 · Who Owns This? (${game.s1round+1}/3)`;
+  document.getElementById("s1-ticket").textContent = task.text;
+  document.getElementById("s1-feedback").innerHTML = "";
+  document.getElementById("s1-nextrow").classList.add("hidden");
+  document.getElementById("s1-submit").disabled = true;
+  document.getElementById("s1-submit").classList.remove("hidden");
+  game.s1selected = null;
+
+  const slot = document.getElementById("s1-slot");
+  slot.innerHTML = `<span class="placeholder">Drop the owning role here</span>`;
+  slot.classList.remove("dragover");
+  slot.ondragover = e=>{ e.preventDefault(); slot.classList.add("dragover"); };
+  slot.ondragleave = ()=> slot.classList.remove("dragover");
+  slot.ondrop = e=>{
+    e.preventDefault(); slot.classList.remove("dragover");
+    const key = e.dataTransfer.getData("text/plain");
+    placeStage1(key);
+  };
+
+  const pool = document.getElementById("s1-roles");
+  pool.innerHTML = "";
+  ROLE_KEYS.forEach(key=>{
+    pool.appendChild(makeRoleCard(key, { onClick: placeStage1 }));
+  });
+  updateHud();
+  updateProgress();
+}
+function placeStage1(key){
+  game.s1selected = key;
+  const r = ROLES[key];
+  const slot = document.getElementById("s1-slot");
+  slot.innerHTML = `<div class="mini-card"><span>${r.icon}</span><span>${r.label}</span><span class="x" onclick="clearStage1(event)">✕</span></div>`;
+  soundSnap();
+  document.getElementById("s1-submit").disabled = false;
+}
+function clearStage1(e){
+  e.stopPropagation();
+  game.s1selected = null;
+  document.getElementById("s1-slot").innerHTML = `<span class="placeholder">Drop the owning role here</span>`;
+  document.getElementById("s1-submit").disabled = true;
+}
+function submitStage1(){
+  const task = game.stage1Tasks[game.s1round];
+  const chosen = game.s1selected;
+  let points = 0, tier = "low";
+  if(chosen === task.owner){ points = 100; tier = "great"; }
+  else if(task.assist.includes(chosen)){ points = 50; tier = "ok"; }
+  else { points = 0; tier = "low"; }
+  game.s1results.push({ taskId:task.id, chosen, points });
+
+  document.getElementById("s1-submit").classList.add("hidden");
+  const ownerR = ROLES[task.owner];
+  const assistHtml = task.assist.map(k=>`<span class="assist-chip">${ROLES[k].icon} ${ROLES[k].label}</span>`).join("");
+  const tierLabel = tier==="great" ? "🎯 Direct hit" : tier==="ok" ? "🤝 Reasonable support role" : "💡 Worth reconsidering";
+
+  document.getElementById("s1-feedback").innerHTML = `
+    <div class="feedback">
+      <h4>Ownership Revealed</h4>
+      <div class="owner-line">${ownerR.icon} <span>${ownerR.label}</span> is the primary owner</div>
+      <p style="margin:0 0 8px;">${task.why}</p>
+      <p style="margin:0 0 4px; font-size:13px; font-weight:700; color:var(--text);">Roles who may assist:</p>
+      <div class="assist-row">${assistHtml}</div>
+      <div class="score-line ${tier}">${tierLabel} — ${points} pts</div>
+    </div>`;
+  document.getElementById("s1-nextrow").classList.remove("hidden");
+  document.getElementById("s1-nextbtn").textContent = (game.s1round < 2) ? "Next Task →" : "Continue to Stage 2 →";
+  soundGood();
+  updateProgress();
+}
+function nextStage1Round(){
+  if(game.s1round < 2){
+    game.s1round++;
+    renderStage1Round();
+  } else {
+    soundStageDone();
+    showScreen("screen-stage2");
+    renderStage2Round();
+  }
+}
+
+/* ============================================================
+   STAGE 2 — Task Routing
+============================================================ */
+function renderStage2Round(){
+  const task = game.stage2Tasks[game.s2round];
+  document.getElementById("s2-badge").textContent = `Stage 2 · Task Routing (${game.s2round+1}/3)`;
+  document.getElementById("s2-ticket").textContent = task.text;
+  document.getElementById("s2-feedback").innerHTML = "";
+  document.getElementById("s2-nextrow").classList.add("hidden");
+  document.getElementById("s2-submit").disabled = true;
+  document.getElementById("s2-submit").classList.remove("hidden");
+  document.getElementById("s2-track").classList.add("hidden");
+
+  const n = task.order.length;
+  game.s2slotState = new Array(n).fill(null);
+
+  // Build pool: correct roles (shuffled) + a couple distractors to make it interesting
+  const distractorsPool = ROLE_KEYS.filter(k=>!task.order.includes(k));
+  const distractors = shuffle(distractorsPool.slice()).slice(0, Math.min(2, distractorsPool.length));
+  const poolKeys = shuffle(task.order.concat(distractors));
+
+  const pool = document.getElementById("s2-pool");
+  pool.innerHTML = "";
+  poolKeys.forEach(key=>{
+    pool.appendChild(makeRoleCard(key, { onClick: k=>autoPlaceStage2(k) }));
+  });
+
+  const slots = document.getElementById("s2-slots");
+  slots.innerHTML = "";
+  for(let i=0;i<n;i++){
+    const slot = document.createElement("div");
+    slot.className = "seq-slot";
+    slot.dataset.index = i;
+    slot.innerHTML = `<div class="slot-num">${i+1}</div><div class="placeholder">Drop a role here</div>`;
+    slot.ondragover = e=>{ e.preventDefault(); slot.classList.add("dragover"); };
+    slot.ondragleave = ()=> slot.classList.remove("dragover");
+    slot.ondrop = e=>{
+      e.preventDefault(); slot.classList.remove("dragover");
+      const key = e.dataTransfer.getData("text/plain");
+      placeStage2(i, key);
+    };
+    slot.onclick = ()=>{
+      if(game.s2slotState[i]){ removeStage2Slot(i); }
+    };
+    slots.appendChild(slot);
+  }
+  updateHud();
+  updateProgress();
+}
+function findRoleCardInPool(key){
+  return document.querySelector(`#s2-pool .role-card[data-role="${key}"]`);
+}
+function autoPlaceStage2(key){
+  const emptyIndex = game.s2slotState.findIndex(v=>v===null);
+  if(emptyIndex === -1) return;
+  placeStage2(emptyIndex, key);
+}
+function placeStage2(index, key){
+  const card = findRoleCardInPool(key);
+  if(!card || card.classList.contains("used")) return;
+  // if slot already filled, put existing back to pool first
+  if(game.s2slotState[index]){
+    const oldKey = game.s2slotState[index];
+    const oldCard = document.querySelector(`#s2-pool .role-card[data-role="${oldKey}"]`);
+    if(oldCard) oldCard.classList.remove("used");
+  }
+  game.s2slotState[index] = key;
+  card.classList.add("used");
+  const r = ROLES[key];
+  const slotEl = document.querySelector(`.seq-slot[data-index="${index}"]`);
+  slotEl.classList.add("filled");
+  slotEl.innerHTML = `<div class="slot-num">${index+1}</div><div class="chip-in-slot">${r.icon} ${r.label}</div>`;
+  soundSnap();
+  checkStage2Complete();
+}
+function removeStage2Slot(index){
+  const key = game.s2slotState[index];
+  if(!key) return;
+  game.s2slotState[index] = null;
+  const card = findRoleCardInPool(key);
+  if(card) card.classList.remove("used");
+  const slotEl = document.querySelector(`.seq-slot[data-index="${index}"]`);
+  slotEl.classList.remove("filled");
+  slotEl.innerHTML = `<div class="slot-num">${index+1}</div><div class="placeholder">Drop a role here</div>`;
+  document.getElementById("s2-submit").disabled = true;
+}
+function checkStage2Complete(){
+  const complete = game.s2slotState.every(v=>v!==null);
+  document.getElementById("s2-submit").disabled = !complete;
+}
+function submitStage2(){
+  const task = game.stage2Tasks[game.s2round];
+  const submitted = game.s2slotState.slice();
+  let correctCount = 0;
+  submitted.forEach((key,i)=>{
+    const slotEl = document.querySelector(`.seq-slot[data-index="${i}"]`);
+    if(key === task.order[i]){ correctCount++; slotEl.classList.add("correct"); }
+    else{ slotEl.classList.add("incorrect"); }
+  });
+  const accuracy = Math.round((correctCount/task.order.length)*100);
+  game.s2results.push({ taskId:task.id, accuracy });
+
+  document.getElementById("s2-submit").classList.add("hidden");
+
+  const tier = accuracy===100 ? "great" : accuracy>=50 ? "ok" : "low";
+  const tierLabel = accuracy===100 ? "🎯 Perfect route" : accuracy>=50 ? "🤝 Mostly on track" : "💡 Different path than typical";
+
+  document.getElementById("s2-feedback").innerHTML = `
+    <div class="feedback">
+      <h4>Common Route</h4>
+      <p style="margin:0 0 8px; font-weight:700;">${task.order.map(k=>ROLES[k].icon+" "+ROLES[k].label).join(" → ")}</p>
+      <p style="margin:0 0 8px;">${task.why}</p>
+      <div class="score-line ${tier}">${tierLabel} — ${accuracy}% of steps matched</div>
+    </div>`;
+
+  // animate ticket traveling across slots
+  const track = document.getElementById("s2-track");
+  const ticketEl = document.getElementById("s2-track-ticket");
+  track.classList.remove("hidden");
+  ticketEl.style.left = "6px";
+  setTimeout(()=>{ ticketEl.style.left = "calc(100% - 34px)"; }, 100);
+
+  document.getElementById("s2-nextrow").classList.remove("hidden");
+  document.getElementById("s2-nextbtn").textContent = (game.s2round < 2) ? "Next Task →" : "Continue to Stage 3 →";
+  soundGood();
+  updateProgress();
+}
+function nextStage2Round(){
+  if(game.s2round < 2){
+    game.s2round++;
+    renderStage2Round();
+  } else {
+    soundStageDone();
+    showScreen("screen-stage3");
+    renderStage3Round();
+  }
+}
+
+/* ============================================================
+   STAGE 3 — Collaboration Challenge
+============================================================ */
+function renderStage3Round(){
+  const task = game.stage3Tasks[game.s3round];
+  document.getElementById("s3-badge").textContent = `Stage 3 · Collaboration Challenge (${game.s3round+1}/3)`;
+  document.getElementById("s3-ticket").textContent = task.text;
+  document.getElementById("s3-feedback").innerHTML = "";
+  document.getElementById("s3-nextrow").classList.add("hidden");
+  document.getElementById("s3-submit").disabled = true;
+  document.getElementById("s3-submit").classList.remove("hidden");
+  game.s3selected = [];
+  game.s3primary = null;
+
+  const pool = document.getElementById("s3-pool");
+  pool.innerHTML = "";
+  ROLE_KEYS.forEach(key=>{
+    pool.appendChild(makeRoleCard(key, { onClick: toggleStage3 }));
+  });
+
+  const team = document.getElementById("s3-team");
+  team.innerHTML = `<span class="placeholder">Add up to 4 roles here</span>`;
+  team.ondragover = e=>{ e.preventDefault(); team.classList.add("dragover"); };
+  team.ondragleave = ()=> team.classList.remove("dragover");
+  team.ondrop = e=>{
+    e.preventDefault(); team.classList.remove("dragover");
+    const key = e.dataTransfer.getData("text/plain");
+    toggleStage3(key);
+  };
+  updateHud();
+  updateProgress();
+}
+function toggleStage3(key){
+  const idx = game.s3selected.indexOf(key);
+  if(idx > -1){
+    game.s3selected.splice(idx,1);
+    if(game.s3primary === key) game.s3primary = null;
+  } else {
+    if(game.s3selected.length >= 4) return;
+    game.s3selected.push(key);
+    soundSnap();
+  }
+  renderStage3Team();
+}
+function setStage3Primary(key){
+  game.s3primary = (game.s3primary === key) ? null : key;
+  renderStage3Team();
+}
+function renderStage3Team(){
+  // mark pool cards used
+  document.querySelectorAll("#s3-pool .role-card").forEach(card=>{
+    const k = card.dataset.role;
+    card.classList.toggle("used", game.s3selected.includes(k));
+  });
+  const team = document.getElementById("s3-team");
+  if(game.s3selected.length === 0){
+    team.innerHTML = `<span class="placeholder">Add up to 4 roles here</span>`;
+  } else {
+    team.innerHTML = "";
+    game.s3selected.forEach(key=>{
+      const r = ROLES[key];
+      const isPrimary = game.s3primary === key;
+      const chip = document.createElement("div");
+      chip.className = "mini-card";
+      chip.style.borderColor = isPrimary ? "var(--accent2)" : "";
+      chip.innerHTML = `<span>${r.icon}</span><span>${r.label}</span>
+        <span title="Mark as primary owner" style="cursor:pointer; margin-left:4px;" onclick="setStage3Primary('${key}')">${isPrimary ? "⭐" : "☆"}</span>
+        <span class="x" onclick="toggleStage3('${key}')">✕</span>`;
+      team.appendChild(chip);
+    });
+  }
+  document.getElementById("s3-submit").disabled = game.s3selected.length === 0;
+}
+function submitStage3(){
+  const task = game.stage3Tasks[game.s3round];
+  const canonicalAll = [task.primary].concat(task.support);
+  const selected = game.s3selected.slice();
+  const overlap = selected.filter(k=>canonicalAll.includes(k));
+  const recall = overlap.length / canonicalAll.length;
+  const precision = selected.length ? (overlap.length / selected.length) : 0;
+  const primaryCorrect = game.s3primary === task.primary;
+  const overAssign = (selected.length === 4 && precision < 0.5);
+  const underCollab = (selected.length === 1);
+
+  game.s3results.push({ taskId:task.id, primaryCorrect, recall, precision, overAssign, underCollab });
+
+  document.getElementById("s3-submit").classList.add("hidden");
+
+  const primaryR = ROLES[task.primary];
+  const supportHtml = task.support.map(k=>`<span class="assist-chip">${ROLES[k].icon} ${ROLES[k].label}</span>`).join("");
+  const overallScore = Math.round(((recall*0.6)+(precision*0.4))*100);
+  const tier = overallScore>=75 ? "great" : overallScore>=40 ? "ok" : "low";
+  const tierLabel = tier==="great" ? "🎯 Strong team read" : tier==="ok" ? "🤝 Partial match" : "💡 Different read than typical";
+
+  let noteExtra = "";
+  if(overAssign) noteExtra += `<p style="margin-top:6px; font-size:13px;">You assigned the maximum number of roles here — sometimes fewer, more relevant people is more effective than involving everyone.</p>`;
+  if(underCollab) noteExtra += `<p style="margin-top:6px; font-size:13px;">You assigned just one role to a fairly complex situation — these scenarios often benefit from a few different perspectives.</p>`;
+
+  document.getElementById("s3-feedback").innerHTML = `
+    <div class="feedback">
+      <h4>Typical Response</h4>
+      <div class="owner-line">${primaryR.icon} <span>${primaryR.label}</span> is the usual primary owner</div>
+      <p style="margin:0 0 4px; font-size:13px; font-weight:700; color:var(--text);">Supporting teams:</p>
+      <div class="assist-row">${supportHtml}</div>
+      <p style="margin:10px 0 4px;">${task.why}</p>
+      <p style="margin:0 0 4px; font-size:13px; font-weight:700; color:var(--text);">Possible communication flow:</p>
+      <p style="margin:0;">${task.flow}</p>
+      <div class="score-line ${tier}">${tierLabel} ${primaryCorrect ? "· primary owner matched" : ""}</div>
+      ${noteExtra}
+    </div>`;
+  document.getElementById("s3-nextrow").classList.remove("hidden");
+  document.getElementById("s3-nextbtn").textContent = (game.s3round < 2) ? "Next Situation →" : "See My Reflection →";
+  soundGood();
+  updateProgress();
+}
+function nextStage3Round(){
+  if(game.s3round < 2){
+    game.s3round++;
+    renderStage3Round();
+  } else {
+    soundStageDone();
+    showScreen("screen-results");
+    renderResults();
+  }
+}
+
+/* ============================================================
+   RESULTS / SCORING / REFLECTION
+============================================================ */
+function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+
+function computeCategories(){
+  const s1pts = game.s1results.map(r=>r.points);
+  const s2acc = game.s2results.map(r=>r.accuracy);
+  const s3primary = game.s3results.map(r=>r.primaryCorrect ? 100 : 0);
+  const s3recall = game.s3results.map(r=>r.recall*100);
+  const s3precision = game.s3results.map(r=>r.precision*100);
+
+  const ownership = Math.round(avg(s1pts)*0.7 + avg(s3primary)*0.3);
+  const workflow = Math.round(avg(s2acc));
+  const collaboration = Math.round(avg(s3recall));
+  const delegation = Math.round(avg(s3precision));
+
+  return {
+    Ownership: clamp(ownership),
+    Delegation: clamp(delegation),
+    Collaboration: clamp(collaboration),
+    "Workflow Thinking": clamp(workflow)
+  };
+}
+function clamp(n){ return Math.max(0, Math.min(100, isNaN(n)?0:n)); }
+
+function renderResults(){
+  const cats = computeCategories();
+  const colors = { Ownership:"#7c9cff", Delegation:"#4fd1c5", Collaboration:"#f6ad55", "Workflow Thinking":"#68d391" };
+
+  const barsEl = document.getElementById("resultBars");
+  barsEl.innerHTML = Object.keys(cats).map(name=>`
+    <div class="bar-row">
+      <div class="bar-label"><span>${name}</span><span>${cats[name]}%</span></div>
+      <div class="bar-track"><div class="bar-fill" id="bar-${slugify(name)}" style="background:${colors[name]};"></div></div>
+    </div>
+  `).join("");
+  setTimeout(()=>{
+    Object.keys(cats).forEach(name=>{
+      const el = document.getElementById("bar-"+slugify(name));
+      if(el) el.style.width = cats[name]+"%";
+    });
+  }, 80);
+
+  // Reflection
+  const bestCat = Object.keys(cats).reduce((a,b)=> cats[a] >= cats[b] ? a : b);
+  const bestText = {
+    "Ownership":"You tended to identify who's closest to a task — the person best positioned to act first.",
+    "Delegation":"You tended to assign responsibility to a focused, relevant group rather than spreading it too thin.",
+    "Collaboration":"You tended to recognize when a situation called for more than one person's input.",
+    "Workflow Thinking":"You tended to sequence work in an order that mirrors how it actually moves through a hospital."
+  };
+
+  const overAssignCount = game.s3results.filter(r=>r.overAssign).length;
+  const underCollabCount = game.s3results.filter(r=>r.underCollab).length;
+
+  const overAssignText = overAssignCount >= 1
+    ? `In ${overAssignCount} of the collaboration challenges, you assigned the maximum number of roles even when fewer may have been more relevant. This is a common pattern — complex-feeling situations can nudge us toward including everyone "just in case."`
+    : `You generally matched the number of people involved to the size of the problem, rather than defaulting to including everyone.`;
+
+  const underCollabText = underCollabCount >= 1
+    ? `In ${underCollabCount} challenge(s), you assigned the situation to a single role. Larger situations like these often benefit from a few different perspectives working together.`
+    : `You consistently recognized when a bigger situation called for more than one role, rather than placing it on a single person.`;
+
+  const insight = INSIGHTS[Math.floor(Math.random()*INSIGHTS.length)];
+
+  document.getElementById("reflectionArea").innerHTML = `
+    <div class="reflect-card"><h4>What You Understood Well</h4><p style="margin:0;">${bestText[bestCat]}</p></div>
+    <div class="reflect-card"><h4>Where You Tended to Over-Assign</h4><p style="margin:0;">${overAssignText}</p></div>
+    <div class="reflect-card"><h4>Where Collaboration Was Underestimated</h4><p style="margin:0;">${underCollabText}</p></div>
+    <div class="reflect-card"><h4>An Insight on Organizations</h4><p style="margin:0;">${insight}</p></div>
+  `;
+
+  launchConfetti();
+}
+function slugify(s){ return s.toLowerCase().replace(/[^a-z]+/g,"-"); }
+
+function launchConfetti(){
+  const wrap = document.createElement("div");
+  wrap.className = "confetti-wrap";
+  document.body.appendChild(wrap);
+  const emojis = ["🎉","✨","🏥","💫","🎊"];
+  for(let i=0;i<28;i++){
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    piece.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    piece.style.left = Math.random()*100+"vw";
+    const duration = 2.4 + Math.random()*1.8;
+    piece.style.animationDuration = duration+"s";
+    piece.style.animationDelay = (Math.random()*0.6)+"s";
+    piece.style.fontSize = (14 + Math.random()*14)+"px";
+    wrap.appendChild(piece);
+  }
+  setTimeout(()=>{ wrap.remove(); }, 5000);
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+document.addEventListener("DOMContentLoaded", ()=>{
+  game = freshGame();
+  showScreen("screen-welcome");
+});
+</script>
+</body>
+</html>
