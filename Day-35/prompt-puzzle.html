@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Puzzle — Master the Art of Prompt Engineering</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --bg2:#ffffff; --text:#12172b; --muted:#5a6178;
+    --card:#ffffff; --border:#e3e7f1; --accent:#6d5bf6; --accent2:#25c6a3;
+    --danger:#ef5a6f; --warn:#f2a93b; --shadow: 0 10px 30px rgba(20,20,40,.08);
+    --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0d0f1a; --bg2:#151827; --text:#eef0fb; --muted:#a2a8c3;
+    --card:#181c2e; --border:#262b45; --accent:#8f7bff; --accent2:#2fe0b6;
+    --danger:#ff6b81; --warn:#ffbf5c; --shadow: 0 10px 30px rgba(0,0,0,.45);
+  }
+  [data-theme="blue"]{
+    --bg:#081b33; --bg2:#0d2745; --text:#eaf3ff; --muted:#9fc0e6;
+    --card:#0f2e52; --border:#1c3f68; --accent:#3fa8ff; --accent2:#37e2c4;
+    --danger:#ff7a8a; --warn:#ffc266; --shadow: 0 10px 30px rgba(0,20,50,.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent),
+                radial-gradient(1000px 500px at 110% 10%, color-mix(in srgb, var(--accent2) 10%, transparent), transparent),
+                var(--bg);
+    color:var(--text); min-height:100vh; transition: background .4s ease, color .4s ease;
+  }
+  .app{max-width:960px; margin:0 auto; padding:28px 18px 60px; min-height:100vh; display:flex; flex-direction:column;}
+  .topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; gap:10px; flex-wrap:wrap;}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px; letter-spacing:.3px;}
+  .brand .logo{
+    width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-size:18px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; box-shadow:var(--shadow);
+  }
+  .hud{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .pill{
+    background:var(--card); border:1px solid var(--border); padding:6px 14px; border-radius:999px;
+    font-size:13px; color:var(--muted); font-weight:600; box-shadow:var(--shadow);
+  }
+  .progress-wrap{width:100%; background:var(--card); border:1px solid var(--border); border-radius:999px; height:10px; overflow:hidden; margin:6px 0 22px; box-shadow: inset 0 1px 3px rgba(0,0,0,.08);}
+  .progress-bar{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .5s ease; border-radius:999px;}
+
+  .screen{display:none; animation: fadeUp .5s ease;}
+  .screen.active{display:block;}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:26px; box-shadow:var(--shadow); margin-bottom:18px; animation: pop .45s ease;
+  }
+  @keyframes pop{from{opacity:0; transform:scale(.97);} to{opacity:1; transform:scale(1);}}
+
+  h1{font-size:clamp(26px,4vw,40px); margin:.2em 0 .1em; font-weight:800; line-height:1.15;}
+  h2{font-size:clamp(20px,3vw,26px); margin:.1em 0 .4em; font-weight:800;}
+  h3{font-size:18px; margin:.2em 0; font-weight:700;}
+  p{color:var(--muted); line-height:1.6;}
+  .lead{font-size:16px; max-width:640px;}
+
+  .btn{
+    appearance:none; border:none; cursor:pointer; padding:13px 22px; border-radius:12px;
+    font-weight:700; font-size:15px; color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:var(--shadow); transition:transform .15s ease, filter .15s ease;
+  }
+  .btn:hover{transform:translateY(-2px); filter:brightness(1.06);}
+  .btn:active{transform:translateY(0);}
+  .btn.secondary{
+    background:transparent; color:var(--text); border:1px solid var(--border);
+  }
+  .btn.ghost{background:transparent; color:var(--accent); border:1px solid var(--accent); box-shadow:none;}
+  .btn:disabled{opacity:.5; cursor:not-allowed; transform:none;}
+  .row{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;}
+  .row.end{justify-content:flex-end;}
+  .row.between{justify-content:space-between; align-items:center;}
+
+  .grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit, minmax(200px,1fr));}
+  .option-card{
+    background:var(--card); border:1.5px solid var(--border); border-radius:16px; padding:20px;
+    cursor:pointer; transition:.2s ease; text-align:left; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:8px; animation:pop .4s ease;
+  }
+  .option-card:hover{transform:translateY(-4px); border-color:var(--accent);}
+  .option-card.selected{border-color:var(--accent); background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--card)), var(--card));}
+  .option-card .icon{font-size:28px;}
+  .option-card .tag{font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.5px;}
+
+  textarea{
+    width:100%; min-height:120px; padding:14px; border-radius:12px; border:1.5px solid var(--border);
+    background:var(--bg2); color:var(--text); font-family:inherit; font-size:15px; resize:vertical;
+    outline:none; transition:border-color .2s ease;
+  }
+  textarea:focus{border-color:var(--accent);}
+  label.field-label{font-weight:700; font-size:14px; margin-bottom:6px; display:block;}
+
+  .chat{display:flex; flex-direction:column; gap:14px; margin:16px 0;}
+  .msg{max-width:85%; padding:12px 16px; border-radius:14px; line-height:1.55; animation:pop .35s ease;}
+  .msg.ai{background:var(--bg2); border:1px solid var(--border); align-self:flex-start; border-bottom-left-radius:4px;}
+  .msg.user{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; align-self:flex-end; border-bottom-right-radius:4px;}
+  .msg .who{font-size:11px; opacity:.65; font-weight:700; text-transform:uppercase; margin-bottom:4px; letter-spacing:.4px;}
+
+  .compare-grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); margin:18px 0;}
+  .cmp-card{border-radius:16px; padding:18px; border:1.5px solid var(--border); background:var(--bg2); animation:pop .4s ease;}
+  .cmp-card.weak{border-color:var(--danger);}
+  .cmp-card.good{border-color:var(--warn);}
+  .cmp-card.excellent{border-color:var(--accent2);}
+  .cmp-badge{display:inline-block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; padding:4px 10px; border-radius:999px; margin-bottom:10px;}
+  .cmp-card.weak .cmp-badge{background:color-mix(in srgb, var(--danger) 20%, transparent); color:var(--danger);}
+  .cmp-card.good .cmp-badge{background:color-mix(in srgb, var(--warn) 22%, transparent); color:var(--warn);}
+  .cmp-card.excellent .cmp-badge{background:color-mix(in srgb, var(--accent2) 20%, transparent); color:var(--accent2);}
+  .cmp-text{font-size:14px; color:var(--text); line-height:1.5; font-style:italic;}
+  .cmp-note{font-size:13px; color:var(--muted); margin-top:10px; line-height:1.5;}
+
+  .score-badge{
+    display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:999px;
+    background:linear-gradient(135deg, var(--accent), var(--accent2)); color:#fff; font-weight:800; font-size:14px;
+  }
+  .feedback-box{border-radius:14px; padding:16px 18px; margin-top:14px; border:1.5px solid var(--border); background:var(--bg2); animation:pop .4s ease;}
+  .feedback-box.great{border-color:var(--accent2);}
+  .feedback-box.ok{border-color:var(--warn);}
+  .feedback-box.weak{border-color:var(--danger);}
+  .suggestions{margin-top:10px; padding-left:18px; color:var(--muted); font-size:14px; line-height:1.7;}
+
+  .report-grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin:18px 0;}
+  .stat-card{background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:18px; text-align:center;}
+  .stat-num{font-size:30px; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .stat-label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:700; margin-top:4px;}
+
+  .challenge-num{
+    width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; display:grid; place-items:center; font-weight:800; font-size:14px; flex-shrink:0;
+  }
+  .challenge-head{display:flex; align-items:center; gap:12px; margin-bottom:8px;}
+  .scenario-box{background:var(--bg2); border-left:4px solid var(--accent); padding:14px 16px; border-radius:10px; margin:14px 0; font-size:14px;}
+
+  footer{margin-top:auto; text-align:center; color:var(--muted); font-size:12px; padding-top:30px;}
+  .hidden{display:none !important;}
+
+  @media (max-width:600px){
+    .app{padding:18px 12px 40px;}
+    .card{padding:18px;}
+    .msg{max-width:95%;}
+  }
+</style>
+</head>
+<body data-theme="light">
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo">🧩</div> Prompt Puzzle</div>
+    <div class="hud" id="hud"></div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap" style="display:none;">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- WELCOME -->
+  <section class="screen active" id="screen-welcome">
+    <div class="card">
+      <h1>Welcome to Prompt Puzzle 🧩</h1>
+      <p class="lead">Sharpen your prompt engineering skills through an interactive game. Choose a domain, take on an AI interview, solve three challenges, and compare weak vs. good vs. excellent prompts — all using fictional scenarios.</p>
+      <div class="row">
+        <button class="btn" onclick="goTo('theme')">Start Playing →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEME -->
+  <section class="screen" id="screen-theme">
+    <div class="card">
+      <h2>Choose Your Theme</h2>
+      <p>Pick a look and feel for your session.</p>
+      <div class="grid" id="themeGrid">
+        <div class="option-card" data-value="light" onclick="selectTheme('light')">
+          <div class="icon">☀️</div><h3>Light</h3><p style="margin:0;">Clean & bright</p>
+        </div>
+        <div class="option-card" data-value="dark" onclick="selectTheme('dark')">
+          <div class="icon">🌙</div><h3>Dark</h3><p style="margin:0;">Sleek & focused</p>
+        </div>
+        <div class="option-card" data-value="blue" onclick="selectTheme('blue')">
+          <div class="icon">🌊</div><h3>Blue</h3><p style="margin:0;">Deep & calm</p>
+        </div>
+      </div>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('welcome')">← Back</button>
+        <button class="btn" id="themeNext" onclick="goTo('domain')" disabled>Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOMAIN -->
+  <section class="screen" id="screen-domain">
+    <div class="card">
+      <h2>Choose Your Domain</h2>
+      <p>Pick the field you'd like your prompt challenges to be about.</p>
+      <div class="grid" id="domainGrid"></div>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('theme')">← Back</button>
+        <button class="btn" id="domainNext" onclick="goTo('difficulty')" disabled>Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIFFICULTY -->
+  <section class="screen" id="screen-difficulty">
+    <div class="card">
+      <h2>Choose Your Difficulty</h2>
+      <p>How challenging should this run be?</p>
+      <div class="grid" id="difficultyGrid"></div>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('domain')">← Back</button>
+        <button class="btn" id="diffNext" onclick="startInterview()" disabled>Begin AI Interview →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI INTERVIEW -->
+  <section class="screen" id="screen-interview">
+    <div class="card">
+      <h2>🤖 AI Interview Simulation</h2>
+      <p>Before your challenges, a simulated AI interviewer will check your baseline understanding. Answer briefly — there are no wrong answers here, just reflection.</p>
+      <div class="chat" id="interviewChat"></div>
+      <div id="interviewInputArea">
+        <label class="field-label" id="interviewQLabel">Your answer:</label>
+        <textarea id="interviewAnswer" placeholder="Type your answer here..."></textarea>
+        <div class="row end">
+          <button class="btn" id="interviewSubmit" onclick="submitInterviewAnswer()">Send →</button>
+        </div>
+      </div>
+      <div class="row between hidden" id="interviewDoneRow">
+        <span></span>
+        <button class="btn" onclick="goTo('challenge')">Start Challenges →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHALLENGE -->
+  <section class="screen" id="screen-challenge">
+    <div class="card">
+      <div class="challenge-head">
+        <div class="challenge-num" id="challengeNum">1</div>
+        <h2 id="challengeTitle" style="margin:0;">Challenge</h2>
+      </div>
+      <div class="scenario-box" id="challengeScenario"></div>
+      <label class="field-label">Write your prompt:</label>
+      <textarea id="challengeInput" placeholder="Craft the best prompt you can for this scenario..."></textarea>
+      <div class="row end">
+        <button class="btn" id="challengeSubmit" onclick="submitChallenge()">Submit Prompt →</button>
+      </div>
+
+      <div id="challengeFeedback"></div>
+
+      <div id="challengeCompareArea"></div>
+
+      <div class="row between hidden" id="challengeNextRow">
+        <span class="score-badge" id="runningScore">Score: 0</span>
+        <button class="btn" id="challengeNextBtn" onclick="nextChallenge()">Next Challenge →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORT -->
+  <section class="screen" id="screen-report">
+    <div class="card">
+      <h2>📊 Prompt Performance Report</h2>
+      <p>Here's how you did across all three challenges.</p>
+      <div class="report-grid" id="reportStats"></div>
+      <div id="reportBreakdown"></div>
+      <h3 style="margin-top:22px;">Overall Feedback</h3>
+      <div class="feedback-box" id="overallFeedback"></div>
+      <div class="row between" style="margin-top:20px;">
+        <button class="btn secondary" onclick="goTo('domain')">Change Domain</button>
+        <button class="btn" onclick="replayGame()">🔁 Replay Game</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>Prompt Puzzle — a fictional, educational simulation for practicing prompt engineering.</footer>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   STATE
+--------------------------------------------------------- */
+const state = {
+  theme: null,
+  domain: null,
+  difficulty: null,
+  interviewStep: 0,
+  interviewAnswers: [],
+  challengeIndex: 0,
+  scores: [],       // per challenge: {score, tier}
+  totalScore: 0,
+};
+
+const SCREEN_ORDER = ["welcome","theme","domain","difficulty","interview","challenge","report"];
+const PROGRESS_MAP = { welcome:0, theme:10, domain:20, difficulty:30, interview:45, challenge:60, report:100 };
+
+/* ---------------------------------------------------------
+   DOMAIN DATA
+--------------------------------------------------------- */
+const DOMAINS = [
+  { key:"coding", icon:"💻", label:"Coding", desc:"Debugging, code generation & review" },
+  { key:"marketing", icon:"📣", label:"Marketing", desc:"Campaigns, copywriting & strategy" },
+  { key:"education", icon:"🎓", label:"Education", desc:"Lesson plans & tutoring" },
+  { key:"business", icon:"📈", label:"Business", desc:"Reports, strategy & analysis" },
+  { key:"healthcare", icon:"🩺", label:"Healthcare", desc:"Fictional patient-education content" },
+];
+
+const DIFFICULTIES = [
+  { key:"beginner", icon:"🌱", label:"Beginner", desc:"Learn the basics of clear prompting" },
+  { key:"intermediate", icon:"⚙️", label:"Intermediate", desc:"Add structure, roles & constraints" },
+  { key:"advanced", icon:"🚀", label:"Advanced", desc:"Chain reasoning, format & precision" },
+];
+
+/* Interview questions (generic, adapt slightly by domain) */
+function getInterviewQuestions(domain){
+  const d = domain.label.toLowerCase();
+  return [
+    `Imagine you're asking an AI for help with a ${d} task. What's one thing that makes a prompt "vague"?`,
+    `Why might giving the AI a specific role (e.g. "Act as a ${d} expert") improve its response?`,
+    `What's one piece of context you'd add to a prompt to get a more useful ${d} answer?`
+  ];
+}
+
+/* ---------------------------------------------------------
+   CHALLENGE DATA GENERATOR
+   Each domain+difficulty gets 3 fictional scenarios with
+   weak/good/excellent example prompts + scoring keywords.
+--------------------------------------------------------- */
+function getChallenges(domainKey, difficulty){
+  const bank = {
+    coding: [
+      {
+        title:"Debugging a Fictional App",
+        scenario:"In a fictional startup called 'Nimbus Labs', their internal tool 'PixelSort' crashes whenever a user uploads an image over 5MB. You need the AI's help to find and fix the bug.",
+        weak:"Fix my code.",
+        good:"Act as a senior developer. Here is the PixelSort upload function. Find why it crashes on files over 5MB and suggest a fix.",
+        excellent:"Act as a senior full-stack engineer reviewing the PixelSort codebase (Node.js + Express). The upload endpoint crashes for files over 5MB with a 'heap out of memory' error. Here is the relevant function: [code]. Please: 1) identify the likely root cause, 2) explain why it happens, 3) propose a fixed version of the code with comments, and 4) suggest one test case to confirm the fix.",
+        keywords:["role","act as","specific","error","steps","test","context","format"]
+      },
+      {
+        title:"Code Review Request",
+        scenario:"The fictional team at 'Nimbus Labs' wants an AI to review a new authentication module before merging it to production.",
+        weak:"Review this code.",
+        good:"Act as a security-focused code reviewer. Review this authentication module for bugs and vulnerabilities.",
+        excellent:"Act as a senior security engineer reviewing a login/authentication module (Node.js, JWT-based) before a production release. Review the code for: 1) security vulnerabilities (e.g. token handling, password storage), 2) edge cases that could break login, 3) readability/maintainability issues. Present findings as a prioritized checklist with severity levels (High/Medium/Low).",
+        keywords:["role","security","checklist","prioritized","severity","specific","format"]
+      },
+      {
+        title:"Explaining Code to a Junior Dev",
+        scenario:"A fictional junior developer, Sam, joined 'Nimbus Labs' and doesn't understand a recursive function used in the PixelSort tool.",
+        weak:"Explain this code.",
+        good:"Explain this recursive function in simple terms for a junior developer who is new to recursion.",
+        excellent:"Act as a patient mentor teaching a junior developer (new to recursion) how this function works. Explain it step-by-step using a simple analogy, walk through one example input, and point out a common mistake beginners make with recursive functions like this one. Keep the explanation under 200 words.",
+        keywords:["audience","analogy","step","example","beginner","length","tone"]
+      }
+    ],
+    marketing: [
+      {
+        title:"Launching a Fictional Product",
+        scenario:"A fictional eco-friendly water bottle brand, 'HydraLeaf', is launching a new insulated bottle. You need AI help writing a product description.",
+        weak:"Write a product description.",
+        good:"Write a product description for HydraLeaf's new insulated water bottle, highlighting its eco-friendly materials.",
+        excellent:"Act as a senior copywriter for an eco-conscious lifestyle brand. Write a 100-150 word product description for HydraLeaf's new insulated water bottle, targeting environmentally-conscious millennials. Highlight: recycled materials, 24-hour cold retention, and a portion of proceeds going to ocean cleanup. Tone: warm, confident, not preachy. End with a short call-to-action.",
+        keywords:["audience","tone","length","specific","cta","call to action","role","benefits"]
+      },
+      {
+        title:"Social Media Campaign",
+        scenario:"HydraLeaf wants a week-long fictional Instagram campaign to promote their new bottle line.",
+        weak:"Make me social media posts.",
+        good:"Create 5 Instagram post ideas promoting HydraLeaf's new bottle line, aimed at young professionals.",
+        excellent:"Act as a social media strategist for HydraLeaf, an eco-friendly brand. Create a 5-day Instagram content calendar for the new insulated bottle launch, targeting young professionals aged 25-35. For each day, include: a post theme, a short caption (under 40 words), and one relevant hashtag set. Vary the content types (behind-the-scenes, testimonial, educational, promotional, UGC).",
+        keywords:["role","audience","calendar","format","variety","length","hashtag","specific"]
+      },
+      {
+        title:"Email Re-engagement",
+        scenario:"HydraLeaf has fictional customers who haven't purchased in 6 months. They want a win-back email.",
+        weak:"Write an email to old customers.",
+        good:"Write a re-engagement email for HydraLeaf customers who haven't purchased in 6 months, offering a discount.",
+        excellent:"Act as an email marketing specialist. Write a win-back email for HydraLeaf subscribers inactive for 6+ months. Include: a subject line under 8 words, a friendly opening that doesn't guilt the reader, a 15% discount code, and a single clear CTA button text. Keep total body copy under 120 words. Tone: warm and low-pressure.",
+        keywords:["subject line","tone","cta","length","specific","discount","role"]
+      }
+    ],
+    education: [
+      {
+        title:"Building a Lesson Plan",
+        scenario:"A fictional teacher, Ms. Rivera, needs help creating a lesson plan on photosynthesis for 7th graders.",
+        weak:"Make a lesson plan.",
+        good:"Create a lesson plan on photosynthesis for 7th grade students, including an activity.",
+        excellent:"Act as an experienced middle school science teacher. Create a 45-minute lesson plan on photosynthesis for 7th graders with mixed learning levels. Include: a 5-minute hook activity, key vocabulary (max 5 terms), a hands-on activity, and 3 formative assessment questions. Format as a structured outline with time allocations.",
+        keywords:["role","time","format","outline","audience","assessment","specific","structure"]
+      },
+      {
+        title:"Simplifying a Concept",
+        scenario:"Ms. Rivera has a fictional student, Alex, who struggles to understand fractions.",
+        weak:"Explain fractions.",
+        good:"Explain fractions in a simple way for a struggling 4th grader.",
+        excellent:"Act as a patient elementary math tutor. Explain fractions to a 4th grader who struggles with the concept, using a pizza-slicing analogy. Include one simple practice problem with a step-by-step solution. Keep language friendly and avoid technical jargon. Limit to 150 words.",
+        keywords:["analogy","audience","practice problem","step","length","tone","role"]
+      },
+      {
+        title:"Parent Progress Update",
+        scenario:"Ms. Rivera needs to write a fictional progress report email to a parent about their child's improvement.",
+        weak:"Write a progress report.",
+        good:"Write a progress report email to a parent about their child's improvement in reading this semester.",
+        excellent:"Act as a supportive elementary teacher. Write a progress update email to a parent about their child's reading improvement this semester. Structure: 1) a positive opening highlighting specific growth, 2) one area to keep working on framed constructively, 3) one simple at-home activity suggestion. Keep tone warm and under 150 words.",
+        keywords:["structure","tone","specific","constructive","length","role","format"]
+      }
+    ],
+    business: [
+      {
+        title:"Quarterly Report Summary",
+        scenario:"A fictional company, 'Vertex Retail', needs an AI-generated summary of their Q3 fictional performance for a board meeting.",
+        weak:"Summarize this report.",
+        good:"Summarize this Q3 report for Vertex Retail, highlighting key wins and concerns for a board meeting.",
+        excellent:"Act as a business analyst preparing an executive summary for Vertex Retail's board meeting. Summarize the attached Q3 report in under 200 words, structured as: 1) top 3 wins, 2) top 2 concerns, 3) one recommended action. Use plain business language, no jargon, and bold the key numbers.",
+        keywords:["role","structure","length","format","specific","numbers","audience"]
+      },
+      {
+        title:"Vendor Negotiation Prep",
+        scenario:"Vertex Retail is negotiating a fictional contract renewal with a shipping vendor and wants prep talking points.",
+        weak:"Help me negotiate with a vendor.",
+        good:"Give me talking points for negotiating a shipping contract renewal, aiming for lower rates.",
+        excellent:"Act as a procurement strategist. Prepare negotiation talking points for Vertex Retail's shipping contract renewal, where the goal is a 10% rate reduction while maintaining current delivery SLAs. Include: 3 opening talking points, 2 fallback positions, and 1 phrase to use if the vendor pushes back on price. Present as a short bulleted script.",
+        keywords:["role","goal","specific","fallback","format","structure","numbers"]
+      },
+      {
+        title:"Internal Policy Memo",
+        scenario:"Vertex Retail is rolling out a fictional new remote-work policy and needs an internal announcement memo.",
+        weak:"Write a memo about the new policy.",
+        good:"Write an internal memo announcing Vertex Retail's new remote-work policy, explaining the key changes.",
+        excellent:"Act as an internal communications manager. Write a company-wide memo announcing Vertex Retail's new hybrid remote-work policy (3 days in-office, effective next quarter). Structure: subject line, brief context (1-2 sentences), 3 key changes as bullet points, and where to direct questions. Tone: clear, reassuring, non-bureaucratic. Under 180 words.",
+        keywords:["role","structure","tone","length","format","specific","bullet"]
+      }
+    ],
+    healthcare: [
+      {
+        title:"Patient-Friendly Explanation",
+        scenario:"A fictional clinic, 'Willowbrook Health', wants patient-friendly material explaining a common fictional procedure, a routine allergy test.",
+        weak:"Explain an allergy test.",
+        good:"Explain what happens during a routine allergy test in simple terms for a nervous patient.",
+        excellent:"Act as a patient educator at a fictional clinic. Explain what happens during a routine skin-prick allergy test for a nervous adult patient with no medical background. Use short sentences, a calm and reassuring tone, and structure the explanation as: what happens, how long it takes, and what discomfort (if any) to expect. Keep it under 150 words and avoid medical jargon.",
+        keywords:["audience","tone","structure","length","jargon","role","reassuring"]
+      },
+      {
+        title:"Appointment Reminder Copy",
+        scenario:"Willowbrook Health wants a fictional friendly SMS reminder template for upcoming patient appointments.",
+        weak:"Write a reminder message.",
+        good:"Write a friendly SMS appointment reminder for Willowbrook Health patients.",
+        excellent:"Act as a patient communications specialist. Write a friendly SMS appointment reminder for Willowbrook Health, under 160 characters, including: clinic name, a placeholder for date/time, and a short instruction for rescheduling. Tone: warm and professional, no medical jargon.",
+        keywords:["length","tone","format","specific","placeholder","role","character"]
+      },
+      {
+        title:"Staff Training Note",
+        scenario:"Willowbrook Health needs a fictional short training note for front-desk staff on handling anxious patients.",
+        weak:"Write training material for staff.",
+        good:"Write a short training note for front-desk staff on how to handle anxious patients calmly.",
+        excellent:"Act as a patient-experience trainer. Write a short training note (under 200 words) for front-desk staff at Willowbrook Health on handling anxious patients. Structure as: 3 do's, 2 don'ts, and one example calming phrase they can use. Tone: practical and encouraging, written for staff with no clinical background.",
+        keywords:["role","structure","length","tone","specific","example","audience"]
+      }
+    ]
+  };
+
+  let list = bank[domainKey] || bank.coding;
+  // Difficulty affects grading strictness label only (keeps content consistent but framing changes)
+  return list;
+}
+
+/* ---------------------------------------------------------
+   NAVIGATION
+--------------------------------------------------------- */
+function goTo(name){
+  SCREEN_ORDER.forEach(s=>{
+    document.getElementById("screen-"+s).classList.toggle("active", s===name);
+  });
+  const wrap = document.getElementById("progressWrap");
+  const bar = document.getElementById("progressBar");
+  if(name==="welcome"){ wrap.style.display="none"; }
+  else{ wrap.style.display="block"; bar.style.width = (PROGRESS_MAP[name]||0)+"%"; }
+  window.scrollTo({top:0, behavior:"smooth"});
+  renderHud();
+  if(name==="domain") renderDomainGrid();
+  if(name==="difficulty") renderDifficultyGrid();
+  if(name==="report") renderReport();
+}
+
+function renderHud(){
+  const hud = document.getElementById("hud");
+  let items = [];
+  if(state.domain) items.push(`<span class="pill">${state.domain.icon} ${state.domain.label}</span>`);
+  if(state.difficulty) items.push(`<span class="pill">${state.difficulty.icon} ${state.difficulty.label}</span>`);
+  if(state.scores.length>0) items.push(`<span class="pill">⭐ ${state.totalScore} pts</span>`);
+  hud.innerHTML = items.join("");
+}
+
+/* ---------------------------------------------------------
+   THEME
+--------------------------------------------------------- */
+function selectTheme(value){
+  state.theme = value;
+  document.body.setAttribute("data-theme", value);
+  document.querySelectorAll("#themeGrid .option-card").forEach(c=>{
+    c.classList.toggle("selected", c.dataset.value===value);
+  });
+  document.getElementById("themeNext").disabled = false;
+}
+
+/* ---------------------------------------------------------
+   DOMAIN
+--------------------------------------------------------- */
+function renderDomainGrid(){
+  const grid = document.getElementById("domainGrid");
+  grid.innerHTML = DOMAINS.map(d=>`
+    <div class="option-card ${state.domain&&state.domain.key===d.key?'selected':''}" data-value="${d.key}" onclick="selectDomain('${d.key}')">
+      <div class="icon">${d.icon}</div>
+      <h3>${d.label}</h3>
+      <p style="margin:0;">${d.desc}</p>
+    </div>
+  `).join("");
+}
+function selectDomain(key){
+  state.domain = DOMAINS.find(d=>d.key===key);
+  renderDomainGrid();
+  document.getElementById("domainNext").disabled = false;
+  renderHud();
+}
+
+/* ---------------------------------------------------------
+   DIFFICULTY
+--------------------------------------------------------- */
+function renderDifficultyGrid(){
+  const grid = document.getElementById("difficultyGrid");
+  grid.innerHTML = DIFFICULTIES.map(d=>`
+    <div class="option-card ${state.difficulty&&state.difficulty.key===d.key?'selected':''}" data-value="${d.key}" onclick="selectDifficulty('${d.key}')">
+      <div class="icon">${d.icon}</div>
+      <h3>${d.label}</h3>
+      <p style="margin:0;">${d.desc}</p>
+    </div>
+  `).join("");
+}
+function selectDifficulty(key){
+  state.difficulty = DIFFICULTIES.find(d=>d.key===key);
+  renderDifficultyGrid();
+  document.getElementById("diffNext").disabled = false;
+  renderHud();
+}
+
+/* ---------------------------------------------------------
+   AI INTERVIEW SIMULATION
+--------------------------------------------------------- */
+let interviewQuestions = [];
+function startInterview(){
+  interviewQuestions = getInterviewQuestions(state.domain);
+  state.interviewStep = 0;
+  state.interviewAnswers = [];
+  document.getElementById("interviewChat").innerHTML = "";
+  document.getElementById("interviewDoneRow").classList.add("hidden");
+  document.getElementById("interviewInputArea").classList.remove("hidden");
+  goTo("interview");
+  askInterviewQuestion();
+}
+function askInterviewQuestion(){
+  const chat = document.getElementById("interviewChat");
+  const q = interviewQuestions[state.interviewStep];
+  chat.innerHTML += `<div class="msg ai"><div class="who">AI Interviewer</div>${q}</div>`;
+  document.getElementById("interviewAnswer").value = "";
+  chat.scrollTop = chat.scrollHeight;
+}
+function submitInterviewAnswer(){
+  const val = document.getElementById("interviewAnswer").value.trim();
+  if(!val){ flashField(document.getElementById("interviewAnswer")); return; }
+  const chat = document.getElementById("interviewChat");
+  chat.innerHTML += `<div class="msg user"><div class="who">You</div>${escapeHtml(val)}</div>`;
+  state.interviewAnswers.push(val);
+  state.interviewStep++;
+
+  if(state.interviewStep < interviewQuestions.length){
+    setTimeout(()=>{
+      const acknowledgements = [
+        "Good reflection — let's continue.",
+        "Interesting perspective! One more question.",
+        "Nice, that's exactly the kind of thinking we'll practice."
+      ];
+      chat.innerHTML += `<div class="msg ai"><div class="who">AI Interviewer</div>${acknowledgements[state.interviewStep-1]||"Let's continue."}</div>`;
+      chat.scrollTop = chat.scrollHeight;
+      setTimeout(askInterviewQuestion, 500);
+    }, 400);
+  } else {
+    setTimeout(()=>{
+      chat.innerHTML += `<div class="msg ai"><div class="who">AI Interviewer</div>Great baseline! You're ready to start the ${state.difficulty.label} challenges in ${state.domain.label}. Let's put this into practice.</div>`;
+      chat.scrollTop = chat.scrollHeight;
+      document.getElementById("interviewInputArea").classList.add("hidden");
+      document.getElementById("interviewDoneRow").classList.remove("hidden");
+    }, 400);
+  }
+}
+function flashField(el){
+  el.style.borderColor = "var(--danger)";
+  setTimeout(()=>{ el.style.borderColor=""; }, 700);
+}
+function escapeHtml(str){
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ---------------------------------------------------------
+   CHALLENGES
+--------------------------------------------------------- */
+let challenges = [];
+
+function beginChallenges(){
+  challenges = getChallenges(state.domain.key, state.difficulty.key);
+  state.challengeIndex = 0;
+  state.scores = [];
+  state.totalScore = 0;
+  renderChallenge();
+}
+
+// Hook: called when navigating to 'challenge' the first time from interview screen
+const originalGoTo = goTo;
+goTo = function(name){
+  if(name==="challenge" && challenges.length===0){
+    beginChallenges();
+  }
+  originalGoTo(name);
+};
+
+function renderChallenge(){
+  const c = challenges[state.challengeIndex];
+  document.getElementById("challengeNum").textContent = state.challengeIndex+1;
+  document.getElementById("challengeTitle").textContent = c.title;
+  document.getElementById("challengeScenario").innerHTML = `<strong>Scenario:</strong> ${c.scenario}`;
+  document.getElementById("challengeInput").value = "";
+  document.getElementById("challengeFeedback").innerHTML = "";
+  document.getElementById("challengeCompareArea").innerHTML = "";
+  document.getElementById("challengeNextRow").classList.add("hidden");
+  document.getElementById("challengeSubmit").disabled = false;
+  document.getElementById("challengeInput").disabled = false;
+  document.getElementById("runningScore").textContent = `Score: ${state.totalScore}`;
+}
+
+function scorePrompt(userText, challengeData){
+  const text = userText.toLowerCase();
+  let points = 0;
+  let hits = [];
+
+  // Heuristic scoring based on prompt-engineering best practices
+  const checks = [
+    { test: /act as|you are a|as an? .*(expert|specialist|developer|teacher|analyst|marketer|manager)/i, label:"Defined a role/persona", pts:15 },
+    { test: /.{60,}/, label:"Provided sufficient detail/context", pts:15 },
+    { test: /\d+ (words|minutes|characters|days)|under \d+|max(imum)? \d+/i, label:"Specified a length/format constraint", pts:15 },
+    { test: /format|structure|bullet|list|outline|step|table/i, label:"Requested a specific format/structure", pts:15 },
+    { test: /target|audience|for a|aimed at|beginner|nervous|junior|parent|patient|customer/i, label:"Specified an audience", pts:15 },
+    { test: /tone|friendly|warm|professional|calm|reassuring|formal|casual/i, label:"Specified a tone", pts:10 },
+    { test: /\?|please|include|explain why|and then|1\)|2\)|3\)/i, label:"Broke the task into clear parts", pts:15 },
+  ];
+
+  checks.forEach(chk=>{
+    if(chk.test.test(text)){ points += chk.pts; hits.push(chk.label); }
+  });
+
+  // Penalize extremely short/vague prompts
+  if(userText.trim().split(/\s+/).length < 4){ points = Math.min(points, 10); }
+
+  points = Math.min(points, 100);
+
+  let tier = "weak";
+  if(points >= 75) tier = "excellent";
+  else if(points >= 40) tier = "good";
+
+  return { points, tier, hits };
+}
+
+function generateSuggestions(userText, tier){
+  const text = userText.toLowerCase();
+  const suggestions = [];
+  if(!/act as|you are a/i.test(text)) suggestions.push("Give the AI a specific role (e.g. \"Act as a marketing strategist\").");
+  if(userText.trim().split(/\s+/).length < 15) suggestions.push("Add more context — the more relevant detail, the better the response.");
+  if(!/\d+ (words|minutes|characters)|under \d+|max(imum)? \d+/i.test(text)) suggestions.push("Specify a length or format constraint, like word count or structure.");
+  if(!/tone|friendly|warm|professional|calm|formal|casual/i.test(text)) suggestions.push("Mention the tone you want (e.g. friendly, formal, reassuring).");
+  if(!/target|audience|for a|aimed at/i.test(text)) suggestions.push("Clarify who the response is for (the target audience).");
+  if(suggestions.length===0) suggestions.push("Excellent structure! Consider adding an example or edge case for even more precision.");
+  return suggestions.slice(0,4);
+}
+
+function submitChallenge(){
+  const input = document.getElementById("challengeInput");
+  const val = input.value.trim();
+  if(!val){ flashField(input); return; }
+
+  const c = challenges[state.challengeIndex];
+  const result = scorePrompt(val, c);
+  state.scores.push({ ...result, challenge:c.title, userText:val });
+  state.totalScore += result.points;
+
+  input.disabled = true;
+  document.getElementById("challengeSubmit").disabled = true;
+
+  const tierClass = result.tier === "excellent" ? "great" : (result.tier==="good" ? "ok" : "weak");
+  const tierLabel = result.tier==="excellent" ? "🌟 Excellent Prompt!" : (result.tier==="good" ? "👍 Good Prompt" : "⚠️ Needs Improvement");
+
+  const suggestions = generateSuggestions(val, result.tier);
+
+  document.getElementById("challengeFeedback").innerHTML = `
+    <div class="feedback-box ${tierClass}">
+      <h3 style="margin:0 0 6px;">${tierLabel} — ${result.points}/100</h3>
+      <p style="margin:0;">${result.hits.length ? "You included: " + result.hits.join(", ") + "." : "Your prompt was quite minimal."}</p>
+      <div class="suggestions">
+        ${suggestions.map(s=>`<div>💡 ${s}</div>`).join("")}
+      </div>
+    </div>
+  `;
+
+  document.getElementById("challengeCompareArea").innerHTML = `
+    <h3 style="margin-top:22px;">Compare: Weak vs Good vs Excellent</h3>
+    <div class="compare-grid">
+      <div class="cmp-card weak">
+        <span class="cmp-badge">Weak</span>
+        <div class="cmp-text">"${c.weak}"</div>
+        <div class="cmp-note">Too vague — no role, context, or format guidance.</div>
+      </div>
+      <div class="cmp-card good">
+        <span class="cmp-badge">Good</span>
+        <div class="cmp-text">"${c.good}"</div>
+        <div class="cmp-note">Adds context and a light role, but lacks precision.</div>
+      </div>
+      <div class="cmp-card excellent">
+        <span class="cmp-badge">Excellent</span>
+        <div class="cmp-text">"${c.excellent}"</div>
+        <div class="cmp-note">Clear role, context, structure, tone, and constraints — ready for a high-quality response.</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("challengeNextRow").classList.remove("hidden");
+  document.getElementById("runningScore").textContent = `Score: ${state.totalScore}`;
+  const nextBtn = document.getElementById("challengeNextBtn");
+  nextBtn.textContent = (state.challengeIndex < challenges.length-1) ? "Next Challenge →" : "See Final Report →";
+  renderHud();
+}
+
+function nextChallenge(){
+  if(state.challengeIndex < challenges.length-1){
+    state.challengeIndex++;
+    renderChallenge();
+  } else {
+    goTo("report");
+  }
+}
+
+/* ---------------------------------------------------------
+   REPORT
+--------------------------------------------------------- */
+function renderReport(){
+  const avg = Math.round(state.totalScore / state.scores.length) || 0;
+  const excellentCount = state.scores.filter(s=>s.tier==="excellent").length;
+  const goodCount = state.scores.filter(s=>s.tier==="good").length;
+  const weakCount = state.scores.filter(s=>s.tier==="weak").length;
+
+  document.getElementById("reportStats").innerHTML = `
+    <div class="stat-card"><div class="stat-num">${state.totalScore}</div><div class="stat-label">Total Score</div></div>
+    <div class="stat-card"><div class="stat-num">${avg}</div><div class="stat-label">Average / Challenge</div></div>
+    <div class="stat-card"><div class="stat-num">${excellentCount}</div><div class="stat-label">Excellent Prompts</div></div>
+    <div class="stat-card"><div class="stat-num">${weakCount}</div><div class="stat-label">Needs Improvement</div></div>
+  `;
+
+  document.getElementById("reportBreakdown").innerHTML = `
+    <h3 style="margin-top:10px;">Challenge Breakdown</h3>
+    ${state.scores.map((s,i)=>`
+      <div class="feedback-box ${s.tier==='excellent'?'great':(s.tier==='good'?'ok':'weak')}">
+        <div class="row between" style="margin:0;">
+          <strong>Challenge ${i+1}: ${s.challenge}</strong>
+          <span class="score-badge">${s.points}/100</span>
+        </div>
+        <p style="margin:6px 0 0;">Tier: <strong style="text-transform:capitalize;">${s.tier}</strong></p>
+      </div>
+    `).join("")}
+  `;
+
+  let overall = "";
+  if(avg >= 75){
+    overall = `Outstanding work! Across ${state.domain.label} scenarios at ${state.difficulty.label} level, you consistently used roles, context, structure, and constraints — the hallmarks of expert prompt engineering.`;
+  } else if(avg >= 40){
+    overall = `Solid effort! You're building good habits — adding context and some structure. To level up, focus on specifying tone, audience, and output format more consistently.`;
+  } else {
+    overall = `You've taken the first step! Your prompts were often too short or vague. Try adding a role, clear context, desired format, and audience to every prompt — this alone dramatically improves AI responses.`;
+  }
+  document.getElementById("overallFeedback").innerHTML = `<p style="margin:0;">${overall}</p>`;
+}
+
+/* ---------------------------------------------------------
+   REPLAY
+--------------------------------------------------------- */
+function replayGame(){
+  state.domain = null;
+  state.difficulty = null;
+  state.interviewStep = 0;
+  state.interviewAnswers = [];
+  state.challengeIndex = 0;
+  state.scores = [];
+  state.totalScore = 0;
+  challenges = [];
+  document.getElementById("domainNext").disabled = true;
+  document.getElementById("diffNext").disabled = true;
+  document.querySelectorAll("#domainGrid .option-card, #difficultyGrid .option-card").forEach(c=>c.classList.remove("selected"));
+  goTo("welcome");
+}
+
+/* ---------------------------------------------------------
+   INIT
+--------------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", ()=>{
+  goTo("welcome");
+});
+</script>
+</body>
+</html>
