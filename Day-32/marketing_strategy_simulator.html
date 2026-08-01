@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing Strategy Simulator</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root{
+    --bg1:#0c0f1a; --bg2:#12172a; --panel:#161c33; --panel2:#1b2340;
+    --line:#2a3358; --text:#eef1fb; --muted:#8b93b8;
+    --accent:#7c5cff; --accent2:#ff6b9d; --gold:#ffb020; --good:#3ddc84; --bad:#ff5d6c;
+    --grad: linear-gradient(135deg,#7c5cff,#ff6b9d);
+  }
+  *{box-sizing:border-box;}
+  html,body,#root{height:100%;}
+  body{
+    margin:0; font-family:'Segoe UI',Arial,sans-serif;
+    background:
+      radial-gradient(circle at 10% 0%, #1b2244 0%, transparent 45%),
+      radial-gradient(circle at 90% 100%, #2a1a3d 0%, transparent 45%),
+      var(--bg1);
+    color:var(--text); min-height:100vh;
+  }
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+
+  .app{display:flex; min-height:100vh;}
+
+  /* ---------- Sidebar Nav ---------- */
+  .sidebar{
+    width:230px; flex-shrink:0; background:var(--bg2); border-right:1px solid var(--line);
+    padding:20px 14px; display:flex; flex-direction:column; gap:4px;
+  }
+  .sidebar-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px;}
+  .sidebar-brand .logo{
+    width:32px;height:32px;border-radius:9px;background:var(--grad);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;
+  }
+  .sidebar-brand h1{font-size:14px;margin:0;letter-spacing:.02em;}
+  .sidebar-brand .sub{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
+  .nav-item{
+    display:flex;align-items:center;gap:10px; padding:9px 10px; border-radius:9px;
+    font-size:12.5px; color:var(--muted); cursor:pointer; transition:background .15s,color .15s;
+    border:1px solid transparent;
+  }
+  .nav-item .num{
+    width:20px;height:20px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;
+    justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:var(--muted);
+  }
+  .nav-item.active{background:var(--panel2);color:var(--text);border-color:var(--line);}
+  .nav-item.active .num{background:var(--grad);color:#fff;}
+  .nav-item.done .num{background:var(--good);color:#04140f;}
+  .nav-item.locked{opacity:.4;cursor:not-allowed;}
+  .nav-item:not(.locked):hover{color:var(--text);}
+
+  @media (max-width:900px){
+    .sidebar{position:fixed; z-index:50; height:100%; transform:translateX(-100%); transition:transform .25s;}
+    .sidebar.open{transform:translateX(0);}
+    .mobile-toggle{display:flex !important;}
+  }
+  .mobile-toggle{
+    display:none; position:fixed; top:14px; left:14px; z-index:60; width:38px;height:38px;
+    border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text);
+    align-items:center;justify-content:center;cursor:pointer;font-size:16px;
+  }
+
+  /* ---------- Main area ---------- */
+  .main{flex:1; min-width:0; padding:26px clamp(16px,4vw,44px); max-width:1180px; margin:0 auto; width:100%;}
+
+  .progress-wrap{margin-bottom:22px;}
+  .progress-track{height:8px;border-radius:6px;background:var(--panel2);overflow:hidden;border:1px solid var(--line);}
+  .progress-fill{height:100%;border-radius:6px;background:var(--grad);transition:width .4s ease;}
+  .progress-label{font-size:11px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;}
+
+  .card{
+    background:linear-gradient(160deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+    border-radius:16px; padding:22px; margin-bottom:16px;
+    animation:cardIn .4s ease;
+  }
+  @keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  h2.section-title{font-size:22px;margin:0 0 6px;}
+  p.section-sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;line-height:1.5;}
+
+  .grid{display:grid; gap:14px;}
+  .grid-3{grid-template-columns:repeat(3,1fr);}
+  .grid-2{grid-template-columns:repeat(2,1fr);}
+  @media (max-width:760px){ .grid-3{grid-template-columns:1fr 1fr;} .grid-2{grid-template-columns:1fr;} }
+  @media (max-width:520px){ .grid-3{grid-template-columns:1fr;} }
+
+  .option-card{
+    background:var(--panel2); border:1.5px solid var(--line); border-radius:14px; padding:16px;
+    cursor:pointer; transition:transform .15s, border-color .15s, background .15s;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .option-card:hover{transform:translateY(-3px); border-color:var(--accent);}
+  .option-card.selected{border-color:var(--accent); background:linear-gradient(160deg,#241a44,#1b2340); box-shadow:0 0 0 1px var(--accent) inset;}
+  .option-card .oc-icon{font-size:24px;}
+  .option-card .oc-title{font-weight:700;font-size:14px;}
+  .option-card .oc-desc{font-size:11.5px;color:var(--muted);line-height:1.4;}
+
+  .btn{
+    font-family:inherit; font-size:13px; font-weight:600; padding:10px 18px; border-radius:10px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer;
+    transition:all .15s;
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{background:var(--grad); border:none; color:#fff;}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+  .btn.ghost{background:transparent;}
+  .btn.small{font-size:11px;padding:6px 12px;}
+
+  .actions-row{display:flex; justify-content:space-between; margin-top:10px; gap:10px; flex-wrap:wrap;}
+
+  input[type=text], textarea, select{
+    width:100%; background:var(--bg2); border:1px solid var(--line); color:var(--text);
+    padding:9px 12px; border-radius:9px; font-size:13px; font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:70px;}
+  label.field-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; display:block; margin-bottom:6px;}
+  .field{margin-bottom:16px;}
+
+  .tag{
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:4px 10px;
+    border-radius:20px; background:var(--panel2); border:1px solid var(--line); color:var(--muted);
+  }
+  .tag.active{border-color:var(--accent); color:var(--text); background:#241a44;}
+
+  .pillar-card{
+    background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:16px;
+    border-top:3px solid var(--accent);
+  }
+  .pillar-card h4{margin:0 0 6px;font-size:14px;}
+  .pillar-card p{margin:0;font-size:12px;color:var(--muted);line-height:1.5;}
+
+  .week-block{margin-bottom:18px;}
+  .week-title{font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px;}
+  .day-row{
+    display:grid; grid-template-columns:70px 1fr 110px; gap:10px; align-items:center;
+    padding:9px 12px; border-bottom:1px solid var(--line); font-size:12.5px;
+  }
+  .day-row:last-child{border-bottom:none;}
+  .day-label{color:var(--muted); font-weight:700; font-size:11px;}
+  .platform-chip{
+    font-size:10px; padding:2px 8px; border-radius:20px; background:var(--panel); border:1px solid var(--line);
+    color:var(--muted); text-align:center;
+  }
+
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  @media (max-width:760px){.cal-grid{grid-template-columns:repeat(2,1fr);}}
+  .cal-cell{
+    background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:10px;
+    min-height:110px; font-size:11px;
+  }
+  .cal-cell .cd-day{font-weight:700; color:var(--accent); margin-bottom:6px; font-size:11px;}
+  .cal-cell .cd-content{color:var(--text); font-size:11.5px; margin-bottom:4px;}
+  .cal-cell .cd-platform{color:var(--muted); font-size:10px;}
+
+  .challenge-card{
+    background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px;
+  }
+  .challenge-card.answered{opacity:.55;}
+  .challenge-scenario{font-size:13.5px; margin-bottom:14px; line-height:1.5;}
+  .choice-btn{
+    display:block; width:100%; text-align:left; margin-bottom:8px; padding:10px 14px;
+    background:var(--bg2); border:1px solid var(--line); border-radius:10px; color:var(--text);
+    font-size:12.5px; cursor:pointer; transition:all .15s;
+  }
+  .choice-btn:hover{border-color:var(--accent);}
+  .choice-btn.chosen-good{border-color:var(--good); background:#0f2a1c;}
+  .choice-btn.chosen-bad{border-color:var(--bad); background:#2a1215;}
+  .choice-feedback{font-size:11.5px; color:var(--muted); margin-top:6px;}
+
+  .score-hero{
+    display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+  }
+  .score-ring{
+    width:130px;height:130px;border-radius:50%; display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(var(--accent) calc(var(--pct)*1%), var(--panel2) 0);
+    position:relative;
+  }
+  .score-ring::before{
+    content:''; position:absolute; inset:10px; border-radius:50%; background:var(--panel);
+  }
+  .score-ring span{position:relative; font-size:26px; font-weight:800;}
+
+  .kpi-mini{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px;}
+  @media (max-width:700px){.kpi-mini{grid-template-columns:repeat(2,1fr);}}
+  .kpi-mini-card{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px;}
+  .kpi-mini-card .kl{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
+  .kpi-mini-card .kv{font-size:20px; font-weight:800; margin-top:4px;}
+
+  .bars{display:flex; align-items:flex-end; gap:8px; height:130px; margin-top:16px;}
+  .bar-col{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;}
+  .bar-fill{width:100%; border-radius:6px 6px 0 0; background:var(--grad); transition:height .5s ease;}
+  .bar-lbl{font-size:9.5px; color:var(--muted);}
+
+  .prompt-card{
+    background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px;
+  }
+  .prompt-card h4{margin:0 0 8px; font-size:13.5px; display:flex; justify-content:space-between; align-items:center;}
+  .prompt-text{
+    font-family:'Consolas',monospace; font-size:11.5px; color:var(--muted); white-space:pre-wrap;
+    background:var(--bg2); padding:10px; border-radius:8px; border:1px solid var(--line); line-height:1.5;
+  }
+  .copied-tag{font-size:10px; color:var(--good);}
+
+  .welcome-hero{text-align:center; padding:40px 10px 20px;}
+  .welcome-hero .logo-big{
+    width:70px;height:70px;border-radius:20px;background:var(--grad); margin:0 auto 18px;
+    display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;
+  }
+  .welcome-hero h1{font-size:clamp(24px,5vw,38px); margin:0 0 10px;}
+  .welcome-hero p{color:var(--muted); font-size:14.5px; max-width:520px; margin:0 auto 28px; line-height:1.6;}
+  .feature-strip{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:30px;}
+  .feature-pill{
+    background:var(--panel2); border:1px solid var(--line); border-radius:20px; padding:6px 14px;
+    font-size:11.5px; color:var(--muted);
+  }
+
+  .badge-locked{font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+/* ============================================================
+   DATA / CONTENT ENGINE
+   ============================================================ */
+
+const BUSINESS_TYPES = [
+  { key:"startup", icon:"🚀", title:"Startup", desc:"Early-stage company chasing product-market fit and first traction." },
+  { key:"personal", icon:"👤", title:"Personal Brand", desc:"An individual building authority, audience, and influence." },
+  { key:"ecommerce", icon:"🛒", title:"E-commerce", desc:"Online store selling physical or digital products directly." },
+  { key:"local", icon:"🏪", title:"Local Business", desc:"Brick-and-mortar or service business tied to a geographic area." },
+  { key:"saas", icon:"💻", title:"SaaS", desc:"Subscription software product solving a recurring problem." },
+  { key:"random", icon:"🎲", title:"Random Client", desc:"Let the simulator assign you a surprise business to strategize for." },
+];
+
+const RANDOM_POOL = ["startup","personal","ecommerce","local","saas"];
+
+const AUDIENCE_PRESETS = {
+  startup: { age:"22–40", interests:"Innovation, productivity tools, startup culture, funding news", painPoints:"Lack of brand awareness, tight budget, unproven credibility" },
+  personal: { age:"18–45", interests:"Self-improvement, niche expertise topics, behind-the-scenes content", painPoints:"Standing out in a crowded niche, converting followers into income" },
+  ecommerce: { age:"18–50", interests:"Deals, product reviews, unboxing content, lifestyle aspiration", painPoints:"Cart abandonment, price sensitivity, trust in a new store" },
+  local: { age:"25–60", interests:"Community events, local recommendations, convenience", painPoints:"Low online visibility, competing with larger chains, foot traffic" },
+  saas: { age:"25–50", interests:"Efficiency, integrations, ROI case studies, industry benchmarks", painPoints:"Long sales cycles, feature confusion, churn risk" },
+};
+
+const GOALS = [
+  { key:"awareness", icon:"📣", title:"Brand Awareness", desc:"Get more people to recognize and remember your brand." },
+  { key:"leads", icon:"🧲", title:"Lead Generation", desc:"Capture emails, sign-ups, or inquiries from interested prospects." },
+  { key:"sales", icon:"💰", title:"Sales & Conversions", desc:"Drive direct purchases or paid conversions." },
+  { key:"community", icon:"🤝", title:"Community Building", desc:"Grow an engaged, loyal audience that interacts regularly." },
+  { key:"engagement", icon:"💬", title:"Engagement", desc:"Maximize comments, shares, and meaningful interactions." },
+];
+
+const PLATFORMS = [
+  { key:"instagram", icon:"📸", title:"Instagram" },
+  { key:"linkedin", icon:"💼", title:"LinkedIn" },
+  { key:"youtube", icon:"▶️", title:"YouTube" },
+  { key:"facebook", icon:"👍", title:"Facebook" },
+  { key:"x", icon:"✖️", title:"X" },
+  { key:"pinterest", icon:"📌", title:"Pinterest" },
+  { key:"email", icon:"✉️", title:"Email Marketing" },
+];
+
+function pillarsFor(businessKey, goalKey){
+  const base = {
+    startup: ["Founder Story & Vision", "Product Milestones", "Customer Wins", "Industry Insights"],
+    personal: ["Personal Journey", "Expertise & Tips", "Behind the Scenes", "Community Q&A"],
+    ecommerce: ["Product Spotlights", "Customer Reviews & UGC", "Promotions & Deals", "Lifestyle Content"],
+    local: ["Local Community Stories", "Behind-the-Counter", "Promotions & Events", "Customer Testimonials"],
+    saas: ["Feature Education", "Case Studies & ROI", "Industry Thought Leadership", "Product Updates"],
+  };
+  const list = base[businessKey] || base.startup;
+  const goalBoost = {
+    leads: "Lead Magnets & Free Resources",
+    sales: "Offers & Conversion Content",
+    community: "User-Generated Content & Shoutouts",
+    engagement: "Polls, Q&As & Interactive Content",
+    awareness: "Shareable Brand Stories",
+  };
+  return [...list, goalBoost[goalKey] || goalBoost.awareness];
+}
+
+function roadmap30Day(businessKey, goalKey){
+  return [
+    { week:"Week 1 — Foundation", focus:"Audit, positioning & setup", items:[
+      "Finalize brand voice, bio, and visual identity across chosen platforms",
+      "Set up analytics/tracking so every post's performance can be measured",
+      "Publish an introductory post/thread establishing who you are and why you matter",
+      "Research 10 competitor or peer accounts for content gaps",
+    ]},
+    { week:"Week 2 — Content Momentum", focus:"Consistent publishing & pillar testing", items:[
+      "Publish content across all defined content pillars at least once",
+      "Test 2 content formats (e.g., short-form video vs. carousel/static post)",
+      "Engage daily with target audience accounts (comments, replies, shares)",
+      "Launch first lead magnet or CTA aligned with your marketing goal",
+    ]},
+    { week:"Week 3 — Engagement & Optimization", focus:"Double down on what's working", items:[
+      "Review week 1–2 performance data; identify top 2 performing posts",
+      "Create variations of top performers to reinforce what resonates",
+      "Run one interactive activation (poll, Q&A, live session, or giveaway)",
+      "Begin light collaboration/outreach (partners, micro-influencers, guest content)",
+    ]},
+    { week:"Week 4 — Conversion & Review", focus:"Push toward the goal & report results", items:[
+      "Launch a focused push aligned to your marketing goal (offer, sign-up drive, etc.)",
+      "Compile a mini performance report: growth, engagement rate, conversions",
+      "Identify 3 lessons learned to carry into month 2",
+      "Plan next 30-day cycle based on what the data shows",
+    ]},
+  ];
+}
+
+const CONTENT_FORMATS = {
+  instagram:["Carousel Post","Reel","Story Poll","Static Post"],
+  linkedin:["Text Post","Document Carousel","Article","Poll"],
+  youtube:["Long-form Video","Short","Tutorial","Behind-the-Scenes Vlog"],
+  facebook:["Community Post","Event Promo","Video Update","Customer Spotlight"],
+  x:["Thread","Single Tweet","Poll","Quote Reply Engagement"],
+  pinterest:["Idea Pin","Infographic Pin","Product Pin","Board Refresh"],
+  email:["Newsletter","Promotional Email","Nurture Sequence","Re-engagement Email"],
+};
+
+function weeklyCalendar(platforms, pillars){
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const activePlatforms = platforms.length ? platforms : ["instagram"];
+  return days.map((day, i) => {
+    const platform = activePlatforms[i % activePlatforms.length];
+    const formats = CONTENT_FORMATS[platform] || ["Post"];
+    const format = formats[i % formats.length];
+    const pillar = pillars[i % pillars.length];
+    return { day, platform, format, pillar };
+  });
+}
+
+const CHALLENGES = [
+  {
+    id:"c1",
+    scenario:"A competitor just launched a viral campaign that's dominating your audience's attention this week.",
+    choices:[
+      { text:"React quickly with a lighthearted, on-brand response post", quality:"good", feedback:"Smart — timely, on-brand engagement often outperforms ignoring trends entirely." },
+      { text:"Ignore it completely and stick to your existing content plan", quality:"neutral", feedback:"Safe, but you may miss a moment of relevant audience attention." },
+      { text:"Copy their exact format and message", quality:"bad", feedback:"Risky — copying erodes brand authenticity and can backfire publicly." },
+    ],
+  },
+  {
+    id:"c2",
+    scenario:"One of your posts unexpectedly goes viral, driving a 5x traffic spike overnight.",
+    choices:[
+      { text:"Immediately follow up with related content and a clear CTA", quality:"good", feedback:"Great instinct — capitalizing on momentum converts attention into results." },
+      { text:"Wait a few days to 'let it settle' before doing anything", quality:"bad", feedback:"Momentum fades fast; waiting usually wastes the spike." },
+      { text:"Repost the same content again immediately", quality:"neutral", feedback:"Some value in re-exposure, but fresh follow-up content usually performs better." },
+    ],
+  },
+  {
+    id:"c3",
+    scenario:"Engagement has been flat for two weeks despite consistent posting.",
+    choices:[
+      { text:"Analyze top vs. bottom performing posts and adjust format/timing", quality:"good", feedback:"Data-driven iteration is exactly the right move here." },
+      { text:"Post more frequently without changing anything else", quality:"neutral", feedback:"More volume alone rarely fixes a format or relevance problem." },
+      { text:"Delete the underperforming posts and stop analyzing", quality:"bad", feedback:"Deleting data removes the very insight you need to improve." },
+    ],
+  },
+  {
+    id:"c4",
+    scenario:"A customer leaves a public negative comment about your product/service.",
+    choices:[
+      { text:"Respond publicly, empathetically, and offer to resolve it privately", quality:"good", feedback:"Textbook reputation management — transparency plus a private resolution path." },
+      { text:"Delete the comment quietly", quality:"bad", feedback:"Deleting critical feedback often escalates distrust if noticed." },
+      { text:"Leave it unanswered", quality:"neutral", feedback:"Silence can read as indifference, even if not intended that way." },
+    ],
+  },
+  {
+    id:"c5",
+    scenario:"Your budget for paid promotion was just cut by 50% this month.",
+    choices:[
+      { text:"Shift focus to organic engagement and community-driven content", quality:"good", feedback:"Adapting strategy to constraints is a sign of strong marketing maturity." },
+      { text:"Spend the reduced budget the same way as before, just less of it", quality:"neutral", feedback:"Works short-term, but doesn't address the underlying efficiency question." },
+      { text:"Pause all marketing activity entirely until budget returns", quality:"bad", feedback:"Going fully dark usually causes momentum and audience loss that's costly to rebuild." },
+    ],
+  },
+];
+
+function pickChallenges(n=4){
+  const shuffled = [...CHALLENGES].sort(()=>Math.random()-0.5);
+  return shuffled.slice(0,n);
+}
+
+function promptTemplates(business, audience, goal, platforms){
+  const businessTitle = BUSINESS_TYPES.find(b=>b.key===business)?.title || "your business";
+  const goalTitle = GOALS.find(g=>g.key===goal)?.title || "your goal";
+  const platformList = platforms.map(p => PLATFORMS.find(pl=>pl.key===p)?.title).filter(Boolean).join(", ") || "your chosen platforms";
+
+  return [
+    {
+      title:"Content Pillar Expansion",
+      text:`Act as a marketing strategist for a ${businessTitle}. My target audience is aged ${audience.age} and cares about: ${audience.interests}. My main goal is ${goalTitle}. Generate 10 specific content ideas for each of these pillars, tailored for ${platformList}: [paste your content pillars here].`,
+    },
+    {
+      title:"Weekly Content Calendar Draft",
+      text:`I run a ${businessTitle} focused on ${goalTitle}, posting on ${platformList}. Create a 7-day content calendar with a specific topic, format, and call-to-action for each day, addressing this audience pain point: ${audience.painPoints}.`,
+    },
+    {
+      title:"Performance Review & Iteration",
+      text:`Here is a summary of my last 30 days of marketing performance for a ${businessTitle}: [paste your metrics]. My goal was ${goalTitle}. Identify the top 3 things that worked, 3 that didn't, and recommend adjustments for the next 30-day cycle.`,
+    },
+    {
+      title:"Platform-Specific Optimization",
+      text:`Rewrite this piece of content optimized specifically for ${platformList} best practices, keeping the tone appropriate for a ${businessTitle} targeting an audience aged ${audience.age}: [paste content here].`,
+    },
+  ];
+}
+
+/* ============================================================
+   STEP CONFIG
+   ============================================================ */
+const STEPS = [
+  { key:"welcome", label:"Welcome" },
+  { key:"business", label:"Business Type" },
+  { key:"audience", label:"Audience Analysis" },
+  { key:"goal", label:"Marketing Goal" },
+  { key:"platform", label:"Platform Selection" },
+  { key:"pillars", label:"Content Pillars" },
+  { key:"roadmap", label:"30-Day Roadmap" },
+  { key:"calendar", label:"Weekly Calendar" },
+  { key:"challenges", label:"Challenges" },
+  { key:"report", label:"Growth Report" },
+  { key:"prompts", label:"Prompt Templates" },
+];
+
+/* ============================================================
+   MAIN APP
+   ============================================================ */
+function App(){
+  const [stepIndex, setStepIndex] = useState(0);
+  const [maxUnlocked, setMaxUnlocked] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [business, setBusiness] = useState(null);
+  const [audience, setAudience] = useState({ age:"", interests:"", painPoints:"" });
+  const [goal, setGoal] = useState(null);
+  const [platforms, setPlatforms] = useState([]);
+  const [pillars, setPillars] = useState([]);
+  const [challengeSet] = useState(() => pickChallenges(4));
+  const [challengeAnswers, setChallengeAnswers] = useState({});
+  const [score, setScore] = useState(50);
+
+  const currentKey = STEPS[stepIndex].key;
+
+  function goTo(i){
+    if(i <= maxUnlocked){
+      setStepIndex(i);
+      setSidebarOpen(false);
+    }
+  }
+  function next(){
+    const n = Math.min(stepIndex+1, STEPS.length-1);
+    setStepIndex(n);
+    setMaxUnlocked(m => Math.max(m, n));
+    setSidebarOpen(false);
+  }
+  function back(){
+    setStepIndex(Math.max(stepIndex-1, 0));
+    setSidebarOpen(false);
+  }
+
+  function chooseBusiness(key){
+    const finalKey = key === "random" ? RANDOM_POOL[Math.floor(Math.random()*RANDOM_POOL.length)] : key;
+    setBusiness(finalKey);
+    setAudience(AUDIENCE_PRESETS[finalKey] || AUDIENCE_PRESETS.startup);
+  }
+
+  function togglePlatform(key){
+    setPlatforms(p => p.includes(key) ? p.filter(x=>x!==key) : [...p, key]);
+  }
+
+  useEffect(() => {
+    if(business && goal){
+      setPillars(pillarsFor(business, goal));
+    }
+  }, [business, goal]);
+
+  function answerChallenge(challengeId, choiceIndex){
+    if(challengeAnswers[challengeId] !== undefined) return;
+    const challenge = challengeSet.find(c=>c.id===challengeId);
+    const choice = challenge.choices[choiceIndex];
+    setChallengeAnswers(a => ({...a, [challengeId]: choiceIndex}));
+    const delta = choice.quality === "good" ? 12 : choice.quality === "neutral" ? 3 : -8;
+    setScore(s => Math.max(0, Math.min(100, s + delta)));
+  }
+
+  const progressPct = Math.round((stepIndex) / (STEPS.length-1) * 100);
+
+  const roadmap = useMemo(() => business ? roadmap30Day(business, goal) : [], [business, goal]);
+  const calendar = useMemo(() => weeklyCalendar(platforms, pillars.length?pillars:["General Content"]), [platforms, pillars]);
+  const prompts = useMemo(() => business ? promptTemplates(business, audience, goal, platforms) : [], [business, audience, goal, platforms]);
+
+  const growthData = useMemo(() => {
+    const answered = Object.keys(challengeAnswers).length;
+    const factor = 0.6 + (score/100)*0.8;
+    return {
+      followers: Math.round((platforms.length*180 + answered*90) * factor),
+      engagementRate: Math.min(12, Math.round((2 + (score/100)*8) * 10)/10),
+      leads: Math.round((platforms.length*14 + answered*8) * factor),
+      conversions: Math.round((platforms.length*3 + answered*2) * factor),
+    };
+  }, [platforms, challengeAnswers, score]);
+
+  function canProceed(){
+    switch(currentKey){
+      case "business": return !!business;
+      case "audience": return audience.age.trim() && audience.interests.trim();
+      case "goal": return !!goal;
+      case "platform": return platforms.length > 0;
+      default: return true;
+    }
+  }
+
+  return (
+    <div className="app">
+      <div className="mobile-toggle" onClick={()=>setSidebarOpen(o=>!o)}>☰</div>
+      <div className={"sidebar" + (sidebarOpen ? " open" : "")}>
+        <div className="sidebar-brand">
+          <div className="logo">MS</div>
+          <div>
+            <h1>Strategy Simulator</h1>
+            <div className="sub">Marketing Playground</div>
+          </div>
+        </div>
+        {STEPS.map((s, i) => (
+          <div
+            key={s.key}
+            className={"nav-item " + (i===stepIndex ? "active " : "") + (i < stepIndex ? "done " : "") + (i > maxUnlocked ? "locked" : "")}
+            onClick={() => goTo(i)}
+          >
+            <span className="num">{i < stepIndex ? "✓" : i+1}</span>
+            <span>{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="main">
+        <div className="progress-wrap">
+          <div className="progress-track"><div className="progress-fill" style={{width: progressPct + "%"}}></div></div>
+          <div className="progress-label">
+            <span>Step {stepIndex+1} of {STEPS.length}</span>
+            <span>{progressPct}% complete</span>
+          </div>
+        </div>
+
+        {currentKey === "welcome" && <WelcomeScreen onStart={next} />}
+
+        {currentKey === "business" && (
+          <BusinessScreen business={business} chooseBusiness={chooseBusiness} />
+        )}
+
+        {currentKey === "audience" && (
+          <AudienceScreen audience={audience} setAudience={setAudience} business={business} />
+        )}
+
+        {currentKey === "goal" && (
+          <GoalScreen goal={goal} setGoal={setGoal} />
+        )}
+
+        {currentKey === "platform" && (
+          <PlatformScreen platforms={platforms} togglePlatform={togglePlatform} />
+        )}
+
+        {currentKey === "pillars" && (
+          <PillarsScreen pillars={pillars} setPillars={setPillars} />
+        )}
+
+        {currentKey === "roadmap" && (
+          <RoadmapScreen roadmap={roadmap} />
+        )}
+
+        {currentKey === "calendar" && (
+          <CalendarScreen calendar={calendar} />
+        )}
+
+        {currentKey === "challenges" && (
+          <ChallengesScreen challengeSet={challengeSet} answers={challengeAnswers} onAnswer={answerChallenge} score={score} />
+        )}
+
+        {currentKey === "report" && (
+          <ReportScreen score={score} growth={growthData} business={business} goal={goal} platforms={platforms} />
+        )}
+
+        {currentKey === "prompts" && (
+          <PromptsScreen prompts={prompts} />
+        )}
+
+        {currentKey !== "welcome" && (
+          <div className="actions-row">
+            <button className="btn ghost" onClick={back} disabled={stepIndex===0}>← Back</button>
+            {stepIndex < STEPS.length-1 && (
+              <button className="btn primary" onClick={next} disabled={!canProceed()}>
+                {currentKey === "prompts" ? "Finish" : "Continue →"}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+
+function WelcomeScreen({ onStart }){
+  return (
+    <div className="card welcome-hero">
+      <div className="logo-big">🎯</div>
+      <h1>Marketing Strategy Simulator</h1>
+      <p>Build a complete, realistic marketing strategy step by step — pick a business, define your audience,
+      choose platforms, and simulate 30 days of decisions, challenges, and growth. Everything runs locally in your browser.</p>
+      <div className="feature-strip">
+        <span className="feature-pill">📊 Growth Report</span>
+        <span className="feature-pill">🗓️ 30-Day Roadmap</span>
+        <span className="feature-pill">⚡ Live Challenges</span>
+        <span className="feature-pill">🧠 Reusable Prompts</span>
+      </div>
+      <button className="btn primary" onClick={onStart} style={{fontSize:"14px",padding:"12px 26px"}}>Start Simulation →</button>
+    </div>
+  );
+}
+
+function BusinessScreen({ business, chooseBusiness }){
+  return (
+    <div className="card">
+      <h2 className="section-title">Choose Your Business Type</h2>
+      <p className="section-sub">This shapes your audience presets, content pillars, and roadmap throughout the simulation.</p>
+      <div className="grid grid-3">
+        {BUSINESS_TYPES.map(b => (
+          <div key={b.key}
+            className={"option-card" + (business === b.key || (b.key==="random" && business && !BUSINESS_TYPES.find(x=>x.key===business)) ? "" : "") + ((b.key !== "random" && business === b.key) ? " selected" : "")}
+            onClick={() => chooseBusiness(b.key)}
+          >
+            <div className="oc-icon">{b.icon}</div>
+            <div className="oc-title">{b.title}</div>
+            <div className="oc-desc">{b.desc}</div>
+          </div>
+        ))}
+      </div>
+      {business && (
+        <p style={{marginTop:"16px", fontSize:"12.5px", color:"var(--good)"}}>
+          ✓ Selected: <b>{BUSINESS_TYPES.find(b=>b.key===business)?.title || business}</b>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AudienceScreen({ audience, setAudience, business }){
+  return (
+    <div className="card">
+      <h2 className="section-title">Audience Analysis</h2>
+      <p className="section-sub">
+        Pre-filled based on your business type — edit any field to match your real target audience.
+      </p>
+      <div className="field">
+        <label className="field-label">Age Range</label>
+        <input type="text" value={audience.age} onChange={e => setAudience({...audience, age:e.target.value})} placeholder="e.g. 25–40" />
+      </div>
+      <div className="field">
+        <label className="field-label">Interests</label>
+        <textarea value={audience.interests} onChange={e => setAudience({...audience, interests:e.target.value})} />
+      </div>
+      <div className="field">
+        <label className="field-label">Pain Points</label>
+        <textarea value={audience.painPoints} onChange={e => setAudience({...audience, painPoints:e.target.value})} />
+      </div>
+    </div>
+  );
+}
+
+function GoalScreen({ goal, setGoal }){
+  return (
+    <div className="card">
+      <h2 className="section-title">Select Your Primary Marketing Goal</h2>
+      <p className="section-sub">This drives your content pillars, roadmap emphasis, and simulated challenges.</p>
+      <div className="grid grid-3">
+        {GOALS.map(g => (
+          <div key={g.key} className={"option-card" + (goal===g.key ? " selected" : "")} onClick={()=>setGoal(g.key)}>
+            <div className="oc-icon">{g.icon}</div>
+            <div className="oc-title">{g.title}</div>
+            <div className="oc-desc">{g.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlatformScreen({ platforms, togglePlatform }){
+  return (
+    <div className="card">
+      <h2 className="section-title">Select Platforms</h2>
+      <p className="section-sub">Choose one or more platforms — this shapes your content calendar and prompt templates.</p>
+      <div className="grid grid-3">
+        {PLATFORMS.map(p => (
+          <div key={p.key} className={"option-card" + (platforms.includes(p.key) ? " selected" : "")} onClick={()=>togglePlatform(p.key)}>
+            <div className="oc-icon">{p.icon}</div>
+            <div className="oc-title">{p.title}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{marginTop:"14px"}}>
+        {platforms.map(p => <span key={p} className="tag active" style={{marginRight:"6px"}}>{PLATFORMS.find(pl=>pl.key===p)?.title}</span>)}
+      </div>
+    </div>
+  );
+}
+
+function PillarsScreen({ pillars, setPillars }){
+  function updatePillar(i, value){
+    const copy = [...pillars];
+    copy[i] = value;
+    setPillars(copy);
+  }
+  return (
+    <div className="card">
+      <h2 className="section-title">Your Content Pillars</h2>
+      <p className="section-sub">Auto-generated from your business type and goal. Edit any pillar name to fit your brand voice.</p>
+      <div className="grid grid-3">
+        {pillars.map((p,i) => (
+          <div key={i} className="pillar-card">
+            <label className="field-label">Pillar {i+1}</label>
+            <input type="text" value={p} onChange={e=>updatePillar(i, e.target.value)} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RoadmapScreen({ roadmap }){
+  return (
+    <div className="card">
+      <h2 className="section-title">30-Day Marketing Roadmap</h2>
+      <p className="section-sub">A week-by-week execution plan tailored to your business and goal.</p>
+      {roadmap.map((w,i) => (
+        <div key={i} className="week-block">
+          <div className="week-title">{w.week} — {w.focus}</div>
+          {w.items.map((item,j) => (
+            <div key={j} className="day-row" style={{gridTemplateColumns:"1fr"}}>
+              <span>• {item}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CalendarScreen({ calendar }){
+  return (
+    <div className="card">
+      <h2 className="section-title">Weekly Content Calendar</h2>
+      <p className="section-sub">One suggested post per day, rotating across your selected platforms and content pillars.</p>
+      <div className="cal-grid">
+        {calendar.map((c,i) => (
+          <div key={i} className="cal-cell">
+            <div className="cd-day">{c.day}</div>
+            <div className="cd-content">{c.pillar}</div>
+            <div className="cd-content" style={{color:"var(--muted)", fontSize:"10.5px"}}>{c.format}</div>
+            <div className="cd-platform">📍 {PLATFORMS.find(p=>p.key===c.platform)?.title || c.platform}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChallengesScreen({ challengeSet, answers, onAnswer, score }){
+  return (
+    <div className="card">
+      <h2 className="section-title">Marketing Challenges Simulation</h2>
+      <p className="section-sub">React to realistic scenarios — your choices affect your Marketing Score, shown live below.</p>
+      <div style={{marginBottom:"18px"}}>
+        <span className="tag active">Current Marketing Score: {score}/100</span>
+      </div>
+      {challengeSet.map(ch => {
+        const answered = answers[ch.id];
+        return (
+          <div key={ch.id} className={"challenge-card" + (answered!==undefined ? " answered" : "")}>
+            <div className="challenge-scenario">🧩 {ch.scenario}</div>
+            {ch.choices.map((choice, i) => {
+              let cls = "choice-btn";
+              if(answered === i) cls += choice.quality === "bad" ? " chosen-bad" : " chosen-good";
+              return (
+                <button key={i} className={cls} onClick={()=>onAnswer(ch.id, i)} disabled={answered!==undefined}>
+                  {choice.text}
+                </button>
+              );
+            })}
+            {answered !== undefined && (
+              <div className="choice-feedback">💡 {ch.choices[answered].feedback}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReportScreen({ score, growth, business, goal, platforms }){
+  const barsData = [
+    { label:"Wk1", val: Math.round(20 + score*0.3) },
+    { label:"Wk2", val: Math.round(35 + score*0.4) },
+    { label:"Wk3", val: Math.round(55 + score*0.5) },
+    { label:"Wk4", val: Math.round(75 + score*0.6) },
+  ];
+  const maxVal = Math.max(...barsData.map(b=>b.val));
+
+  return (
+    <div className="card">
+      <h2 className="section-title">Growth Report & Marketing Score</h2>
+      <p className="section-sub">A simulated summary of how your strategy and challenge decisions translated into results.</p>
+
+      <div className="score-hero">
+        <div className="score-ring" style={{"--pct": score}}>
+          <span>{score}</span>
+        </div>
+        <div>
+          <div style={{fontSize:"13px", color:"var(--muted)"}}>Overall Marketing Score</div>
+          <div style={{fontSize:"20px", fontWeight:800, marginTop:"4px"}}>
+            {score >= 80 ? "Excellent Strategy 🌟" : score >= 60 ? "Solid Momentum 📈" : score >= 40 ? "Needs Refinement ⚙️" : "High Risk — Revisit Approach ⚠️"}
+          </div>
+          <div style={{fontSize:"12px", color:"var(--muted)", marginTop:"4px"}}>
+            Based on your challenge decisions and platform coverage across {platforms.length} platform(s).
+          </div>
+        </div>
+      </div>
+
+      <div className="kpi-mini">
+        <div className="kpi-mini-card"><div className="kl">Est. New Followers</div><div className="kv">+{growth.followers}</div></div>
+        <div className="kpi-mini-card"><div className="kl">Engagement Rate</div><div className="kv">{growth.engagementRate}%</div></div>
+        <div className="kpi-mini-card"><div className="kl">Est. Leads</div><div className="kv">+{growth.leads}</div></div>
+        <div className="kpi-mini-card"><div className="kl">Est. Conversions</div><div className="kv">+{growth.conversions}</div></div>
+      </div>
+
+      <div style={{marginTop:"22px"}}>
+        <div className="field-label" style={{marginBottom:"10px"}}>Simulated 30-Day Growth Trend</div>
+        <div className="bars">
+          {barsData.map((b,i) => (
+            <div key={i} className="bar-col">
+              <div className="bar-fill" style={{height: (b.val/maxVal*100) + "%"}}></div>
+              <div className="bar-lbl">{b.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PromptsScreen({ prompts }){
+  const [copiedIdx, setCopiedIdx] = useState(null);
+
+  function copyPrompt(text, i){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch(e){}
+    document.body.removeChild(ta);
+    setCopiedIdx(i);
+    setTimeout(()=>setCopiedIdx(null), 1800);
+  }
+
+  return (
+    <div className="card">
+      <h2 className="section-title">Reusable Claude Prompt Templates</h2>
+      <p className="section-sub">Copy these into Claude any time you want to extend or re-run parts of this strategy with your real data.</p>
+      {prompts.map((p,i) => (
+        <div key={i} className="prompt-card">
+          <h4>
+            {p.title}
+            <button className="btn small" onClick={()=>copyPrompt(p.text, i)}>
+              {copiedIdx === i ? "✓ Copied" : "Copy"}
+            </button>
+          </h4>
+          <div className="prompt-text">{p.text}</div>
+        </div>
+      ))}
+      <p style={{fontSize:"12px", color:"var(--muted)", marginTop:"10px"}}>
+        🎉 You've completed the full Marketing Strategy Simulation. Use the sidebar to revisit any step, or refresh the page to start a new simulation.
+      </p>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
