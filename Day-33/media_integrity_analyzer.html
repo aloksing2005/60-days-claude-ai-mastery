@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Integrity Analyzer</title>
+<style>
+  :root{
+    /* Default theme = Dark, overridden by data-theme attribute below */
+    --bg1:#0b0f1a; --bg2:#111726; --panel:#161d30; --panel2:#1b2438;
+    --line:#2a3550; --text:#e8edf9; --muted:#8b96b8;
+    --accent:#5eead4; --accent2:#f472b6; --grad:linear-gradient(135deg,#5eead4,#818cf8);
+    --good:#4ade80; --warn:#fbbf24; --bad:#fb7185;
+  }
+  html[data-theme="light"]{
+    --bg1:#f4f6fb; --bg2:#ffffff; --panel:#ffffff; --panel2:#eef1f8;
+    --line:#dde3ef; --text:#1c2436; --muted:#5b6785;
+    --accent:#0891b2; --accent2:#db2777; --grad:linear-gradient(135deg,#0891b2,#6366f1);
+    --good:#16a34a; --warn:#d97706; --bad:#dc2626;
+  }
+  html[data-theme="blue"]{
+    --bg1:#061426; --bg2:#0a1d33; --panel:#0d2540; --panel2:#0f2c4a;
+    --line:#1c3f61; --text:#dceaff; --muted:#7ba3cc;
+    --accent:#38bdf8; --accent2:#60a5fa; --grad:linear-gradient(135deg,#38bdf8,#6366f1);
+    --good:#34d399; --warn:#fbbf24; --bad:#f87171;
+  }
+
+  *{box-sizing:border-box;}
+  html,body,#appRoot{height:100%;}
+  body{
+    margin:0; font-family:'Segoe UI',Arial,sans-serif;
+    background:
+      radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 45%),
+      var(--bg1);
+    color:var(--text); min-height:100vh; transition:background .3s, color .3s;
+  }
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+
+  .app{display:flex; min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:230px; flex-shrink:0; background:var(--bg2); border-right:1px solid var(--line);
+    padding:20px 14px; display:flex; flex-direction:column; gap:4px; transition:background .3s;
+  }
+  .brand{display:flex; align-items:center; gap:10px; padding:4px 8px 18px;}
+  .brand .logo{
+    width:34px;height:34px;border-radius:10px;background:var(--grad);
+    display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#04140f;
+  }
+  .brand h1{font-size:13.5px;margin:0;}
+  .brand .sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  .nav-item{
+    display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px;
+    font-size:12.5px; color:var(--muted); cursor:pointer; border:1px solid transparent; transition:all .15s;
+  }
+  .nav-item .num{
+    width:20px;height:20px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;
+    justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:var(--muted);
+  }
+  .nav-item.active{background:var(--panel2); color:var(--text); border-color:var(--line);}
+  .nav-item.active .num{background:var(--grad); color:#04140f;}
+  .nav-item.done .num{background:var(--good); color:#04140f;}
+  .nav-item.locked{opacity:.4; cursor:not-allowed;}
+  .nav-item:not(.locked):hover{color:var(--text);}
+
+  @media (max-width:900px){
+    .sidebar{position:fixed; z-index:60; height:100%; transform:translateX(-100%); transition:transform .25s;}
+    .sidebar.open{transform:translateX(0);}
+    .mobile-toggle{display:flex !important;}
+  }
+  .mobile-toggle{
+    display:none; position:fixed; top:14px; left:14px; z-index:70; width:38px;height:38px;
+    border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text);
+    align-items:center; justify-content:center; cursor:pointer; font-size:16px;
+  }
+
+  /* ---------- Main ---------- */
+  .main{flex:1; min-width:0; padding:26px clamp(16px,4vw,44px); max-width:1180px; margin:0 auto; width:100%;}
+
+  .progress-wrap{margin-bottom:22px;}
+  .progress-track{height:8px;border-radius:6px;background:var(--panel2);overflow:hidden;border:1px solid var(--line);}
+  .progress-fill{height:100%;border-radius:6px;background:var(--grad);transition:width .4s ease;}
+  .progress-label{font-size:11px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;}
+
+  .card{
+    background:linear-gradient(160deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+    border-radius:16px; padding:22px; margin-bottom:16px; animation:cardIn .4s ease;
+  }
+  @keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  h2.section-title{font-size:21px;margin:0 0 6px;}
+  p.section-sub{color:var(--muted);font-size:13px;margin:0 0 18px;line-height:1.55;}
+
+  .fictional-tag{
+    display:inline-flex; align-items:center; gap:6px; font-size:10.5px; padding:4px 10px;
+    border-radius:20px; background:var(--panel2); border:1px solid var(--line); color:var(--muted);
+    margin-bottom:14px;
+  }
+
+  .grid{display:grid; gap:14px;}
+  .grid-3{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:760px){.grid-3{grid-template-columns:1fr 1fr;}}
+  @media (max-width:520px){.grid-3{grid-template-columns:1fr;}}
+
+  .theme-card{
+    background:var(--panel2); border:1.5px solid var(--line); border-radius:14px; padding:18px;
+    cursor:pointer; transition:transform .15s, border-color .15s; text-align:center;
+  }
+  .theme-card:hover{transform:translateY(-3px); border-color:var(--accent);}
+  .theme-card.selected{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset;}
+  .theme-swatch{width:100%;height:50px;border-radius:10px;margin-bottom:10px;}
+  .theme-card .tc-title{font-weight:700; font-size:13px;}
+
+  .btn{
+    font-family:inherit; font-size:13px; font-weight:600; padding:10px 18px; border-radius:10px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--text); cursor:pointer; transition:all .15s;
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{background:var(--grad); border:none; color:#04140f;}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+  .btn.ghost{background:transparent;}
+  .btn.small{font-size:11px;padding:6px 12px;}
+  .actions-row{display:flex; justify-content:space-between; margin-top:10px; gap:10px; flex-wrap:wrap;}
+
+  textarea, select{
+    width:100%; background:var(--bg2); border:1px solid var(--line); color:var(--text);
+    padding:10px 12px; border-radius:9px; font-size:13px; font-family:inherit;
+  }
+  textarea{resize:vertical; min-height:110px; line-height:1.5;}
+  label.field-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; display:block; margin-bottom:6px;}
+  .field{margin-bottom:16px;}
+
+  .headline-preview{
+    font-size:15px; line-height:1.6; padding:14px; background:var(--bg2); border:1px solid var(--line);
+    border-radius:10px; margin-bottom:6px;
+  }
+  mark.hl-sensational{background:color-mix(in srgb, var(--bad) 35%, transparent); color:var(--text); border-radius:3px; padding:0 2px;}
+  mark.hl-emotional{background:color-mix(in srgb, var(--warn) 35%, transparent); color:var(--text); border-radius:3px; padding:0 2px;}
+  mark.hl-bias{background:color-mix(in srgb, var(--accent2) 35%, transparent); color:var(--text); border-radius:3px; padding:0 2px;}
+
+  .legend-row{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin:10px 0 18px;}
+  .legend-row span{display:flex; align-items:center; gap:6px;}
+  .legend-row i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+  .score-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:6px;}
+  @media (max-width:700px){.score-grid{grid-template-columns:repeat(2,1fr);}}
+  .score-card{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:14px;}
+  .score-card .sc-label{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
+  .score-card .sc-val{font-size:24px; font-weight:800; margin:6px 0 4px;}
+  .score-track{height:6px;border-radius:5px;background:var(--line);overflow:hidden;}
+  .score-fill{height:100%;border-radius:5px;transition:width .5s ease;}
+
+  .credibility-hero{display:flex; align-items:center; gap:22px; flex-wrap:wrap; margin-bottom:18px;}
+  .cred-ring{
+    width:120px;height:120px;border-radius:50%;
+    background:conic-gradient(var(--cred-color) calc(var(--pct)*1%), var(--panel2) 0);
+    display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .cred-ring::before{content:''; position:absolute; inset:9px; border-radius:50%; background:var(--panel);}
+  .cred-ring span{position:relative; font-size:24px; font-weight:800;}
+
+  .dash-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  @media (max-width:760px){.dash-grid{grid-template-columns:repeat(2,1fr);}}
+  .dash-card{background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:16px;}
+  .dash-card .dl{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
+  .dash-card .dv{font-size:24px; font-weight:800; margin-top:6px;}
+
+  .history-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px;
+    border-bottom:1px solid var(--line); font-size:12px;
+  }
+  .history-row:last-child{border-bottom:none;}
+  .history-badge{font-size:10.5px; padding:2px 9px; border-radius:20px; font-weight:700;}
+
+  .tip-card{
+    background:var(--panel2); border:1px solid var(--line); border-radius:14px; padding:16px; cursor:pointer;
+    transition:transform .15s, border-color .15s;
+  }
+  .tip-card:hover{transform:translateY(-3px); border-color:var(--accent);}
+  .tip-card h4{margin:0 0 6px; font-size:13.5px; display:flex; gap:8px; align-items:center;}
+  .tip-card .tip-body{font-size:12px; color:var(--muted); line-height:1.5; display:none;}
+  .tip-card.open .tip-body{display:block;}
+  .tip-card .chev{margin-left:auto; font-size:11px; color:var(--muted); transition:transform .2s;}
+  .tip-card.open .chev{transform:rotate(180deg);}
+
+  .welcome-hero{text-align:center; padding:36px 10px 16px;}
+  .welcome-hero .logo-big{
+    width:70px;height:70px;border-radius:20px;background:var(--grad); margin:0 auto 18px;
+    display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#04140f;
+  }
+  .welcome-hero h1{font-size:clamp(22px,5vw,34px); margin:0 0 10px;}
+  .welcome-hero p{color:var(--muted); font-size:14px; max-width:560px; margin:0 auto 24px; line-height:1.6;}
+  .feature-strip{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:26px;}
+  .feature-pill{background:var(--panel2); border:1px solid var(--line); border-radius:20px; padding:6px 13px; font-size:11px; color:var(--muted);}
+
+  .disclaimer-box{
+    background:color-mix(in srgb, var(--warn) 12%, transparent); border:1px solid var(--warn);
+    border-radius:12px; padding:12px 16px; font-size:12.5px; color:var(--text); line-height:1.5; margin-bottom:18px;
+  }
+</style>
+</head>
+<body>
+<div id="appRoot"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   FICTIONAL DATA — everything here is invented for education
+   ============================================================ */
+const FICTIONAL_HEADLINES = [
+  "BREAKING: Senator Marbleton's 'Secret' Plan to Bankrupt Freedonia EXPOSED — You Won't Believe What Happens Next!",
+  "Globex Corp SLAMS Rival Company in Shocking Statement, Insiders Call It a Total Meltdown",
+  "Experts Say New Zorak Colony Policy Could Change Everything — Here's the Calm, Detailed Breakdown",
+  "Outrageous! City of Newbridge Council Accused of 'Radical Agenda' by Furious Residents",
+  "The Quiet Truth About Newbridge's Water Project That Nobody Is Talking About",
+  "Devastating Report: Local Bakery Guild Says Bread Prices Rose 4% This Quarter",
+  "EXPOSED: The 'Elite' Cabal Secretly Running the Freedonian Grain Market (Sources Say)",
+  "Freedonia's New Mayor Unveils Transit Plan; City Council to Review Proposal Next Month",
+  "You Won't Believe This One Weird Trick Globex Corp Used to 'Destroy' Its Competition",
+  "Panic Grips Newbridge as Officials Calmly Announce Minor Road Closure for Repairs",
+  "Tyrant or Hero? Chancellor Voss's Latest Speech Divides Freedonia Overnight",
+  "Zorak Colony Researchers Publish Peer-Reviewed Study on Crop Yields, Results Modest but Promising",
+  "BOMBSHELL: Anonymous Insider Claims Newbridge Mayor's Office Is 'Corrupt to the Core'",
+  "Local Robotics Club Wins Regional Award; Members Say They're 'Pretty Happy' About It",
+  "SHOCKING Secret Behind Freedonia's Economy That 'They' Don't Want You to Know",
+];
+
+const EMOTIONAL_WORDS = [
+  "shocking","terrifying","heartbreaking","outrageous","unbelievable","devastating","alarming",
+  "explosive","furious","panic","chaos","disaster","horrifying","enraged","gripped","desperate",
+  "nightmare","crisis","meltdown","fear","dread","fury"
+];
+
+const SENSATIONAL_PHRASES = [
+  "breaking", "exclusive", "you won't believe", "shocking", "secret", "exposed", "scandal",
+  "slams", "destroys", "obliterates", "bombshell", "one weird trick", "you need to see this",
+  "the truth about", "what happens next"
+];
+
+const BIAS_WORDS = [
+  "radical", "extremist", "corrupt", "incompetent", "tyrant", "hero", "savior", "enemy",
+  "agenda", "elite", "regime", "cabal", "puppet", "so-called"
+];
+
+const LEARNING_TIPS = [
+  {
+    icon:"🔍",
+    title:"Check the Language, Not Just the Headline",
+    body:"Words like 'SHOCKING', 'EXPOSED', or 'BOMBSHELL' are designed to trigger a fast emotional reaction rather than inform. A calm, precise headline is often a better sign of careful reporting than an exciting one."
+  },
+  {
+    icon:"⚖️",
+    title:"Watch for Loaded Labels",
+    body:"Terms like 'radical', 'tyrant', 'hero', or 'elite' assign a judgment before you've seen the evidence. Notice when a story labels people or groups instead of describing their actions."
+  },
+  {
+    icon:"❤️",
+    title:"Emotional Intensity ≠ Accuracy",
+    body:"Content that makes you feel panic, fury, or heartbreak is more likely to be shared quickly — but strong emotion doesn't mean the underlying claim is well-supported. Pause before reacting or sharing."
+  },
+  {
+    icon:"🧮",
+    title:"Look for Verifiable Specifics",
+    body:"Reliable reporting tends to include specific, checkable details (dates, named sources, numbers) rather than vague claims like 'insiders say' or 'sources reveal'."
+  },
+  {
+    icon:"🔁",
+    title:"Compare Multiple Framings",
+    body:"The same event can be described very differently depending on word choice. Comparing how different outlets frame the same story often reveals bias more clearly than reading just one version."
+  },
+  {
+    icon:"🕰️",
+    title:"Slow Down Before Sharing",
+    body:"Sensational and emotionally charged content is built to spread fast. Taking even 30 extra seconds to evaluate a claim critically is one of the simplest, most effective media literacy habits."
+  },
+];
+
+/* ============================================================
+   ANALYSIS ENGINE
+   ============================================================ */
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function analyzeText(text){
+  const lower = text.toLowerCase();
+
+  function countMatches(list){
+    let count = 0;
+    list.forEach(w => {
+      const re = new RegExp("\\b" + escapeRegExp(w) + "\\b", "gi");
+      const m = lower.match(re);
+      if(m) count += m.length;
+    });
+    return count;
+  }
+
+  const emotionalHits = countMatches(EMOTIONAL_WORDS);
+  const sensationalHits = countMatches(SENSATIONAL_PHRASES);
+  const biasHits = countMatches(BIAS_WORDS);
+
+  const wordCount = Math.max(text.trim().split(/\s+/).length, 1);
+  const density = (hits) => Math.min(100, Math.round((hits / wordCount) * 400));
+
+  const emotionalScore = density(emotionalHits);
+  const sensationalScore = density(sensationalHits);
+  const biasScore = density(biasHits);
+
+  const manipulationComposite = Math.round((emotionalScore*0.4 + sensationalScore*0.4 + biasScore*0.2));
+  const credibilityScore = Math.max(0, 100 - manipulationComposite);
+
+  // Build highlighted HTML
+  let highlighted = escapeHtml(text);
+  function highlightList(list, cls){
+    list.forEach(w => {
+      const re = new RegExp("(\\b" + escapeRegExp(w) + "\\b)", "gi");
+      highlighted = highlighted.replace(re, `<mark class="${cls}">$1</mark>`);
+    });
+  }
+  // order matters: longer phrases first to avoid nested overlap issues (approximation, acceptable for demo)
+  highlightList([...SENSATIONAL_PHRASES].sort((a,b)=>b.length-a.length), "hl-sensational");
+  highlightList(EMOTIONAL_WORDS, "hl-emotional");
+  highlightList(BIAS_WORDS, "hl-bias");
+
+  return {
+    emotionalScore, sensationalScore, biasScore, credibilityScore,
+    emotionalHits, sensationalHits, biasHits,
+    highlighted,
+  };
+}
+
+function escapeHtml(s){
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function credColor(score){
+  if(score >= 70) return 'var(--good)';
+  if(score >= 40) return 'var(--warn)';
+  return 'var(--bad)';
+}
+function verdictLabel(score){
+  if(score >= 80) return "High Credibility Indicators";
+  if(score >= 60) return "Mostly Sound, Some Flags";
+  if(score >= 40) return "Notable Manipulation Signals";
+  return "High Manipulation Risk";
+}
+
+/* ============================================================
+   APP STATE
+   ============================================================ */
+const STEPS = [
+  { key:"welcome", label:"Welcome" },
+  { key:"theme", label:"Theme Selection" },
+  { key:"analyzer", label:"Headline Analyzer" },
+  { key:"dashboard", label:"Integrity Dashboard" },
+  { key:"tips", label:"Learning Tips" },
+];
+
+let state = {
+  stepIndex: 0,
+  maxUnlocked: 0,
+  theme: "dark",
+  currentText: "",
+  currentAnalysis: null,
+  history: [], // {text, credibilityScore, emotionalScore, sensationalScore, biasScore}
+  sidebarOpen: false,
+};
+
+const root = document.getElementById('appRoot');
+
+/* ============================================================
+   RENDER HELPERS
+   ============================================================ */
+function setTheme(theme){
+  state.theme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+}
+setTheme(state.theme);
+
+function goTo(i){
+  if(i <= state.maxUnlocked){
+    state.stepIndex = i;
+    state.sidebarOpen = false;
+    render();
+  }
+}
+function next(){
+  const n = Math.min(state.stepIndex+1, STEPS.length-1);
+  state.stepIndex = n;
+  state.maxUnlocked = Math.max(state.maxUnlocked, n);
+  state.sidebarOpen = false;
+  render();
+}
+function back(){
+  state.stepIndex = Math.max(state.stepIndex-1, 0);
+  state.sidebarOpen = false;
+  render();
+}
+function toggleSidebar(){
+  state.sidebarOpen = !state.sidebarOpen;
+  render();
+}
+
+function canProceed(){
+  const key = STEPS[state.stepIndex].key;
+  if(key === "theme") return !!state.theme;
+  if(key === "analyzer") return !!state.currentAnalysis;
+  return true;
+}
+
+/* ============================================================
+   SCREEN BUILDERS (return HTML strings)
+   ============================================================ */
+function screenWelcome(){
+  return `
+    <div class="card welcome-hero">
+      <div class="logo-big">🧠</div>
+      <h1>Media Integrity Analyzer</h1>
+      <p>Practice spotting emotional manipulation, bias, and sensational language using entirely fictional
+      headlines and scenarios. Nothing here refers to real people, companies, or events — it's a safe sandbox
+      for building real media literacy skills.</p>
+      <div class="feature-strip">
+        <span class="feature-pill">📰 Fictional Headlines Only</span>
+        <span class="feature-pill">🎯 Credibility Scoring</span>
+        <span class="feature-pill">📊 Integrity Dashboard</span>
+        <span class="feature-pill">💡 Learning Tips</span>
+      </div>
+      <button class="btn primary" id="startBtn" style="font-size:14px;padding:12px 26px;">Start Analyzing →</button>
+    </div>
+  `;
+}
+
+function screenTheme(){
+  const themes = [
+    { key:"light", title:"Light", swatch:"linear-gradient(135deg,#f4f6fb,#dde3ef)" },
+    { key:"dark", title:"Dark", swatch:"linear-gradient(135deg,#111726,#1b2438)" },
+    { key:"blue", title:"Blue", swatch:"linear-gradient(135deg,#0a1d33,#1c3f61)" },
+  ];
+  return `
+    <div class="card">
+      <h2 class="section-title">Choose Your Theme</h2>
+      <p class="section-sub">Pick the visual style you'd like to use throughout the analyzer. You can change this any time from the sidebar step.</p>
+      <div class="grid grid-3">
+        ${themes.map(t => `
+          <div class="theme-card ${state.theme===t.key ? 'selected' : ''}" data-theme-choice="${t.key}">
+            <div class="theme-swatch" style="background:${t.swatch}"></div>
+            <div class="tc-title">${t.title}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function screenAnalyzer(){
+  const a = state.currentAnalysis;
+  return `
+    <div class="card">
+      <h2 class="section-title">Fictional Headline Analyzer</h2>
+      <div class="fictional-tag">⚠️ All content below is fictional and for educational practice only</div>
+      <p class="section-sub">Generate a random fictional scenario, or paste/write your own fictional example, then run the analysis.</p>
+
+      <div class="field">
+        <label class="field-label">Headline / Text to Analyze</label>
+        <textarea id="analyzerInput" placeholder="Click 'Random Scenario' below, or type your own fictional headline...">${escapeHtml(state.currentText)}</textarea>
+      </div>
+
+      <div class="actions-row" style="margin-top:0;">
+        <button class="btn" id="randomBtn">🎲 Random Scenario</button>
+        <button class="btn primary" id="analyzeBtn">🔍 Run Analysis</button>
+      </div>
+
+      ${a ? renderAnalysisResults(a) : ''}
+    </div>
+  `;
+}
+
+function renderAnalysisResults(a){
+  const cred = a.credibilityScore;
+  return `
+    <div style="margin-top:22px; border-top:1px solid var(--line); padding-top:18px;">
+      <h3 style="font-size:15px; margin:0 0 10px;">Highlighted Analysis</h3>
+      <div class="headline-preview">${a.highlighted}</div>
+      <div class="legend-row">
+        <span><i style="background:var(--bad)"></i> Sensational Language</span>
+        <span><i style="background:var(--warn)"></i> Emotional Manipulation</span>
+        <span><i style="background:var(--accent2)"></i> Biased / Loaded Terms</span>
+      </div>
+
+      <div class="credibility-hero">
+        <div class="cred-ring" style="--pct:${cred}; --cred-color:${credColor(cred)};">
+          <span>${cred}</span>
+        </div>
+        <div>
+          <div style="font-size:12.5px;color:var(--muted);">Credibility Score</div>
+          <div style="font-size:18px; font-weight:800; margin-top:4px;">${verdictLabel(cred)}</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+            Estimated from detected manipulation, bias, and sensational-language signals in the text.
+          </div>
+        </div>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <div class="sc-label">Emotional Manipulation</div>
+          <div class="sc-val" style="color:${credColor(100-a.emotionalScore)}">${a.emotionalScore}/100</div>
+          <div class="score-track"><div class="score-fill" style="width:${a.emotionalScore}%; background:var(--warn);"></div></div>
+        </div>
+        <div class="score-card">
+          <div class="sc-label">Sensational Language</div>
+          <div class="sc-val" style="color:${credColor(100-a.sensationalScore)}">${a.sensationalScore}/100</div>
+          <div class="score-track"><div class="score-fill" style="width:${a.sensationalScore}%; background:var(--bad);"></div></div>
+        </div>
+        <div class="score-card">
+          <div class="sc-label">Bias Signals</div>
+          <div class="sc-val" style="color:${credColor(100-a.biasScore)}">${a.biasScore}/100</div>
+          <div class="score-track"><div class="score-fill" style="width:${a.biasScore}%; background:var(--accent2);"></div></div>
+        </div>
+        <div class="score-card">
+          <div class="sc-label">Credibility Score</div>
+          <div class="sc-val" style="color:${credColor(cred)}">${cred}/100</div>
+          <div class="score-track"><div class="score-fill" style="width:${cred}%; background:var(--good);"></div></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function screenDashboard(){
+  const h = state.history;
+  const avg = (arr) => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
+  const avgCred = avg(h.map(x=>x.credibilityScore));
+  const avgEmo = avg(h.map(x=>x.emotionalScore));
+  const avgSens = avg(h.map(x=>x.sensationalScore));
+  const avgBias = avg(h.map(x=>x.biasScore));
+
+  return `
+    <div class="card">
+      <h2 class="section-title">Media Integrity Dashboard</h2>
+      <p class="section-sub">A running summary of every fictional headline/text you've analyzed this session.</p>
+
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dl">Items Analyzed</div><div class="dv">${h.length}</div></div>
+        <div class="dash-card"><div class="dl">Avg. Credibility</div><div class="dv" style="color:${credColor(avgCred)}">${avgCred}</div></div>
+        <div class="dash-card"><div class="dl">Avg. Emotional Signal</div><div class="dv" style="color:var(--warn)">${avgEmo}</div></div>
+        <div class="dash-card"><div class="dl">Avg. Bias Signal</div><div class="dv" style="color:var(--accent2)">${avgBias}</div></div>
+      </div>
+
+      <h3 style="font-size:14px; margin:22px 0 10px;">Analysis History</h3>
+      ${h.length === 0 ? `<p style="color:var(--muted); font-size:13px;">No headlines analyzed yet. Go back to the Analyzer step to get started.</p>` : `
+        <div style="border:1px solid var(--line); border-radius:12px; overflow:hidden;">
+          ${h.slice().reverse().map(item => `
+            <div class="history-row">
+              <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.text.slice(0,70))}${item.text.length>70?'…':''}</span>
+              <span class="history-badge" style="background:color-mix(in srgb, ${credColor(item.credibilityScore)} 20%, transparent); color:${credColor(item.credibilityScore)};">
+                Cred: ${item.credibilityScore}
+              </span>
+            </div>
+          `).join('')}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+let openTips = new Set();
+function screenTips(){
+  return `
+    <div class="card">
+      <h2 class="section-title">Interactive Learning Tips</h2>
+      <p class="section-sub">Click any card to expand it. These are general media literacy principles you can apply beyond this simulator.</p>
+      <div class="grid grid-3">
+        ${LEARNING_TIPS.map((tip, i) => `
+          <div class="tip-card ${openTips.has(i) ? 'open' : ''}" data-tip-idx="${i}">
+            <h4>${tip.icon} ${tip.title} <span class="chev">▾</span></h4>
+            <div class="tip-body">${tip.body}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="actions-row" style="margin-top:22px;">
+        <button class="btn primary" id="replayBtn">↺ Replay Simulation</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   MAIN RENDER
+   ============================================================ */
+function render(){
+  const current = STEPS[state.stepIndex].key;
+  const progressPct = Math.round((state.stepIndex) / (STEPS.length-1) * 100);
+
+  let screenHtml = '';
+  if(current === 'welcome') screenHtml = screenWelcome();
+  else if(current === 'theme') screenHtml = screenTheme();
+  else if(current === 'analyzer') screenHtml = screenAnalyzer();
+  else if(current === 'dashboard') screenHtml = screenDashboard();
+  else if(current === 'tips') screenHtml = screenTips();
+
+  root.innerHTML = `
+    <div class="app">
+      <div class="mobile-toggle" id="mobileToggle">☰</div>
+      <div class="sidebar ${state.sidebarOpen ? 'open' : ''}">
+        <div class="brand">
+          <div class="logo">MI</div>
+          <div>
+            <h1>Integrity Analyzer</h1>
+            <div class="sub">Media Literacy Lab</div>
+          </div>
+        </div>
+        ${STEPS.map((s,i) => `
+          <div class="nav-item ${i===state.stepIndex ? 'active' : ''} ${i<state.stepIndex ? 'done' : ''} ${i>state.maxUnlocked ? 'locked' : ''}" data-nav-idx="${i}">
+            <span class="num">${i < state.stepIndex ? '✓' : i+1}</span>
+            <span>${s.label}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="main">
+        <div class="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" style="width:${progressPct}%;"></div></div>
+          <div class="progress-label">
+            <span>Step ${state.stepIndex+1} of ${STEPS.length}</span>
+            <span>${progressPct}% complete</span>
+          </div>
+        </div>
+
+        ${current !== 'welcome' && current !== 'analyzer' ? `<div class="disclaimer-box">⚠️ Educational simulator: all headlines, names, and scenarios are fictional. No real people, companies, or news events are referenced.</div>` : ''}
+
+        ${screenHtml}
+
+        ${current !== 'welcome' ? `
+          <div class="actions-row">
+            <button class="btn ghost" id="backBtn" ${state.stepIndex===0 ? 'disabled' : ''}>← Back</button>
+            ${state.stepIndex < STEPS.length-1 ? `<button class="btn primary" id="nextBtn" ${!canProceed() ? 'disabled' : ''}>Continue →</button>` : ''}
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+
+  attachEvents();
+}
+
+/* ============================================================
+   EVENT WIRING
+   ============================================================ */
+function attachEvents(){
+  const startBtn = document.getElementById('startBtn');
+  if(startBtn) startBtn.addEventListener('click', next);
+
+  const mobileToggle = document.getElementById('mobileToggle');
+  if(mobileToggle) mobileToggle.addEventListener('click', toggleSidebar);
+
+  document.querySelectorAll('[data-nav-idx]').forEach(el => {
+    el.addEventListener('click', () => goTo(parseInt(el.dataset.navIdx,10)));
+  });
+
+  const backBtn = document.getElementById('backBtn');
+  if(backBtn) backBtn.addEventListener('click', back);
+  const nextBtn = document.getElementById('nextBtn');
+  if(nextBtn) nextBtn.addEventListener('click', next);
+
+  // Theme selection
+  document.querySelectorAll('[data-theme-choice]').forEach(el => {
+    el.addEventListener('click', () => {
+      setTheme(el.dataset.themeChoice);
+      render();
+    });
+  });
+
+  // Analyzer
+  const analyzerInput = document.getElementById('analyzerInput');
+  if(analyzerInput){
+    analyzerInput.addEventListener('input', (e) => {
+      state.currentText = e.target.value;
+    });
+  }
+  const randomBtn = document.getElementById('randomBtn');
+  if(randomBtn){
+    randomBtn.addEventListener('click', () => {
+      const pick = FICTIONAL_HEADLINES[Math.floor(Math.random()*FICTIONAL_HEADLINES.length)];
+      state.currentText = pick;
+      state.currentAnalysis = null;
+      render();
+    });
+  }
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  if(analyzeBtn){
+    analyzeBtn.addEventListener('click', () => {
+      const text = (state.currentText || '').trim();
+      if(!text) return;
+      const analysis = analyzeText(text);
+      state.currentAnalysis = analysis;
+      state.history.push({
+        text,
+        credibilityScore: analysis.credibilityScore,
+        emotionalScore: analysis.emotionalScore,
+        sensationalScore: analysis.sensationalScore,
+        biasScore: analysis.biasScore,
+      });
+      render();
+    });
+  }
+
+  // Tips
+  document.querySelectorAll('[data-tip-idx]').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.tipIdx,10);
+      if(openTips.has(idx)) openTips.delete(idx); else openTips.add(idx);
+      render();
+    });
+  });
+
+  // Replay
+  const replayBtn = document.getElementById('replayBtn');
+  if(replayBtn){
+    replayBtn.addEventListener('click', () => {
+      state.stepIndex = 0;
+      state.maxUnlocked = 0;
+      state.currentText = '';
+      state.currentAnalysis = null;
+      state.history = [];
+      openTips = new Set();
+      render();
+    });
+  }
+}
+
+render();
+
+})();
+</script>
+</body>
+</html>
