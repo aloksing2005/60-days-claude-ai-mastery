@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cognitive Pattern Explorer</title>
+<style>
+  :root{
+    --bg:#f5f6fb; --bg2:#ffffff; --text:#12172b; --muted:#5a6178;
+    --card:#ffffff; --border:#e3e7f1; --accent:#6d5bf6; --accent2:#25c6a3;
+    --warm:#f2a93b; --shadow:0 10px 30px rgba(20,20,40,.08); --radius:18px;
+  }
+  [data-theme="dark"]{
+    --bg:#0d0f1a; --bg2:#151827; --text:#eef0fb; --muted:#a2a8c3;
+    --card:#181c2e; --border:#262b45; --accent:#8f7bff; --accent2:#2fe0b6;
+    --warm:#ffbf5c; --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  [data-theme="calmblue"]{
+    --bg:#0b2038; --bg2:#0f2c4a; --text:#eaf3ff; --muted:#9fc0e6;
+    --card:#123456; --border:#1c4468; --accent:#4fb3ff; --accent2:#3fe0c4;
+    --warm:#ffcf8a; --shadow:0 10px 30px rgba(0,20,50,.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent),
+                radial-gradient(1000px 500px at 110% 10%, color-mix(in srgb, var(--accent2) 8%, transparent), transparent),
+                var(--bg);
+    color:var(--text); min-height:100vh; transition:background .4s ease, color .4s ease;
+  }
+  .app{max-width:980px; margin:0 auto; padding:28px 18px 60px; min-height:100vh; display:flex; flex-direction:column;}
+  .topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; gap:10px; flex-wrap:wrap;}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px;}
+  .brand .logo{width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-size:18px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; box-shadow:var(--shadow);}
+  .hud{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .pill{background:var(--card); border:1px solid var(--border); padding:6px 14px; border-radius:999px;
+    font-size:13px; color:var(--muted); font-weight:600; box-shadow:var(--shadow);}
+
+  .progress-wrap{width:100%; background:var(--card); border:1px solid var(--border); border-radius:999px; height:10px; overflow:hidden; margin:6px 0 22px; box-shadow:inset 0 1px 3px rgba(0,0,0,.08); display:none;}
+  .progress-bar{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .5s ease; border-radius:999px;}
+
+  .screen{display:none; animation:fadeUp .5s ease;}
+  .screen.active{display:block;}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+  @keyframes pop{from{opacity:0; transform:scale(.97);} to{opacity:1; transform:scale(1);}}
+
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:26px;
+    box-shadow:var(--shadow); margin-bottom:18px; animation:pop .45s ease;}
+
+  h1{font-size:clamp(26px,4vw,38px); margin:.2em 0 .1em; font-weight:800; line-height:1.15;}
+  h2{font-size:clamp(20px,3vw,26px); margin:.1em 0 .4em; font-weight:800;}
+  h3{font-size:18px; margin:.2em 0; font-weight:700;}
+  p{color:var(--muted); line-height:1.6;}
+  .lead{font-size:16px; max-width:660px;}
+  .note{font-size:13px; color:var(--muted); background:var(--bg2); border:1px dashed var(--border); border-radius:10px; padding:10px 14px; margin-top:14px;}
+
+  .btn{appearance:none; border:none; cursor:pointer; padding:13px 22px; border-radius:12px; font-weight:700;
+    font-size:15px; color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:var(--shadow);
+    transition:transform .15s ease, filter .15s ease;}
+  .btn:hover{transform:translateY(-2px); filter:brightness(1.06);}
+  .btn:active{transform:translateY(0);}
+  .btn.secondary{background:transparent; color:var(--text); border:1px solid var(--border);}
+  .btn.ghost{background:transparent; color:var(--accent); border:1px solid var(--accent); box-shadow:none;}
+  .btn:disabled{opacity:.5; cursor:not-allowed; transform:none;}
+  .row{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;}
+  .row.end{justify-content:flex-end;}
+  .row.between{justify-content:space-between; align-items:center;}
+
+  .grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
+  .option-card{background:var(--card); border:1.5px solid var(--border); border-radius:16px; padding:20px;
+    cursor:pointer; transition:.2s ease; text-align:left; box-shadow:var(--shadow); display:flex; flex-direction:column;
+    gap:8px; animation:pop .4s ease;}
+  .option-card:hover{transform:translateY(-4px); border-color:var(--accent);}
+  .option-card.selected{border-color:var(--accent); background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--card)), var(--card));}
+  .option-card .icon{font-size:28px;}
+  .option-card .tag{font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.5px;}
+
+  textarea, input[type=text]{width:100%; padding:14px; border-radius:12px; border:1.5px solid var(--border);
+    background:var(--bg2); color:var(--text); font-family:inherit; font-size:15px; resize:vertical; outline:none;
+    transition:border-color .2s ease;}
+  textarea{min-height:110px;}
+  textarea:focus, input[type=text]:focus{border-color:var(--accent);}
+  label.field-label{font-weight:700; font-size:14px; margin-bottom:6px; display:block;}
+
+  .scenario-box{background:var(--bg2); border-left:4px solid var(--accent); padding:14px 16px; border-radius:10px; margin:14px 0; font-size:14px;}
+
+  /* Drag and drop */
+  .dnd-wrap{display:grid; gap:18px; grid-template-columns:1fr 1fr; margin:18px 0;}
+  @media (max-width:700px){ .dnd-wrap{grid-template-columns:1fr;} }
+  .dnd-col{background:var(--bg2); border:1.5px dashed var(--border); border-radius:14px; padding:14px; min-height:180px;}
+  .dnd-col h4{margin:0 0 10px; font-size:14px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted);}
+  .dnd-item{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+    cursor:grab; font-size:14px; box-shadow:var(--shadow); transition:transform .15s ease, opacity .15s ease; user-select:none;}
+  .dnd-item:active{cursor:grabbing;}
+  .dnd-item.dragging{opacity:.4;}
+  .dnd-col.dragover{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--bg2));}
+  .dnd-col.dropzone-target{min-height:220px;}
+
+  /* Sequence builder */
+  .seq-pool{display:flex; flex-wrap:wrap; gap:10px; margin:14px 0;}
+  .seq-chip{background:var(--bg2); border:1px solid var(--border); border-radius:999px; padding:8px 16px; font-size:14px;
+    cursor:grab; box-shadow:var(--shadow); user-select:none;}
+  .seq-chip.dragging{opacity:.4;}
+  .seq-slots{display:flex; flex-direction:column; gap:10px; margin:14px 0;}
+  .seq-slot{min-height:52px; border:1.5px dashed var(--border); border-radius:12px; padding:10px 14px; display:flex;
+    align-items:center; gap:10px; background:var(--bg2); transition:border-color .2s ease, background .2s ease;}
+  .seq-slot.dragover{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--bg2));}
+  .seq-slot .slot-num{width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; display:grid; place-items:center; font-size:12px; font-weight:800; flex-shrink:0;}
+  .seq-slot .placeholder{color:var(--muted); font-size:13px; font-style:italic;}
+  .seq-slot .filled{background:var(--card); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:14px; flex:1;}
+
+  /* Balanced thinking comparison */
+  .compare-grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); margin:18px 0;}
+  .cmp-card{border-radius:16px; padding:18px; border:1.5px solid var(--border); background:var(--bg2); animation:pop .4s ease;}
+  .cmp-card.rigid{border-color:var(--warm);}
+  .cmp-card.balanced{border-color:var(--accent2);}
+  .cmp-badge{display:inline-block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; padding:4px 10px; border-radius:999px; margin-bottom:10px;}
+  .cmp-card.rigid .cmp-badge{background:color-mix(in srgb, var(--warm) 22%, transparent); color:var(--warm);}
+  .cmp-card.balanced .cmp-badge{background:color-mix(in srgb, var(--accent2) 20%, transparent); color:var(--accent2);}
+  .cmp-text{font-size:14px; color:var(--text); line-height:1.55; font-style:italic;}
+  .cmp-note{font-size:13px; color:var(--muted); margin-top:10px; line-height:1.5;}
+
+  /* Journal */
+  .journal-entry{background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; animation:pop .4s ease;}
+  .journal-entry .meta{font-size:12px; color:var(--muted); margin-bottom:6px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+
+  .stat-card{background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:18px; text-align:center;}
+  .stat-num{font-size:30px; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .stat-label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:700; margin-top:4px;}
+  .report-grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin:18px 0;}
+
+  .step-num{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; display:grid; place-items:center; font-weight:800; font-size:14px; flex-shrink:0;}
+  .step-head{display:flex; align-items:center; gap:12px; margin-bottom:8px;}
+
+  footer{margin-top:auto; text-align:center; color:var(--muted); font-size:12px; padding-top:30px;}
+  .hidden{display:none !important;}
+
+  @media (max-width:600px){
+    .app{padding:18px 12px 40px;}
+    .card{padding:18px;}
+  }
+</style>
+</head>
+<body data-theme="light">
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo">🧠</div> Cognitive Pattern Explorer</div>
+    <div class="hud" id="hud"></div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- WELCOME -->
+  <section class="screen active" id="screen-welcome">
+    <div class="card">
+      <h1>Explore How You Think 🧠</h1>
+      <p class="lead">Cognitive Pattern Explorer is a reflective, educational space to notice how you approach everyday decisions — through gentle exercises, not tests. There's no scoring of you as a person, no diagnosis, and no right answer.</p>
+      <div class="note">This app is for self-reflection and learning only. It does not diagnose, classify, or clinically assess mental health. If you're looking for support with your wellbeing, a licensed professional is the right resource.</div>
+      <div class="row">
+        <button class="btn" onclick="goTo('theme')">Begin Exploring →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEME -->
+  <section class="screen" id="screen-theme">
+    <div class="card">
+      <h2>Choose Your Theme</h2>
+      <p>Pick a visual atmosphere that feels comfortable to you.</p>
+      <div class="grid" id="themeGrid">
+        <div class="option-card" data-value="light" onclick="selectTheme('light')">
+          <div class="icon">☀️</div><h3>Light</h3><p style="margin:0;">Clean & bright</p>
+        </div>
+        <div class="option-card" data-value="dark" onclick="selectTheme('dark')">
+          <div class="icon">🌙</div><h3>Dark</h3><p style="margin:0;">Sleek & focused</p>
+        </div>
+        <div class="option-card" data-value="calmblue" onclick="selectTheme('calmblue')">
+          <div class="icon">🌊</div><h3>Calm Blue</h3><p style="margin:0;">Soft & soothing</p>
+        </div>
+      </div>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('welcome')">← Back</button>
+        <button class="btn" id="themeNext" onclick="goTo('mode')" disabled>Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODE -->
+  <section class="screen" id="screen-mode">
+    <div class="card">
+      <h2>Choose Your Mode</h2>
+      <p>This shapes the pace and tone of your session — pick whatever fits how you're feeling right now.</p>
+      <div class="grid" id="modeGrid">
+        <div class="option-card" data-value="calm" onclick="selectMode('calm')">
+          <div class="icon">🍃</div><h3>Calm Mode</h3><p style="margin:0;">Slower pace, softer language, gentle pauses</p>
+        </div>
+        <div class="option-card" data-value="stress" onclick="selectMode('stress')">
+          <div class="icon">⚡</div><h3>Stress Mode</h3><p style="margin:0;">Direct, efficient prompts for a busy moment</p>
+        </div>
+      </div>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('theme')">← Back</button>
+        <button class="btn" id="modeNext" onclick="goTo('scenario')" disabled>Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCENARIO -->
+  <section class="screen" id="screen-scenario">
+    <div class="card">
+      <h2>Choose a Decision Area</h2>
+      <p>Pick an everyday area of life you'd like to reflect on today.</p>
+      <div class="grid" id="scenarioGrid"></div>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('mode')">← Back</button>
+        <button class="btn" id="scenarioNext" onclick="beginJourney()" disabled>Start Reflection →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DRAG AND DROP REFLECTION -->
+  <section class="screen" id="screen-dnd">
+    <div class="card">
+      <div class="step-head"><div class="step-num">1</div><h2 style="margin:0;">Sort Your Thoughts</h2></div>
+      <div class="scenario-box" id="dndScenario"></div>
+      <p>Drag each thought into the column where it feels like it belongs. There's no wrong sorting — this is just a way to notice your own patterns.</p>
+      <div class="dnd-wrap">
+        <div class="dnd-col dropzone-target" id="dndPool"><h4>Unsorted Thoughts</h4></div>
+        <div class="dnd-col dropzone-target" id="dndHelpful" data-zone="helpful"><h4>Feels Helpful / Grounded</h4></div>
+      </div>
+      <div class="dnd-wrap">
+        <div class="dnd-col dropzone-target" id="dndPressured" data-zone="pressured"><h4>Feels Pressured / Worried</h4></div>
+        <div class="dnd-col dropzone-target" id="dndUnsure" data-zone="unsure"><h4>Not Sure Yet</h4></div>
+      </div>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('scenario')">← Back</button>
+        <button class="btn" id="dndNext" onclick="goTo('sequence')">Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEQUENCE BUILDER -->
+  <section class="screen" id="screen-sequence">
+    <div class="card">
+      <div class="step-head"><div class="step-num">2</div><h2 style="margin:0;">Build Your Thinking Sequence</h2></div>
+      <p>Drag the steps below into the order that reflects how you'd naturally approach this decision. Again — no single "correct" order.</p>
+      <div class="seq-pool" id="seqPool"></div>
+      <div class="seq-slots" id="seqSlots"></div>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('dnd')">← Back</button>
+        <button class="btn" id="seqNext" onclick="goTo('compare')">Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BALANCED THINKING COMPARISON -->
+  <section class="screen" id="screen-compare">
+    <div class="card">
+      <div class="step-head"><div class="step-num">3</div><h2 style="margin:0;">Compare Thinking Styles</h2></div>
+      <p>Here are two ways someone might think through a similar situation. Notice — without judgment — which one feels more familiar to you today.</p>
+      <div class="compare-grid" id="compareGrid"></div>
+      <label class="field-label" style="margin-top:10px;">Which felt more familiar, and why? (optional)</label>
+      <textarea id="compareNote" placeholder="e.g. The second one felt closer to how I think, because..."></textarea>
+      <div class="row between">
+        <button class="btn secondary" onclick="goTo('sequence')">← Back</button>
+        <button class="btn" onclick="saveCompareAndContinue()">Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section class="screen" id="screen-journal">
+    <div class="card">
+      <div class="step-head"><div class="step-num">4</div><h2 style="margin:0;">Reflection Journal</h2></div>
+      <p>Write a short note to yourself about what you noticed during this exercise. This stays on this page only, for this session.</p>
+      <label class="field-label" id="journalPrompt">What did you notice about your thinking today?</label>
+      <textarea id="journalInput" placeholder="Take a moment... there's no rush."></textarea>
+      <div class="row end">
+        <button class="btn" onclick="addJournalEntry()">Add Entry →</button>
+      </div>
+      <div id="journalEntries" style="margin-top:18px;"></div>
+      <div class="row between" style="margin-top:10px;">
+        <button class="btn secondary" onclick="goTo('compare')">← Back</button>
+        <button class="btn" onclick="goTo('summary')">See My Reflection Summary →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section class="screen" id="screen-summary">
+    <div class="card">
+      <h2>🌱 Your Reflection Summary</h2>
+      <p>A gentle overview of this session — not a score, just a mirror of what you explored.</p>
+      <div class="report-grid" id="summaryStats"></div>
+      <div id="summaryDetails"></div>
+      <h3 style="margin-top:22px;">A Closing Thought</h3>
+      <div class="note" id="closingThought"></div>
+      <div class="row between" style="margin-top:20px;">
+        <button class="btn secondary" onclick="goTo('scenario')">Explore Another Area</button>
+        <button class="btn" onclick="replaySession()">🔁 Replay Session</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>Cognitive Pattern Explorer — an educational, reflective tool. Not a diagnostic or clinical instrument.</footer>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   STATE
+--------------------------------------------------------- */
+const state = {
+  theme:null, mode:null, scenario:null,
+  dndSorted:{ helpful:[], pressured:[], unsure:[] },
+  sequenceOrder:[],
+  compareChoice:null, compareNote:"",
+  journal:[],
+  progressStepsDone:0
+};
+const TOTAL_STEPS = 5; // scenario, dnd, sequence, compare, journal
+
+const SCREEN_ORDER = ["welcome","theme","mode","scenario","dnd","sequence","compare","journal","summary"];
+const PROGRESS_MAP = { welcome:0, theme:8, mode:16, scenario:24, dnd:42, sequence:58, compare:74, journal:88, summary:100 };
+
+/* ---------------------------------------------------------
+   CONTENT DATA
+--------------------------------------------------------- */
+const SCENARIOS = [
+  { key:"career", icon:"💼", label:"Career", desc:"Job choices, growth & direction" },
+  { key:"study", icon:"📚", label:"Study", desc:"Learning goals & habits" },
+  { key:"health", icon:"🌿", label:"Health", desc:"Everyday wellbeing choices" },
+  { key:"finance", icon:"💰", label:"Finance", desc:"Spending & saving decisions" },
+  { key:"relationships", icon:"🤝", label:"Relationships", desc:"Everyday social choices" },
+];
+
+const SCENARIO_CONTENT = {
+  career:{
+    situation:"Imagine you're considering whether to apply for a new role at a fictional company, 'Northgate Studios' — it's a stretch opportunity but outside your comfort zone.",
+    thoughts:[
+      "If I don't apply, someone less qualified might get it.",
+      "I should probably wait until I feel 100% ready.",
+      "I could ask a mentor what they'd do in my position.",
+      "Everyone will judge me if I don't get the role.",
+      "I can list what skills I'd bring and what I might need to learn.",
+      "Maybe I'm not cut out for something like this."
+    ]
+  },
+  study:{
+    situation:"Imagine you're planning how to prepare for a fictional exam at 'Ridgeview College' next month.",
+    thoughts:[
+      "If I don't study every single day, I'll fail completely.",
+      "I could break the material into smaller weekly chunks.",
+      "Other students probably already know more than me.",
+      "I can review what topics I'm least confident in first.",
+      "One bad practice test means I'm not smart enough.",
+      "I could ask a classmate to compare notes with me."
+    ]
+  },
+  health:{
+    situation:"Imagine you're deciding whether to start a new evening walking habit near your fictional neighborhood, Elmswood.",
+    thoughts:[
+      "If I miss one day, the whole habit is ruined.",
+      "I could start with just 10 minutes and see how it feels.",
+      "I should be doing an intense workout, not just walking.",
+      "Small consistent steps count, even if they're imperfect.",
+      "If I'm tired today, that means I'm lazy.",
+      "I could pick a specific time of day that fits my schedule."
+    ]
+  },
+  finance:{
+    situation:"Imagine you're deciding whether to start putting a small amount into fictional savings each month at 'Brightwell Bank'.",
+    thoughts:[
+      "If I can't save a lot, there's no point saving at all.",
+      "I could start with a small, manageable amount.",
+      "Everyone else probably has this figured out already.",
+      "I can review my spending for one category at a time.",
+      "One unexpected expense means I've failed at budgeting.",
+      "I could set a simple monthly reminder to check in."
+    ]
+  },
+  relationships:{
+    situation:"Imagine a fictional friend, Jordan, hasn't replied to your message in a few days.",
+    thoughts:[
+      "They're probably upset with me and don't want to talk.",
+      "There could be many reasons — they might just be busy.",
+      "I should never have sent that message in the first place.",
+      "I could send a low-pressure follow-up whenever feels right.",
+      "If they don't reply today, the friendship is basically over.",
+      "I can give it a bit more time before assuming anything."
+    ]
+  }
+};
+
+const SEQUENCE_STEPS = [
+  "Notice the decision in front of me",
+  "Name what feels uncertain about it",
+  "Consider a few different options",
+  "Ask what information I'm missing",
+  "Imagine how I'd advise a friend in this spot",
+  "Choose a small, low-pressure next step"
+];
+
+const COMPARE_CONTENT = {
+  career:{
+    rigid:"\"If this doesn't go perfectly, it proves I'm not good enough for this kind of role.\"",
+    balanced:"\"This is a stretch opportunity. I can apply, learn from the process, and it won't define my whole ability either way.\""
+  },
+  study:{
+    rigid:"\"If I don't understand this topic instantly, I must not be smart enough for this subject.\"",
+    balanced:"\"Some topics take longer to click. I can break this down and revisit it without it meaning anything about my ability overall.\""
+  },
+  health:{
+    rigid:"\"If I don't do this perfectly every day, there's no point trying at all.\"",
+    balanced:"\"Consistency matters more than perfection. A partial effort today still counts for something.\""
+  },
+  finance:{
+    rigid:"\"If I can't save a large amount, saving anything is pointless.\"",
+    balanced:"\"Starting small still builds a habit. I can adjust the amount as things change.\""
+  },
+  relationships:{
+    rigid:"\"Their silence must mean something is wrong with our friendship.\"",
+    balanced:"\"There are many possible reasons for a delay. I can stay open without assuming the worst.\""
+  }
+};
+
+/* ---------------------------------------------------------
+   NAVIGATION
+--------------------------------------------------------- */
+function goTo(name){
+  SCREEN_ORDER.forEach(s=>{
+    document.getElementById("screen-"+s).classList.toggle("active", s===name);
+  });
+  const wrap = document.getElementById("progressWrap");
+  const bar = document.getElementById("progressBar");
+  if(name==="welcome" || name==="theme" || name==="mode"){ wrap.style.display="none"; }
+  else{ wrap.style.display="block"; bar.style.width=(PROGRESS_MAP[name]||0)+"%"; }
+  window.scrollTo({top:0, behavior:"smooth"});
+  renderHud();
+}
+
+function renderHud(){
+  const hud = document.getElementById("hud");
+  let items=[];
+  if(state.mode) items.push(`<span class="pill">${state.mode==='calm'?'🍃 Calm Mode':'⚡ Stress Mode'}</span>`);
+  if(state.scenario) items.push(`<span class="pill">${state.scenario.icon} ${state.scenario.label}</span>`);
+  if(state.journal.length>0) items.push(`<span class="pill">📝 ${state.journal.length} journal ${state.journal.length===1?'entry':'entries'}</span>`);
+  hud.innerHTML = items.join("");
+}
+
+/* ---------------------------------------------------------
+   THEME & MODE
+--------------------------------------------------------- */
+function selectTheme(value){
+  state.theme = value;
+  document.body.setAttribute("data-theme", value);
+  document.querySelectorAll("#themeGrid .option-card").forEach(c=>c.classList.toggle("selected", c.dataset.value===value));
+  document.getElementById("themeNext").disabled = false;
+}
+function selectMode(value){
+  state.mode = value;
+  document.querySelectorAll("#modeGrid .option-card").forEach(c=>c.classList.toggle("selected", c.dataset.value===value));
+  document.getElementById("modeNext").disabled = false;
+  renderHud();
+}
+
+/* ---------------------------------------------------------
+   SCENARIO SELECTION
+--------------------------------------------------------- */
+function renderScenarioGrid(){
+  const grid = document.getElementById("scenarioGrid");
+  grid.innerHTML = SCENARIOS.map(s=>`
+    <div class="option-card ${state.scenario&&state.scenario.key===s.key?'selected':''}" data-value="${s.key}" onclick="selectScenario('${s.key}')">
+      <div class="icon">${s.icon}</div>
+      <h3>${s.label}</h3>
+      <p style="margin:0;">${s.desc}</p>
+    </div>
+  `).join("");
+}
+function selectScenario(key){
+  state.scenario = SCENARIOS.find(s=>s.key===key);
+  renderScenarioGrid();
+  document.getElementById("scenarioNext").disabled = false;
+  renderHud();
+}
+
+function beginJourney(){
+  state.dndSorted = { helpful:[], pressured:[], unsure:[] };
+  state.sequenceOrder = [];
+  state.compareChoice = null;
+  state.compareNote = "";
+  renderDnd();
+  renderSequence();
+  renderCompare();
+  goTo("dnd");
+}
+
+/* ---------------------------------------------------------
+   DRAG & DROP REFLECTION
+--------------------------------------------------------- */
+let dndData = [];
+function renderDnd(){
+  const content = SCENARIO_CONTENT[state.scenario.key];
+  document.getElementById("dndScenario").innerHTML = `<strong>Situation:</strong> ${content.situation}`;
+  dndData = content.thoughts.map((t,i)=>({ id:"t"+i, text:t }));
+
+  const pool = document.getElementById("dndPool");
+  const helpful = document.getElementById("dndHelpful");
+  const pressured = document.getElementById("dndPressured");
+  const unsure = document.getElementById("dndUnsure");
+  [pool,helpful,pressured,unsure].forEach(col=>{
+    const h = col.querySelector("h4");
+    col.innerHTML = "";
+    col.appendChild(h);
+  });
+
+  dndData.forEach(item=>{
+    const el = document.createElement("div");
+    el.className = "dnd-item";
+    el.textContent = item.text;
+    el.draggable = true;
+    el.dataset.id = item.id;
+    attachDragEvents(el);
+    pool.appendChild(el);
+  });
+
+  [pool,helpful,pressured,unsure].forEach(col=>{
+    col.addEventListener("dragover", (e)=>{ e.preventDefault(); col.classList.add("dragover"); });
+    col.addEventListener("dragleave", ()=>{ col.classList.remove("dragover"); });
+    col.addEventListener("drop", (e)=>{
+      e.preventDefault();
+      col.classList.remove("dragover");
+      const id = e.dataTransfer.getData("text/plain");
+      const dragged = document.querySelector(`.dnd-item[data-id="${id}"]`);
+      if(dragged){ col.appendChild(dragged); recordDndZones(); }
+    });
+  });
+}
+function attachDragEvents(el){
+  el.addEventListener("dragstart", (e)=>{
+    e.dataTransfer.setData("text/plain", el.dataset.id);
+    setTimeout(()=>el.classList.add("dragging"), 0);
+  });
+  el.addEventListener("dragend", ()=>{ el.classList.remove("dragging"); });
+}
+function recordDndZones(){
+  const zones = { helpful:[], pressured:[], unsure:[] };
+  ["dndHelpful","dndPressured","dndUnsure"].forEach(id=>{
+    const col = document.getElementById(id);
+    const zoneKey = col.dataset.zone;
+    col.querySelectorAll(".dnd-item").forEach(el=>{ zones[zoneKey].push(el.textContent); });
+  });
+  state.dndSorted = zones;
+}
+
+/* ---------------------------------------------------------
+   SEQUENCE BUILDER
+--------------------------------------------------------- */
+function renderSequence(){
+  const pool = document.getElementById("seqPool");
+  const slots = document.getElementById("seqSlots");
+  pool.innerHTML = "";
+  slots.innerHTML = "";
+
+  const shuffled = [...SEQUENCE_STEPS].sort(()=>Math.random()-0.5);
+  shuffled.forEach((text,i)=>{
+    const chip = document.createElement("div");
+    chip.className = "seq-chip";
+    chip.textContent = text;
+    chip.draggable = true;
+    chip.dataset.text = text;
+    chip.addEventListener("dragstart",(e)=>{
+      e.dataTransfer.setData("text/plain", text);
+      setTimeout(()=>chip.classList.add("dragging"),0);
+    });
+    chip.addEventListener("dragend",()=>chip.classList.remove("dragging"));
+    pool.appendChild(chip);
+  });
+
+  SEQUENCE_STEPS.forEach((_, i)=>{
+    const slot = document.createElement("div");
+    slot.className = "seq-slot";
+    slot.dataset.index = i;
+    slot.innerHTML = `<div class="slot-num">${i+1}</div><div class="placeholder">Drop a step here</div>`;
+    slot.addEventListener("dragover",(e)=>{ e.preventDefault(); slot.classList.add("dragover"); });
+    slot.addEventListener("dragleave",()=>slot.classList.remove("dragover"));
+    slot.addEventListener("drop",(e)=>{
+      e.preventDefault();
+      slot.classList.remove("dragover");
+      const text = e.dataTransfer.getData("text/plain");
+      fillSequenceSlot(slot, text);
+    });
+    slots.appendChild(slot);
+  });
+}
+function fillSequenceSlot(slot, text){
+  // Remove text from any other slot first (in case it was already placed)
+  document.querySelectorAll(".seq-slot").forEach(s=>{
+    const filled = s.querySelector(".filled");
+    if(filled && filled.textContent === text && s !== slot){
+      s.innerHTML = `<div class="slot-num">${parseInt(s.dataset.index)+1}</div><div class="placeholder">Drop a step here</div>`;
+    }
+  });
+  // Remove chip from pool
+  const chip = document.querySelector(`.seq-chip[data-text="${cssEscape(text)}"]`);
+  if(chip) chip.remove();
+
+  slot.innerHTML = `<div class="slot-num">${parseInt(slot.dataset.index)+1}</div><div class="filled">${escapeHtml(text)}</div>`;
+  updateSequenceOrder();
+}
+function updateSequenceOrder(){
+  const order = [];
+  document.querySelectorAll(".seq-slot").forEach(s=>{
+    const filled = s.querySelector(".filled");
+    order.push(filled ? filled.textContent : null);
+  });
+  state.sequenceOrder = order;
+}
+function cssEscape(str){
+  return str.replace(/["\\]/g, '\\$&');
+}
+
+/* ---------------------------------------------------------
+   BALANCED THINKING COMPARISON
+--------------------------------------------------------- */
+function renderCompare(){
+  const c = COMPARE_CONTENT[state.scenario.key];
+  document.getElementById("compareGrid").innerHTML = `
+    <div class="cmp-card rigid" data-choice="rigid" onclick="chooseCompare('rigid')">
+      <span class="cmp-badge">Style A</span>
+      <div class="cmp-text">${c.rigid}</div>
+      <div class="cmp-note">A more all-or-nothing framing.</div>
+    </div>
+    <div class="cmp-card balanced" data-choice="balanced" onclick="chooseCompare('balanced')">
+      <span class="cmp-badge">Style B</span>
+      <div class="cmp-text">${c.balanced}</div>
+      <div class="cmp-note">A more flexible, both/and framing.</div>
+    </div>
+  `;
+  document.getElementById("compareNote").value = "";
+}
+function chooseCompare(choice){
+  state.compareChoice = choice;
+  document.querySelectorAll(".cmp-card").forEach(el=>{
+    el.style.outline = el.dataset.choice===choice ? "3px solid var(--accent)" : "none";
+  });
+}
+function saveCompareAndContinue(){
+  state.compareNote = document.getElementById("compareNote").value.trim();
+  renderJournalPrompt();
+  goTo("journal");
+}
+
+/* ---------------------------------------------------------
+   JOURNAL
+--------------------------------------------------------- */
+function renderJournalPrompt(){
+  const prompts = {
+    calm: "Take a slow breath. What did you notice about your thinking today?",
+    stress: "Quick check-in: what's one thought pattern you noticed just now?"
+  };
+  document.getElementById("journalPrompt").textContent = prompts[state.mode] || prompts.calm;
+  renderJournalEntries();
+}
+function addJournalEntry(){
+  const input = document.getElementById("journalInput");
+  const val = input.value.trim();
+  if(!val) return;
+  state.journal.push({ text:val, scenario:state.scenario.label, time:new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+  input.value = "";
+  renderJournalEntries();
+  renderHud();
+}
+function renderJournalEntries(){
+  const wrap = document.getElementById("journalEntries");
+  if(state.journal.length===0){ wrap.innerHTML = ""; return; }
+  wrap.innerHTML = state.journal.map(e=>`
+    <div class="journal-entry">
+      <div class="meta"><span>${e.scenario}</span><span>${e.time}</span></div>
+      <div>${escapeHtml(e.text)}</div>
+    </div>
+  `).join("");
+}
+
+/* ---------------------------------------------------------
+   SUMMARY
+--------------------------------------------------------- */
+function renderSummary(){
+  const helpfulCount = state.dndSorted.helpful.length;
+  const pressuredCount = state.dndSorted.pressured.length;
+  const unsureCount = state.dndSorted.unsure.length;
+  const sequenceFilled = state.sequenceOrder.filter(Boolean).length;
+
+  document.getElementById("summaryStats").innerHTML = `
+    <div class="stat-card"><div class="stat-num">${helpfulCount}</div><div class="stat-label">Grounded Thoughts</div></div>
+    <div class="stat-card"><div class="stat-num">${pressuredCount}</div><div class="stat-label">Pressured Thoughts</div></div>
+    <div class="stat-card"><div class="stat-num">${sequenceFilled}/${SEQUENCE_STEPS.length}</div><div class="stat-label">Sequence Steps Placed</div></div>
+    <div class="stat-card"><div class="stat-num">${state.journal.length}</div><div class="stat-label">Journal Entries</div></div>
+  `;
+
+  let compareLine = "";
+  if(state.compareChoice){
+    compareLine = `<p>You noted that <strong>Style ${state.compareChoice==='rigid'?'A':'B'}</strong> felt more familiar today${state.compareNote ? " — you wrote: \"" + escapeHtml(state.compareNote) + "\"" : "."}</p>`;
+  }
+
+  document.getElementById("summaryDetails").innerHTML = `
+    <h3 style="margin-top:10px;">What You Explored</h3>
+    <p>In the <strong>${state.scenario.label}</strong> area, using <strong>${state.mode==='calm'?'Calm':'Stress'} Mode</strong>, you sorted ${helpfulCount+pressuredCount+unsureCount} thoughts, arranged ${sequenceFilled} steps of your thinking sequence, and reflected on two thinking styles.</p>
+    ${compareLine}
+    ${state.journal.length ? `<h3>Your Journal Notes</h3>` + state.journal.map(e=>`<div class="journal-entry"><div class="meta"><span>${e.scenario}</span><span>${e.time}</span></div><div>${escapeHtml(e.text)}</div></div>`).join("") : ""}
+  `;
+
+  const closings = [
+    "Noticing your own thinking — without judging it — is itself a valuable skill. However this session went, that noticing counts.",
+    "There's no 'correct' way your thoughts should have been sorted. What matters is the moment of pausing to look.",
+    "Patterns aren't permanent. The way you thought about this today doesn't have to be the way you think about it tomorrow.",
+  ];
+  document.getElementById("closingThought").textContent = closings[Math.floor(Math.random()*closings.length)];
+}
+
+/* Hook summary rendering on nav */
+const _origGoTo = goTo;
+goTo = function(name){
+  _origGoTo(name);
+  if(name==="scenario") renderScenarioGrid();
+  if(name==="summary") renderSummary();
+};
+
+/* ---------------------------------------------------------
+   REPLAY
+--------------------------------------------------------- */
+function replaySession(){
+  state.scenario = null;
+  state.dndSorted = { helpful:[], pressured:[], unsure:[] };
+  state.sequenceOrder = [];
+  state.compareChoice = null;
+  state.compareNote = "";
+  state.journal = [];
+  document.getElementById("scenarioNext").disabled = true;
+  document.querySelectorAll("#scenarioGrid .option-card").forEach(c=>c.classList.remove("selected"));
+  goTo("welcome");
+}
+
+/* ---------------------------------------------------------
+   UTIL
+--------------------------------------------------------- */
+function escapeHtml(str){
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ---------------------------------------------------------
+   INIT
+--------------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", ()=>{
+  goTo("welcome");
+});
+</script>
+</body>
+</html>
