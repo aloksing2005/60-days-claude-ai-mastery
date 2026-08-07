@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Financial Command Center — Student Edition</title>
+<style>
+:root{
+  --bg:#0E1116;
+  --surface:#171B24;
+  --surface-2:#1F2530;
+  --line:#2B3240;
+  --text:#EDEFF4;
+  --muted:#8E96A6;
+  --mint:#5FE3B0;
+  --coral:#FF8C6B;
+  --amber:#F5C15C;
+  --sky:#6FB6FF;
+  --violet:#B79CFF;
+  --danger:#FF6B6B;
+  --good:#5FE3B0;
+  --radius:14px;
+  --mono:'Consolas','SFMono-Regular',Menlo,monospace;
+  --disp:'Trebuchet MS','Segoe UI',sans-serif;
+  --body:'Segoe UI',system-ui,sans-serif;
+}
+[data-theme="light"]{
+  --bg:#FAF8F3; --surface:#FFFFFF; --surface-2:#F2EFE6; --line:#E1DDD0; --text:#1C2027; --muted:#6B7180;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.6; padding-bottom:60px; transition:.3s;}
+h1,h2,h3,h4{font-family:var(--disp); font-weight:700;}
+::selection{background:var(--mint); color:#0E1116;}
+.mono{font-family:var(--mono);}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms !important; transition-duration:.01ms !important;}}
+
+/* ===== TOPBAR ===== */
+.topbar{position:sticky; top:0; z-index:200; display:flex; align-items:center; justify-content:space-between; padding:14px 26px; background:rgba(14,17,22,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line);}
+[data-theme="light"] .topbar{background:rgba(250,248,243,.9);}
+.brand{display:flex; align-items:center; gap:10px; font-family:var(--disp); font-weight:700; font-size:1.05rem;}
+.brand .dot{width:10px; height:10px; border-radius:50%; background:var(--mint); box-shadow:0 0 12px var(--mint);}
+.tb-actions{display:flex; gap:10px; align-items:center;}
+.icon-btn{background:var(--surface-2); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:8px 12px; font-size:.82rem; cursor:pointer; transition:.2s;}
+.icon-btn:hover{border-color:var(--mint); color:var(--mint);}
+
+/* nav tabs */
+.tabs{display:flex; gap:6px; padding:10px 26px; overflow-x:auto; background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:57px; z-index:190;}
+.tab{white-space:nowrap; font-size:.82rem; padding:8px 14px; border-radius:20px; background:transparent; border:1px solid var(--line); color:var(--muted); cursor:pointer; transition:.15s;}
+.tab:hover{color:var(--text);}
+.tab.active{background:var(--mint); color:#0E1116; border-color:var(--mint); font-weight:600;}
+
+.wrap{max-width:1100px; margin:0 auto; padding:0 24px;}
+.view{display:none; padding:32px 0 10px;}
+.view.active{display:block;}
+.eyebrow{font-family:var(--mono); text-transform:uppercase; letter-spacing:2.5px; font-size:.72rem; color:var(--mint); margin-bottom:8px;}
+p{color:var(--text); opacity:.92;}
+.muted{color:var(--muted);}
+
+/* cards / grid */
+.grid{display:grid; gap:18px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:1.3fr .7fr;}
+@media(max-width:900px){ .grid-4{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:1fr 1fr;} .grid-2{grid-template-columns:1fr;} }
+@media(max-width:560px){ .grid-4,.grid-3{grid-template-columns:1fr;} }
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
+.card h3{font-size:1rem; margin-bottom:10px;}
+.stat-card{padding:18px 20px;}
+.stat-label{font-family:var(--mono); font-size:.7rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:8px;}
+.stat-val{font-family:var(--disp); font-size:1.7rem; font-weight:700;}
+.stat-sub{font-size:.78rem; color:var(--muted); margin-top:4px;}
+.trend-up{color:var(--good);} .trend-down{color:var(--danger);}
+
+/* buttons/inputs */
+.btn{font-family:var(--body); font-weight:600; font-size:.9rem; padding:11px 20px; border-radius:9px; border:1px solid transparent; cursor:pointer; transition:.2s;}
+.btn-primary{background:var(--mint); color:#0E1116;}
+.btn-primary:hover{transform:translateY(-2px); box-shadow:0 8px 20px -8px var(--mint);}
+.btn-ghost{background:transparent; border-color:var(--line); color:var(--text);}
+.btn-ghost:hover{border-color:var(--mint); color:var(--mint);}
+.btn-sm{padding:7px 12px; font-size:.78rem; border-radius:7px;}
+input,select,textarea{background:var(--surface-2); border:1px solid var(--line); color:var(--text); padding:9px 12px; border-radius:8px; font-family:var(--body); font-size:.88rem; width:100%;}
+label{font-size:.78rem; color:var(--muted); display:block; margin-bottom:5px; font-family:var(--mono); text-transform:uppercase; letter-spacing:1px;}
+.field{margin-bottom:14px;}
+.row{display:flex; gap:10px; flex-wrap:wrap;}
+.row > *{flex:1; min-width:120px;}
+
+table{width:100%; border-collapse:collapse; font-size:.87rem;}
+th,td{padding:10px 8px; border-bottom:1px solid var(--line); text-align:left;}
+th{font-family:var(--mono); font-size:.7rem; text-transform:uppercase; color:var(--muted); letter-spacing:1px;}
+tr:hover td{background:var(--surface-2);}
+.pill{font-family:var(--mono); font-size:.7rem; padding:3px 9px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line);}
+.pill.need{color:var(--sky); border-color:var(--sky);}
+.pill.want{color:var(--coral); border-color:var(--coral);}
+.pill.save{color:var(--mint); border-color:var(--mint);}
+.del-btn{background:none; border:none; color:var(--danger); cursor:pointer; font-size:1rem;}
+
+/* progress bars */
+.pbar{height:10px; border-radius:6px; background:var(--surface-2); overflow:hidden; margin:8px 0;}
+.pbar-fill{height:100%; border-radius:6px; transition:width .6s ease;}
+
+/* semester runway ring (signature element) */
+.runway{display:flex; align-items:center; gap:26px; flex-wrap:wrap;}
+.ring-wrap{position:relative; width:170px; height:170px; flex-shrink:0;}
+.ring-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+.ring-center .big{font-family:var(--disp); font-size:1.6rem; font-weight:700;}
+.ring-center .small{font-family:var(--mono); font-size:.68rem; color:var(--muted);}
+
+/* health score gauge */
+.score-wrap{display:flex; align-items:center; gap:22px; flex-wrap:wrap;}
+.score-num{font-family:var(--disp); font-size:3rem; font-weight:800;}
+.score-badge{font-family:var(--mono); font-size:.72rem; padding:5px 12px; border-radius:14px; display:inline-block;}
+
+.chip-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+.chip{font-family:var(--mono); font-size:.72rem; padding:5px 11px; border-radius:14px; background:var(--surface-2); border:1px solid var(--line); color:var(--muted);}
+
+.insight{border-left:3px solid var(--mint); background:var(--surface-2); padding:14px 16px; border-radius:0 10px 10px 0; margin-bottom:10px; font-size:.88rem;}
+.insight.warn{border-color:var(--coral);}
+.insight.info{border-color:var(--sky);}
+
+.checklist{list-style:none;}
+.checklist li{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:.9rem;}
+.checklist li:last-child{border-bottom:none;}
+.checklist input[type=checkbox]{width:auto; accent-color:var(--mint);}
+
+.resource-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+@media(max-width:700px){.resource-grid{grid-template-columns:1fr;}}
+.resource-card h4{font-family:var(--mono); font-size:.75rem; text-transform:uppercase; letter-spacing:2px; color:var(--mint); margin-bottom:10px;}
+.resource-card ul{list-style:none;}
+.resource-card li{padding:5px 0; font-size:.88rem; color:var(--muted);}
+.resource-card li b{color:var(--text);}
+
+footer{text-align:center; padding:40px 24px; color:var(--muted); font-size:.85rem;}
+.section-title{margin:26px 0 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+
+@media print{
+  .topbar,.tabs,.btn,.icon-btn,input,select,.del-btn{display:none !important;}
+  .view{display:block !important;}
+  body{background:#fff; color:#000;}
+  .card{border:1px solid #ccc; break-inside:avoid;}
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="topbar">
+  <div class="brand"><span class="dot"></span> Personal Financial Command Center</div>
+  <div class="tb-actions">
+    <span class="icon-btn mono" id="lastSaved">Saved locally</span>
+    <button class="icon-btn" onclick="window.print()">🖨️ Print report</button>
+    <button class="icon-btn" id="themeToggle">🌙 Dark</button>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-view="overview">Overview</button>
+  <button class="tab" data-view="income">Income</button>
+  <button class="tab" data-view="budget">Budget &amp; Expenses</button>
+  <button class="tab" data-view="subscriptions">Subscriptions</button>
+  <button class="tab" data-view="savings">Savings Goals</button>
+  <button class="tab" data-view="invest101">Investing 101</button>
+  <button class="tab" data-view="whatif">What-If Simulator</button>
+  <button class="tab" data-view="insights">Insights &amp; Score</button>
+  <button class="tab" data-view="learn">Tips &amp; Resources</button>
+</div>
+
+<div class="wrap">
+
+<!-- ============== OVERVIEW ============== -->
+<div class="view active" id="view-overview">
+  <div class="eyebrow">Student Edition · Scholarship / Stipend Income</div>
+  <h1 style="font-size:clamp(1.7rem,4vw,2.3rem); margin-bottom:6px;">Your semester at a glance</h1>
+  <p class="muted" style="max-width:60ch;">Built for stipend-and-support income: irregular timing, no debt yet, and the goal of building your first real savings habit before graduation.</p>
+
+  <div class="grid grid-4" style="margin-top:22px;">
+    <div class="card stat-card">
+      <div class="stat-label">This month's income</div>
+      <div class="stat-val" id="ov-income">₹0</div>
+      <div class="stat-sub" id="ov-income-sub">stipend + support</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">This month's spending</div>
+      <div class="stat-val" id="ov-spend">₹0</div>
+      <div class="stat-sub" id="ov-spend-sub">across all categories</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Left to spend</div>
+      <div class="stat-val" id="ov-left">₹0</div>
+      <div class="stat-sub" id="ov-left-sub">for the rest of this month</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Financial health score</div>
+      <div class="stat-val" id="ov-score">—</div>
+      <div class="stat-sub">tap "Insights" tab for the breakdown</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:18px;">
+    <div class="card">
+      <h3>Semester money runway</h3>
+      <p class="muted" style="font-size:.85rem; margin-bottom:10px;">How your remaining balance stretches against the days left before your next stipend or support arrives.</p>
+      <div class="runway">
+        <div class="ring-wrap"><svg id="runwayRing" viewBox="0 0 170 170" width="170" height="170"></svg>
+          <div class="ring-center"><div class="big" id="runwayPct">—</div><div class="small">of days covered</div></div>
+        </div>
+        <div style="flex:1; min-width:180px;">
+          <div class="row">
+            <div class="field"><label>Days until next income</label><input type="number" id="daysUntilIncome" value="18" min="1"></div>
+            <div class="field"><label>Avg daily spend (₹)</label><input type="number" id="avgDailySpend" value="150" min="0"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="renderRunway()">Recalculate runway</button>
+          <p class="muted" style="font-size:.8rem; margin-top:10px;" id="runwayNote"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Spending by category</h3>
+      <svg id="donutChart" viewBox="0 0 200 200" width="100%" height="200"></svg>
+      <div class="chip-row" id="donutLegend"></div>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>Quick add a transaction</h3></div>
+  <div class="card">
+    <div class="row">
+      <div class="field"><label>Type</label><select id="qa-type"><option value="expense">Expense</option><option value="income">Income</option></select></div>
+      <div class="field"><label>Category</label>
+        <select id="qa-cat">
+          <option>Food &amp; Groceries</option><option>Housing/Rent</option><option>Transport</option>
+          <option>Books &amp; Supplies</option><option>Entertainment</option><option>Subscriptions</option>
+          <option>Health</option><option>Stipend</option><option>Family Support</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Amount (₹)</label><input type="number" id="qa-amount" placeholder="0"></div>
+      <div class="field"><label>Note</label><input type="text" id="qa-note" placeholder="optional"></div>
+    </div>
+    <button class="btn btn-primary" onclick="quickAdd()">Add transaction</button>
+  </div>
+
+  <div class="section-title"><h3>Recent transactions</h3></div>
+  <div class="card">
+    <table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Note</th><th>Amount</th><th></th></tr></thead>
+    <tbody id="txTable"></tbody></table>
+    <p class="muted" id="txEmpty" style="display:none; padding:14px 0;">No transactions yet — add your first one above.</p>
+  </div>
+</div>
+
+<!-- ============== INCOME ============== -->
+<div class="view" id="view-income">
+  <div class="eyebrow">Income</div>
+  <h2>Where your money comes from</h2>
+  <p class="muted" style="max-width:60ch; margin-bottom:18px;">Stipend and family support rarely arrive on a neat monthly schedule — track each source so you can see real timing, not just totals.</p>
+
+  <div class="card">
+    <h3>Add an income source</h3>
+    <div class="row">
+      <div class="field"><label>Source name</label><input type="text" id="inc-name" placeholder="e.g. Research stipend"></div>
+      <div class="field"><label>Amount (₹)</label><input type="number" id="inc-amount" placeholder="0"></div>
+      <div class="field"><label>Frequency</label><select id="inc-freq"><option>Monthly</option><option>One-time</option><option>Irregular</option></select></div>
+    </div>
+    <button class="btn btn-primary" onclick="addIncomeSource()">Add source</button>
+  </div>
+
+  <div class="section-title"><h3>Your income sources</h3></div>
+  <div class="card">
+    <table><thead><tr><th>Source</th><th>Frequency</th><th>Amount</th><th></th></tr></thead>
+    <tbody id="incomeTable"></tbody></table>
+  </div>
+
+  <div class="section-title"><h3>Income stability</h3></div>
+  <div class="card">
+    <p class="muted" style="font-size:.87rem;">Because scholarship/stipend income can be irregular, aim to keep at least <b>1 month of expenses</b> as a buffer so a delayed payment never forces a scramble.</p>
+    <div class="pbar"><div class="pbar-fill" id="bufferBar" style="background:var(--sky); width:0%;"></div></div>
+    <p class="muted" id="bufferNote" style="font-size:.82rem;"></p>
+  </div>
+</div>
+
+<!-- ============== BUDGET ============== -->
+<div class="view" id="view-budget">
+  <div class="eyebrow">Budget &amp; Expenses</div>
+  <h2>The 50/30/20 rule, adapted for student life</h2>
+  <p class="muted" style="max-width:62ch; margin-bottom:16px;">50% needs (rent, food, transport), 30% wants (entertainment, eating out), 20% savings/future. Set your monthly income below and we'll split it.</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label>Expected monthly income (₹)</label><input type="number" id="budgetIncome" value="8000"></div>
+      <div style="align-self:flex-end;"><button class="btn btn-primary" onclick="renderBudget()">Recalculate budget</button></div>
+    </div>
+    <div class="grid grid-3" style="margin-top:16px;">
+      <div class="card" style="background:var(--surface-2);">
+        <div class="stat-label" style="color:var(--sky);">NEEDS · 50%</div>
+        <div class="stat-val" id="budNeeds">₹0</div>
+      </div>
+      <div class="card" style="background:var(--surface-2);">
+        <div class="stat-label" style="color:var(--coral);">WANTS · 30%</div>
+        <div class="stat-val" id="budWants">₹0</div>
+      </div>
+      <div class="card" style="background:var(--surface-2);">
+        <div class="stat-label" style="color:var(--mint);">SAVINGS · 20%</div>
+        <div class="stat-val" id="budSavings">₹0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>Actual spend vs budget, by category</h3></div>
+  <div class="card" id="budgetVsActual"></div>
+
+  <div class="section-title"><h3>All expenses</h3></div>
+  <div class="card">
+    <table><thead><tr><th>Date</th><th>Category</th><th>Type</th><th>Note</th><th>Amount</th></tr></thead>
+    <tbody id="expenseTable"></tbody></table>
+  </div>
+</div>
+
+<!-- ============== SUBSCRIPTIONS ============== -->
+<div class="view" id="view-subscriptions">
+  <div class="eyebrow">Subscriptions</div>
+  <h2>The silent budget killer</h2>
+  <p class="muted" style="max-width:60ch; margin-bottom:16px;">Streaming, music, cloud storage, campus tools — small recurring charges add up fast on a student budget. Track them here.</p>
+
+  <div class="card">
+    <h3>Add a subscription</h3>
+    <div class="row">
+      <div class="field"><label>Name</label><input type="text" id="sub-name" placeholder="e.g. Spotify"></div>
+      <div class="field"><label>Monthly cost (₹)</label><input type="number" id="sub-cost" placeholder="0"></div>
+      <div class="field"><label>Category</label><select id="sub-cat"><option>Streaming</option><option>Software/Tools</option><option>Gaming</option><option>Fitness</option><option>Other</option></select></div>
+    </div>
+    <button class="btn btn-primary" onclick="addSubscription()">Add subscription</button>
+  </div>
+
+  <div class="section-title"><h3>Active subscriptions</h3></div>
+  <div class="card">
+    <table><thead><tr><th>Name</th><th>Category</th><th>Monthly</th><th>Yearly cost</th><th></th></tr></thead>
+    <tbody id="subTable"></tbody></table>
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">
+      <span class="muted">Total monthly:</span> <b class="mono" id="subTotalMonthly">₹0</b> &nbsp;·&nbsp;
+      <span class="muted">Total yearly:</span> <b class="mono" id="subTotalYearly">₹0</b>
+    </div>
+  </div>
+  <div class="insight warn" id="subInsight" style="display:none;"></div>
+</div>
+
+<!-- ============== SAVINGS GOALS ============== -->
+<div class="view" id="view-savings">
+  <div class="eyebrow">Savings Goals</div>
+  <h2>Give your money a destination</h2>
+  <p class="muted" style="max-width:60ch; margin-bottom:16px;">An emergency fund is the highest-priority goal for anyone on irregular income. Start there, then layer in other goals.</p>
+
+  <div class="card">
+    <h3>Add a savings goal</h3>
+    <div class="row">
+      <div class="field"><label>Goal name</label><input type="text" id="goal-name" placeholder="e.g. Emergency fund"></div>
+      <div class="field"><label>Target amount (₹)</label><input type="number" id="goal-target" placeholder="0"></div>
+      <div class="field"><label>Already saved (₹)</label><input type="number" id="goal-current" placeholder="0"></div>
+      <div class="field"><label>Target date</label><input type="date" id="goal-date"></div>
+    </div>
+    <button class="btn btn-primary" onclick="addGoal()">Add goal</button>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:16px;" id="goalsGrid"></div>
+
+  <div class="card" style="margin-top:16px;">
+    <h3>Emergency fund calculator</h3>
+    <p class="muted" style="font-size:.85rem;">Rule of thumb for students: 1–3 months of essential expenses.</p>
+    <div class="row">
+      <div class="field"><label>Monthly essential expenses (₹)</label><input type="number" id="ef-monthly" value="5000"></div>
+      <div class="field"><label>Months of cover wanted</label><input type="number" id="ef-months" value="2"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="calcEmergencyFund()">Calculate target</button>
+    <p style="margin-top:10px;">Target emergency fund: <b class="mono" id="efResult">₹0</b></p>
+  </div>
+</div>
+
+<!-- ============== INVESTING 101 ============== -->
+<div class="view" id="view-invest101">
+  <div class="eyebrow">Investing 101 · Learn before you start</div>
+  <h2>You don't need to be rich to start investing</h2>
+  <p class="muted" style="max-width:64ch; margin-bottom:16px;">You said you're not investing yet but want to learn — this module explains the basics and lets you simulate outcomes before you commit real money.</p>
+
+  <div class="grid grid-3">
+    <div class="card">
+      <h3 style="color:var(--mint);">Compounding</h3>
+      <p style="font-size:.87rem;">Interest earns interest. ₹1,000/month at 10% annual return becomes far more than ₹1,000 × months, because early contributions keep growing.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--sky);">SIP / Index Funds</h3>
+      <p style="font-size:.87rem;">A Systematic Investment Plan lets you invest a fixed small amount regularly into a diversified fund — a common low-effort starting point.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--coral);">Risk vs time horizon</h3>
+      <p style="font-size:.87rem;">The longer your money can stay invested, the more short-term ups and downs you can ride out. As a student, time is your biggest advantage.</p>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>SIP growth simulator</h3></div>
+  <div class="card">
+    <div class="row">
+      <div class="field"><label>Monthly investment (₹)</label><input type="number" id="sip-amount" value="500"></div>
+      <div class="field"><label>Expected annual return (%)</label><input type="number" id="sip-return" value="10"></div>
+      <div class="field"><label>Years invested</label><input type="number" id="sip-years" value="10"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="renderSip()">Simulate growth</button>
+    <svg id="sipChart" viewBox="0 0 600 220" width="100%" height="220" style="margin-top:14px;"></svg>
+    <div class="chip-row" id="sipSummary"></div>
+  </div>
+
+  <div class="insight info">Educational simulation only — not investment advice. Actual returns vary and can be negative in any given year.</div>
+</div>
+
+<!-- ============== WHAT-IF SIMULATOR ============== -->
+<div class="view" id="view-whatif">
+  <div class="eyebrow">What-If Simulator</div>
+  <h2>Test a decision before you make it</h2>
+  <p class="muted" style="max-width:62ch; margin-bottom:16px;">Adjust the sliders below to see how a spending or saving change plays out over the rest of the semester.</p>
+
+  <div class="card">
+    <div class="field">
+      <label>Cut discretionary spending by: <span id="wf-cutVal" class="mono">₹0</span>/month</label>
+      <input type="range" id="wf-cut" min="0" max="3000" step="100" value="0" oninput="updateWhatIf()">
+    </div>
+    <div class="field">
+      <label>Add a side gig income of: <span id="wf-gigVal" class="mono">₹0</span>/month</label>
+      <input type="range" id="wf-gig" min="0" max="5000" step="100" value="0" oninput="updateWhatIf()">
+    </div>
+    <div class="field">
+      <label>Months to project: <span id="wf-monthsVal" class="mono">6</span></label>
+      <input type="range" id="wf-months" min="1" max="24" step="1" value="6" oninput="updateWhatIf()">
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:16px;">
+    <div class="card">
+      <h3>Projected savings, with vs without the change</h3>
+      <svg id="whatIfChart" viewBox="0 0 560 240" width="100%" height="240"></svg>
+    </div>
+    <div class="card">
+      <h3>Impact summary</h3>
+      <div id="wfSummary"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== INSIGHTS & SCORE ============== -->
+<div class="view" id="view-insights">
+  <div class="eyebrow">Insights &amp; Financial Health Score</div>
+  <h2>Where you actually stand</h2>
+
+  <div class="card score-wrap" style="margin-top:10px;">
+    <div>
+      <div class="stat-label">FINANCIAL HEALTH SCORE</div>
+      <div class="score-num" id="scoreNum">—</div>
+      <div class="score-badge" id="scoreBadge"></div>
+    </div>
+    <div style="flex:1; min-width:220px;">
+      <div id="scoreFactors"></div>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>AI-style recommendations</h3></div>
+  <div id="recommendations"></div>
+
+  <div class="section-title"><h3>Cash flow, this month</h3></div>
+  <div class="card">
+    <svg id="cashflowChart" viewBox="0 0 560 200" width="100%" height="200"></svg>
+  </div>
+</div>
+
+<!-- ============== TIPS & RESOURCES ============== -->
+<div class="view" id="view-learn">
+  <div class="eyebrow">Tips, Checklists &amp; Resources</div>
+  <h2>Keep building the habit</h2>
+
+  <div class="grid grid-2" style="margin-top:10px;">
+    <div class="card">
+      <h3>Money tips for students on stipend income</h3>
+      <ul style="padding-left:18px; font-size:.9rem;">
+        <li>Track irregular income by <i>date received</i>, not by assumed monthly average.</li>
+        <li>Pay yourself first — move a fixed amount to savings the moment income lands.</li>
+        <li>Use student discounts and campus resources before paid alternatives.</li>
+        <li>Review subscriptions every semester — cancel what you haven't used in 30 days.</li>
+        <li>Round up spare change from expenses into your emergency fund goal.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Monthly financial checklist</h3>
+      <ul class="checklist" id="checklist"></ul>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>Resources to go deeper</h3></div>
+  <div class="resource-grid">
+    <div class="resource-card">
+      <h4>📚 Books</h4>
+      <ul>
+        <li><b>I Will Teach You to Be Rich</b> — Ramit Sethi</li>
+        <li><b>The Psychology of Money</b> — Morgan Housel</li>
+        <li><b>The Simple Path to Wealth</b> — JL Collins</li>
+      </ul>
+    </div>
+    <div class="resource-card">
+      <h4>🧮 Tools &amp; calculators</h4>
+      <ul>
+        <li>SIP / compound interest calculators (most fund houses offer free ones)</li>
+        <li>Campus financial aid office budgeting worksheets</li>
+        <li>Bank apps' built-in spend-categorization features</li>
+      </ul>
+    </div>
+    <div class="resource-card">
+      <h4>👥 Communities</h4>
+      <ul>
+        <li>r/personalfinance, r/StudentLoans (for later)</li>
+        <li>Campus financial literacy workshops</li>
+        <li>Local credit union student programs</li>
+      </ul>
+    </div>
+    <div class="resource-card">
+      <h4>🔎 Search keywords</h4>
+      <div>
+        <span class="pill save" style="margin:3px 4px 0 0; display:inline-block;">emergency fund for students</span>
+        <span class="pill save" style="margin:3px 4px 0 0; display:inline-block;">SIP vs lump sum</span>
+        <span class="pill save" style="margin:3px 4px 0 0; display:inline-block;">50/30/20 budget rule</span>
+        <span class="pill save" style="margin:3px 4px 0 0; display:inline-block;">index funds for beginners</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title"><h3>Prompts for further AI-assisted learning</h3></div>
+  <div class="card">
+    <ul style="padding-left:18px; font-size:.88rem;">
+      <li style="margin-bottom:8px;">"I get ₹8,000/month from a stipend with irregular timing — help me build a simple monthly budget."</li>
+      <li style="margin-bottom:8px;">"Explain index funds vs individual stocks for a complete beginner, with pros/cons."</li>
+      <li style="margin-bottom:8px;">"What's a realistic emergency fund target for a student with no debt and irregular income?"</li>
+      <li>"Walk me through how compounding works with a ₹500/month example over 10 years."</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+<footer>Personal Financial Command Center · Student Edition · All data stays in your browser (localStorage) — nothing is sent anywhere.</footer>
+
+<script>
+/* ================= STORAGE ================= */
+const STORE_KEY = 'pfcc_student_v1';
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {
+    transactions:[
+      {date:'2026-08-01', type:'income', cat:'Stipend', note:'Monthly stipend', amount:6000},
+      {date:'2026-08-01', type:'income', cat:'Family Support', note:'', amount:2000},
+      {date:'2026-08-03', type:'expense', cat:'Housing/Rent', note:'Hostel fee share', amount:2500},
+      {date:'2026-08-05', type:'expense', cat:'Food & Groceries', note:'', amount:1400},
+      {date:'2026-08-07', type:'expense', cat:'Transport', note:'Bus pass', amount:400},
+      {date:'2026-08-08', type:'expense', cat:'Entertainment', note:'Movie night', amount:350},
+      {date:'2026-08-09', type:'expense', cat:'Books & Supplies', note:'Notebook set', amount:300}
+    ],
+    incomeSources:[
+      {name:'Research stipend', amount:6000, freq:'Monthly'},
+      {name:'Family support', amount:2000, freq:'Irregular'}
+    ],
+    subscriptions:[
+      {name:'Spotify', cost:119, cat:'Streaming'},
+      {name:'Cloud storage', cost:130, cat:'Software/Tools'}
+    ],
+    goals:[
+      {name:'Emergency fund', target:15000, current:2000, date:'2027-01-01'}
+    ],
+    checklist:[
+      {label:'Reviewed this month\\'s transactions', done:false},
+      {label:'Checked subscriptions for unused ones', done:false},
+      {label:'Moved something into savings', done:false},
+      {label:'Compared spend vs budget', done:false}
+    ]
+  };
+}
+let state = loadState();
+function save(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  const el = document.getElementById('lastSaved');
+  el.textContent = 'Saved ' + new Date().toLocaleTimeString();
+}
+
+/* ================= THEME ================= */
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', ()=>{
+  const isDark = document.body.getAttribute('data-theme') !== 'light';
+  document.body.setAttribute('data-theme', isDark ? 'light':'dark');
+  themeBtn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+  renderAll();
+});
+
+/* ================= TABS ================= */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-'+tab.dataset.view).classList.add('active');
+    renderAll();
+  });
+});
+
+/* ================= HELPERS ================= */
+function fmt(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function cssVar(name){ return getComputedStyle(document.body).getPropertyValue(name).trim(); }
+function monthKey(d){ return d.slice(0,7); }
+function currentMonth(){ return new Date().toISOString().slice(0,7); }
+
+/* ================= QUICK ADD / TRANSACTIONS ================= */
+function quickAdd(){
+  const type = document.getElementById('qa-type').value;
+  const cat = document.getElementById('qa-cat').value;
+  const amount = parseFloat(document.getElementById('qa-amount').value);
+  const note = document.getElementById('qa-note').value;
+  if(!amount || amount<=0) return;
+  state.transactions.push({date:new Date().toISOString().slice(0,10), type, cat, note, amount});
+  document.getElementById('qa-amount').value='';
+  document.getElementById('qa-note').value='';
+  save(); renderAll();
+}
+function deleteTx(i){ state.transactions.splice(i,1); save(); renderAll(); }
+
+function renderTxTable(){
+  const tbody = document.getElementById('txTable');
+  const sorted = state.transactions.map((t,i)=>({...t,i})).sort((a,b)=>b.date.localeCompare(a.date));
+  tbody.innerHTML = sorted.slice(0,10).map(t=>`
+    <tr>
+      <td class="mono" style="font-size:.8rem;">${t.date}</td>
+      <td><span class="pill ${t.type==='income'?'save':'want'}">${t.type}</span></td>
+      <td>${t.cat}</td>
+      <td class="muted">${t.note||'—'}</td>
+      <td class="mono" style="color:${t.type==='income'?'var(--good)':'var(--text)'};">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td>
+      <td><button class="del-btn" onclick="deleteTx(${t.i})">✕</button></td>
+    </tr>`).join('');
+  document.getElementById('txEmpty').style.display = state.transactions.length ? 'none':'block';
+
+  const expTbody = document.getElementById('expenseTable');
+  if(expTbody){
+    const exps = state.transactions.filter(t=>t.type==='expense').sort((a,b)=>b.date.localeCompare(a.date));
+    expTbody.innerHTML = exps.map(t=>`<tr><td class="mono" style="font-size:.8rem;">${t.date}</td><td>${t.cat}</td><td><span class="pill want">expense</span></td><td class="muted">${t.note||'—'}</td><td class="mono">${fmt(t.amount)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No expenses yet.</td></tr>';
+  }
+}
+
+/* ================= OVERVIEW STATS ================= */
+function monthTotals(){
+  const cm = currentMonth();
+  let income=0, spend=0;
+  const catTotals = {};
+  state.transactions.forEach(t=>{
+    if(monthKey(t.date)!==cm) return;
+    if(t.type==='income') income += t.amount;
+    else { spend += t.amount; catTotals[t.cat] = (catTotals[t.cat]||0) + t.amount; }
+  });
+  return {income, spend, catTotals};
+}
+
+function renderOverviewStats(){
+  const {income, spend, catTotals} = monthTotals();
+  document.getElementById('ov-income').textContent = fmt(income);
+  document.getElementById('ov-spend').textContent = fmt(spend);
+  const left = income - spend;
+  document.getElementById('ov-left').textContent = fmt(Math.max(left,0));
+  document.getElementById('ov-left-sub').textContent = left<0 ? 'over budget this month' : 'for the rest of this month';
+  document.getElementById('ov-score').textContent = computeScore().score;
+  renderDonut(catTotals);
+}
+
+/* ================= DONUT CHART (pure SVG) ================= */
+const CAT_COLORS = {'Food & Groceries':'#5FE3B0','Housing/Rent':'#6FB6FF','Transport':'#F5C15C','Books & Supplies':'#B79CFF','Entertainment':'#FF8C6B','Subscriptions':'#FF6B6B','Health':'#4EC5E0','Other':'#8E96A6'};
+function renderDonut(catTotals){
+  const svg = document.getElementById('donutChart');
+  const legend = document.getElementById('donutLegend');
+  const entries = Object.entries(catTotals);
+  const total = entries.reduce((s,[,v])=>s+v,0);
+  svg.innerHTML=''; legend.innerHTML='';
+  if(!total){ svg.innerHTML = '<text x="100" y="105" text-anchor="middle" fill="#8E96A6" font-size="12">No spending yet</text>'; return; }
+  let angle = -90;
+  const cx=100, cy=100, r=70, ir=42;
+  entries.forEach(([cat,val])=>{
+    const frac = val/total;
+    const sweep = frac*360;
+    const large = sweep>180?1:0;
+    const x1 = cx + r*Math.cos(angle*Math.PI/180), y1 = cy + r*Math.sin(angle*Math.PI/180);
+    const x2 = cx + r*Math.cos((angle+sweep)*Math.PI/180), y2 = cy + r*Math.sin((angle+sweep)*Math.PI/180);
+    const ix1 = cx + ir*Math.cos(angle*Math.PI/180), iy1 = cy + ir*Math.sin(angle*Math.PI/180);
+    const ix2 = cx + ir*Math.cos((angle+sweep)*Math.PI/180), iy2 = cy + ir*Math.sin((angle+sweep)*Math.PI/180);
+    const color = CAT_COLORS[cat] || '#8E96A6';
+    const path = `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${ir} ${ir} 0 ${large} 0 ${ix1} ${iy1} Z`;
+    svg.innerHTML += `<path d="${path}" fill="${color}" opacity="0.92"><title>${cat}: ${fmt(val)}</title></path>`;
+    const chip = document.createElement('span');
+    chip.className='chip'; chip.style.borderColor=color; chip.style.color=color;
+    chip.textContent = cat+' · '+fmt(val);
+    legend.appendChild(chip);
+    angle += sweep;
+  });
+  svg.innerHTML += `<text x="100" y="96" text-anchor="middle" fill="${cssVar('--text')}" font-family="Consolas,monospace" font-size="15" font-weight="700">${fmt(total)}</text><text x="100" y="112" text-anchor="middle" fill="#8E96A6" font-size="10">this month</text>`;
+}
+
+/* ================= RUNWAY RING ================= */
+function renderRunway(){
+  const days = parseFloat(document.getElementById('daysUntilIncome').value)||1;
+  const dailySpend = parseFloat(document.getElementById('avgDailySpend').value)||0;
+  const {income, spend} = monthTotals();
+  const remaining = Math.max(income - spend, 0);
+  const daysCoverable = dailySpend>0 ? remaining/dailySpend : 0;
+  const pct = Math.min(daysCoverable/days, 1);
+  const svg = document.getElementById('runwayRing');
+  const r=70, cx=85, cy=85;
+  const circumference = 2*Math.PI*r;
+  const color = pct>=1 ? cssVar('--mint') : pct>=0.6 ? cssVar('--amber') : cssVar('--coral');
+  svg.innerHTML = `
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cssVar('--surface-2')}" stroke-width="14"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="14"
+      stroke-dasharray="${circumference}" stroke-dashoffset="${circumference*(1-pct)}"
+      stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dashoffset .6s ease;"/>
+  `;
+  document.getElementById('runwayPct').textContent = Math.round(pct*100)+'%';
+  document.getElementById('runwayNote').textContent = pct>=1
+    ? `Your remaining balance covers all ${days} days until your next income — solid.`
+    : `At this pace, your balance covers about ${Math.round(daysCoverable)} of the ${days} days left. Consider trimming discretionary spend.`;
+}
+
+/* ================= INCOME VIEW ================= */
+function addIncomeSource(){
+  const name = document.getElementById('inc-name').value.trim();
+  const amount = parseFloat(document.getElementById('inc-amount').value);
+  const freq = document.getElementById('inc-freq').value;
+  if(!name || !amount) return;
+  state.incomeSources.push({name, amount, freq});
+  document.getElementById('inc-name').value=''; document.getElementById('inc-amount').value='';
+  save(); renderAll();
+}
+function deleteIncome(i){ state.incomeSources.splice(i,1); save(); renderAll(); }
+function renderIncomeTable(){
+  const tbody = document.getElementById('incomeTable');
+  if(!tbody) return;
+  tbody.innerHTML = state.incomeSources.map((s,i)=>`<tr><td>${s.name}</td><td class="muted">${s.freq}</td><td class="mono">${fmt(s.amount)}</td><td><button class="del-btn" onclick="deleteIncome(${i})">✕</button></td></tr>`).join('') || '<tr><td colspan="4" class="muted">No income sources yet.</td></tr>';
+
+  const totalIncome = state.incomeSources.reduce((s,x)=>s+x.amount,0);
+  const {spend} = monthTotals();
+  const bufferPct = totalIncome>0 ? Math.min((totalIncome-spend)/totalIncome*100,100) : 0;
+  const bar = document.getElementById('bufferBar');
+  if(bar){ bar.style.width = Math.max(bufferPct,0)+'%'; }
+  const note = document.getElementById('bufferNote');
+  if(note) note.textContent = totalIncome>0 ? `You're retaining about ${Math.max(Math.round(bufferPct),0)}% of income as buffer this month.` : 'Add income sources to see your buffer.';
+}
+
+/* ================= BUDGET VIEW ================= */
+function renderBudget(){
+  const income = parseFloat(document.getElementById('budgetIncome').value)||0;
+  document.getElementById('budNeeds').textContent = fmt(income*0.5);
+  document.getElementById('budWants').textContent = fmt(income*0.3);
+  document.getElementById('budSavings').textContent = fmt(income*0.2);
+
+  const {catTotals} = monthTotals();
+  const NEED_CATS = ['Housing/Rent','Food & Groceries','Transport','Health','Books & Supplies'];
+  const WANT_CATS = ['Entertainment','Subscriptions','Other'];
+  let needsSpent=0, wantsSpent=0;
+  Object.entries(catTotals).forEach(([c,v])=>{
+    if(NEED_CATS.includes(c)) needsSpent+=v; else wantsSpent+=v;
+  });
+  const container = document.getElementById('budgetVsActual');
+  if(container){
+    const rows = [
+      {label:'Needs', budget:income*0.5, actual:needsSpent, color:'var(--sky)'},
+      {label:'Wants', budget:income*0.3, actual:wantsSpent, color:'var(--coral)'},
+    ];
+    container.innerHTML = rows.map(r=>{
+      const pct = r.budget>0 ? Math.min((r.actual/r.budget)*100,100) : 0;
+      const over = r.actual > r.budget;
+      return `<div style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:4px;">
+          <span>${r.label}</span><span class="mono ${over?'trend-down':''}">${fmt(r.actual)} / ${fmt(r.budget)}</span>
+        </div>
+        <div class="pbar"><div class="pbar-fill" style="width:${pct}%; background:${over?'var(--danger)':r.color};"></div></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+/* ================= SUBSCRIPTIONS ================= */
+function addSubscription(){
+  const name = document.getElementById('sub-name').value.trim();
+  const cost = parseFloat(document.getElementById('sub-cost').value);
+  const cat = document.getElementById('sub-cat').value;
+  if(!name || !cost) return;
+  state.subscriptions.push({name, cost, cat});
+  document.getElementById('sub-name').value=''; document.getElementById('sub-cost').value='';
+  save(); renderAll();
+}
+function deleteSub(i){ state.subscriptions.splice(i,1); save(); renderAll(); }
+function renderSubs(){
+  const tbody = document.getElementById('subTable');
+  if(!tbody) return;
+  tbody.innerHTML = state.subscriptions.map((s,i)=>`<tr><td>${s.name}</td><td class="muted">${s.cat}</td><td class="mono">${fmt(s.cost)}</td><td class="mono">${fmt(s.cost*12)}</td><td><button class="del-btn" onclick="deleteSub(${i})">✕</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">No subscriptions tracked yet.</td></tr>';
+  const totalM = state.subscriptions.reduce((s,x)=>s+x.cost,0);
+  document.getElementById('subTotalMonthly').textContent = fmt(totalM);
+  document.getElementById('subTotalYearly').textContent = fmt(totalM*12);
+  const insight = document.getElementById('subInsight');
+  const {income} = monthTotals();
+  if(income>0 && totalM/income > 0.08){
+    insight.style.display='block';
+    insight.textContent = `Subscriptions are eating ${Math.round(totalM/income*100)}% of this month's income — that's above the ~8% guideline for discretionary recurring costs. Consider pausing one.`;
+  } else { insight.style.display='none'; }
+}
+
+/* ================= SAVINGS GOALS ================= */
+function addGoal(){
+  const name = document.getElementById('goal-name').value.trim();
+  const target = parseFloat(document.getElementById('goal-target').value);
+  const current = parseFloat(document.getElementById('goal-current').value)||0;
+  const date = document.getElementById('goal-date').value;
+  if(!name || !target) return;
+  state.goals.push({name, target, current, date});
+  document.getElementById('goal-name').value=''; document.getElementById('goal-target').value=''; document.getElementById('goal-current').value='';
+  save(); renderAll();
+}
+function deleteGoal(i){ state.goals.splice(i,1); save(); renderAll(); }
+function renderGoals(){
+  const grid = document.getElementById('goalsGrid');
+  if(!grid) return;
+  grid.innerHTML = state.goals.map((g,i)=>{
+    const pct = g.target>0 ? Math.min((g.current/g.target)*100,100) : 0;
+    return `<div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>${g.name}</h3><button class="del-btn" onclick="deleteGoal(${i})">✕</button>
+      </div>
+      <div class="pbar"><div class="pbar-fill" style="width:${pct}%; background:var(--mint);"></div></div>
+      <div style="display:flex; justify-content:space-between; font-size:.85rem;">
+        <span class="mono">${fmt(g.current)} / ${fmt(g.target)}</span><span class="muted">${Math.round(pct)}%</span>
+      </div>
+      ${g.date?`<div class="muted" style="font-size:.78rem; margin-top:6px;">Target date: ${g.date}</div>`:''}
+    </div>`;
+  }).join('') || '<div class="card muted">No goals yet — add one above.</div>';
+}
+function calcEmergencyFund(){
+  const monthly = parseFloat(document.getElementById('ef-monthly').value)||0;
+  const months = parseFloat(document.getElementById('ef-months').value)||0;
+  document.getElementById('efResult').textContent = fmt(monthly*months);
+}
+
+/* ================= SIP SIMULATOR ================= */
+function renderSip(){
+  const amount = parseFloat(document.getElementById('sip-amount').value)||0;
+  const rate = (parseFloat(document.getElementById('sip-return').value)||0)/100;
+  const years = parseInt(document.getElementById('sip-years').value)||1;
+  const months = years*12;
+  const monthlyRate = rate/12;
+  let balance=0;
+  const invested=[], grown=[];
+  for(let m=1; m<=months; m++){
+    balance = balance*(1+monthlyRate) + amount;
+    if(m%12===0 || m===months){
+      invested.push(amount*m);
+      grown.push(balance);
+    }
+  }
+  const svg = document.getElementById('sipChart');
+  const w=600,h=220,pad=36;
+  const maxVal = Math.max(...grown,1);
+  const stepX = (w-pad*2)/(grown.length-1||1);
+  const pathGrown = grown.map((v,i)=>`${i===0?'M':'L'} ${pad+i*stepX} ${h-pad-(v/maxVal)*(h-pad*2)}`).join(' ');
+  const pathInvested = invested.map((v,i)=>`${i===0?'M':'L'} ${pad+i*stepX} ${h-pad-(v/maxVal)*(h-pad*2)}`).join(' ');
+  svg.innerHTML = `
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="${cssVar('--line')}"/>
+    <path d="${pathInvested}" fill="none" stroke="${cssVar('--muted')}" stroke-width="2" stroke-dasharray="5,4"/>
+    <path d="${pathGrown}" fill="none" stroke="${cssVar('--mint')}" stroke-width="3"/>
+    <text x="${pad}" y="18" fill="${cssVar('--mint')}" font-family="Consolas,monospace" font-size="11">— Grown value</text>
+    <text x="${pad+140}" y="18" fill="${cssVar('--muted')}" font-family="Consolas,monospace" font-size="11">- - Amount invested</text>
+  `;
+  const totalInvested = amount*months;
+  const finalValue = balance;
+  document.getElementById('sipSummary').innerHTML = `
+    <span class="chip">Invested: ${fmt(totalInvested)}</span>
+    <span class="chip" style="color:var(--mint); border-color:var(--mint);">Final value: ${fmt(finalValue)}</span>
+    <span class="chip" style="color:var(--sky); border-color:var(--sky);">Growth: ${fmt(finalValue-totalInvested)}</span>
+  `;
+}
+
+/* ================= WHAT-IF SIMULATOR ================= */
+function updateWhatIf(){
+  const cut = parseFloat(document.getElementById('wf-cut').value);
+  const gig = parseFloat(document.getElementById('wf-gig').value);
+  const months = parseInt(document.getElementById('wf-months').value);
+  document.getElementById('wf-cutVal').textContent = fmt(cut);
+  document.getElementById('wf-gigVal').textContent = fmt(gig);
+  document.getElementById('wf-monthsVal').textContent = months;
+
+  const {income, spend} = monthTotals();
+  const baseMonthlyNet = income - spend;
+  const newMonthlyNet = baseMonthlyNet + cut + gig;
+
+  const baseSeries=[], newSeries=[];
+  let b=0,n=0;
+  for(let m=0;m<=months;m++){
+    baseSeries.push(b); newSeries.push(n);
+    b += baseMonthlyNet; n += newMonthlyNet;
+  }
+  const svg = document.getElementById('whatIfChart');
+  const w=560,h=240,pad=40;
+  const allVals = [...baseSeries, ...newSeries];
+  const maxV = Math.max(...allVals,1), minV = Math.min(...allVals,0);
+  const range = (maxV-minV)||1;
+  const stepX = (w-pad*2)/months;
+  const scaleY = v => h-pad-((v-minV)/range)*(h-pad*2);
+  const pathBase = baseSeries.map((v,i)=>`${i===0?'M':'L'} ${pad+i*stepX} ${scaleY(v)}`).join(' ');
+  const pathNew = newSeries.map((v,i)=>`${i===0?'M':'L'} ${pad+i*stepX} ${scaleY(v)}`).join(' ');
+  svg.innerHTML = `
+    <line x1="${pad}" y1="${scaleY(0)}" x2="${w-pad}" y2="${scaleY(0)}" stroke="${cssVar('--line')}"/>
+    <path d="${pathBase}" fill="none" stroke="${cssVar('--muted')}" stroke-width="2" stroke-dasharray="5,4"/>
+    <path d="${pathNew}" fill="none" stroke="${cssVar('--mint')}" stroke-width="3"/>
+    <text x="${pad}" y="18" fill="${cssVar('--muted')}" font-family="Consolas,monospace" font-size="11">- - Current path</text>
+    <text x="${pad+130}" y="18" fill="${cssVar('--mint')}" font-family="Consolas,monospace" font-size="11">— With changes</text>
+  `;
+  const diff = newSeries[newSeries.length-1] - baseSeries[baseSeries.length-1];
+  document.getElementById('wfSummary').innerHTML = `
+    <p style="font-size:.88rem;">Current monthly net: <b class="mono">${fmt(baseMonthlyNet)}</b></p>
+    <p style="font-size:.88rem;">Projected monthly net with changes: <b class="mono" style="color:var(--mint);">${fmt(newMonthlyNet)}</b></p>
+    <p style="font-size:.88rem; margin-top:10px;">Over ${months} months, that's an extra <b class="mono" style="color:var(--mint);">${fmt(diff)}</b> saved compared to your current path.</p>
+  `;
+}
+
+/* ================= FINANCIAL HEALTH SCORE ================= */
+function computeScore(){
+  const {income, spend} = monthTotals();
+  let score = 50;
+  const factors = [];
+
+  const savingsRate = income>0 ? (income-spend)/income : 0;
+  if(savingsRate>=0.2){ score+=20; factors.push({label:'Healthy savings rate ('+Math.round(savingsRate*100)+'%)', positive:true}); }
+  else if(savingsRate>=0){ score+=8; factors.push({label:'Positive but thin savings rate ('+Math.round(savingsRate*100)+'%)', positive:true}); }
+  else { score-=15; factors.push({label:'Spending exceeds income this month', positive:false}); }
+
+  const totalIncome = state.incomeSources.reduce((s,x)=>s+x.amount,0) || income;
+  const buffer = totalIncome>0 ? (totalIncome-spend)/totalIncome : 0;
+  if(buffer>0.3){ score+=10; factors.push({label:'Comfortable income buffer', positive:true}); }
+  else { factors.push({label:'Thin buffer against irregular income timing', positive:false}); }
+
+  const subTotal = state.subscriptions.reduce((s,x)=>s+x.cost,0);
+  if(income>0 && subTotal/income <= 0.08){ score+=8; factors.push({label:'Subscriptions under control', positive:true}); }
+  else if(income>0){ score-=8; factors.push({label:'Subscriptions are a large share of income', positive:false}); }
+
+  if(state.goals.length>0){ score+=10; factors.push({label:'Actively tracking a savings goal', positive:true}); }
+  else { factors.push({label:'No savings goal set yet', positive:false}); }
+
+  score += 2; // no-debt baseline bonus (profile has no debt)
+  factors.push({label:'No debt — strong starting position', positive:true});
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  return {score, factors};
+}
+
+function renderScore(){
+  const {score, factors} = computeScore();
+  const scoreEl = document.getElementById('scoreNum');
+  const badgeEl = document.getElementById('scoreBadge');
+  if(scoreEl) scoreEl.textContent = score;
+  let label, color;
+  if(score>=75){ label='Strong'; color='var(--mint)'; }
+  else if(score>=55){ label='Building well'; color='var(--sky)'; }
+  else if(score>=35){ label='Needs attention'; color='var(--amber)'; }
+  else { label='At risk'; color='var(--danger)'; }
+  if(badgeEl){ badgeEl.textContent = label; badgeEl.style.background = color; badgeEl.style.color='#0E1116'; }
+  const factorsEl = document.getElementById('scoreFactors');
+  if(factorsEl){
+    factorsEl.innerHTML = factors.map(f=>`<div class="insight ${f.positive?'':'warn'}" style="margin-bottom:8px;">${f.positive?'✓':'⚠'} ${f.label}</div>`).join('');
+  }
+}
+
+/* ================= RECOMMENDATIONS ================= */
+function renderRecommendations(){
+  const el = document.getElementById('recommendations');
+  if(!el) return;
+  const {income, spend, catTotals} = monthTotals();
+  const recs = [];
+  const savingsRate = income>0 ? (income-spend)/income : 0;
+  if(savingsRate<0.2 && income>0) recs.push({type:'warn', text:`You're saving ${Math.max(Math.round(savingsRate*100),0)}% this month — aim for 20% by trimming your largest discretionary category.`});
+  const subTotal = state.subscriptions.reduce((s,x)=>s+x.cost,0);
+  if(income>0 && subTotal/income>0.08) recs.push({type:'warn', text:`Subscriptions cost ${fmt(subTotal)}/month. Cancelling even one could push your savings rate up noticeably.`});
+  const topCat = Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+  if(topCat) recs.push({type:'info', text:`Your biggest spend category this month is ${topCat[0]} at ${fmt(topCat[1])}.`});
+  if(state.goals.length===0) recs.push({type:'info', text:`You don't have a savings goal yet — start with an emergency fund covering 1-2 months of essentials.`});
+  if(income>spend && income>0) recs.push({type:'', text:`You're in the black this month by ${fmt(income-spend)} — consider moving part of that into your emergency fund goal today.`});
+  el.innerHTML = recs.map(r=>`<div class="insight ${r.type}">${r.text}</div>`).join('') || '<div class="insight">Add some transactions to see personalized recommendations.</div>';
+}
+
+/* ================= CASH FLOW CHART ================= */
+function renderCashflow(){
+  const svg = document.getElementById('cashflowChart');
+  if(!svg) return;
+  const byDay = {};
+  state.transactions.forEach(t=>{
+    if(monthKey(t.date)!==currentMonth()) return;
+    byDay[t.date] = byDay[t.date]||{income:0,expense:0};
+    byDay[t.date][t.type] += t.amount;
+  });
+  const days = Object.keys(byDay).sort();
+  if(!days.length){ svg.innerHTML = '<text x="280" y="100" text-anchor="middle" fill="#8E96A6" font-size="12">No transactions this month yet</text>'; return; }
+  const w=560,h=200,pad=36;
+  const maxVal = Math.max(...days.map(d=>Math.max(byDay[d].income,byDay[d].expense)),1);
+  const barW = Math.min(24,(w-pad*2)/days.length/2.2);
+  svg.innerHTML = `<line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="${cssVar('--line')}"/>`;
+  const stepX = (w-pad*2)/days.length;
+  days.forEach((d,i)=>{
+    const x = pad + i*stepX + stepX/2;
+    const inc = byDay[d].income, exp = byDay[d].expense;
+    const incH = (inc/maxVal)*(h-pad*2), expH = (exp/maxVal)*(h-pad*2);
+    svg.innerHTML += `<rect x="${x-barW-2}" y="${h-pad-incH}" width="${barW}" height="${incH}" fill="${cssVar('--mint')}" rx="2"/>`;
+    svg.innerHTML += `<rect x="${x+2}" y="${h-pad-expH}" width="${barW}" height="${expH}" fill="${cssVar('--coral')}" rx="2"/>`;
+  });
+  svg.innerHTML += `<text x="${pad}" y="18" fill="${cssVar('--mint')}" font-family="Consolas,monospace" font-size="11">■ Income</text><text x="${pad+90}" y="18" fill="${cssVar('--coral')}" font-family="Consolas,monospace" font-size="11">■ Expense</text>`;
+}
+
+/* ================= CHECKLIST ================= */
+function renderChecklist(){
+  const ul = document.getElementById('checklist');
+  if(!ul) return;
+  ul.innerHTML = state.checklist.map((c,i)=>`
+    <li><input type="checkbox" ${c.done?'checked':''} onchange="toggleCheck(${i})"> <span style="${c.done?'text-decoration:line-through; opacity:.6;':''}">${c.label}</span></li>
+  `).join('');
+}
+function toggleCheck(i){ state.checklist[i].done = !state.checklist[i].done; save(); renderChecklist(); }
+
+/* ================= RENDER ALL ================= */
+function renderAll(){
+  renderTxTable();
+  renderOverviewStats();
+  renderRunway();
+  renderIncomeTable();
+  renderBudget();
+  renderSubs();
+  renderGoals();
+  renderScore();
+  renderRecommendations();
+  renderCashflow();
+  renderChecklist();
+  updateWhatIf();
+}
+renderSip();
+renderAll();
+</script>
+</body>
+</html>
