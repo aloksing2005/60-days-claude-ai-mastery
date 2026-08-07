@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Learning Studio — Arrays, Stacks &amp; Queues</title>
+<style>
+:root{
+  --bg:#0B1220;
+  --surface:#111B2E;
+  --surface-2:#16213A;
+  --line:#243252;
+  --text:#E8EDF5;
+  --muted:#8A96AB;
+  --amber:#F5A623;
+  --amber-dim:#8a611f;
+  --teal:#4ECDC4;
+  --rose:#F06565;
+  --violet:#9B8CFF;
+  --good:#5FD68A;
+  --radius:14px;
+  --mono: 'Consolas', 'SFMono-Regular', Menlo, monospace;
+  --disp: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  --body: 'Segoe UI', system-ui, sans-serif;
+}
+[data-theme="light"]{
+  --bg:#F4F3EF;
+  --surface:#FFFFFF;
+  --surface-2:#ECEAE3;
+  --line:#DAD7CC;
+  --text:#1B2130;
+  --muted:#666B78;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--body);
+  line-height:1.6; transition:background .3s, color .3s; padding-bottom:80px;
+}
+@media (prefers-reduced-motion: reduce){ *{animation-duration:.01ms !important; transition-duration:.01ms !important;} }
+
+::selection{ background:var(--amber); color:#0B1220; }
+
+/* ---------- TOPBAR ---------- */
+.topbar{
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 28px; background:rgba(11,18,32,.85); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+[data-theme="light"] .topbar{ background:rgba(244,243,239,.9); }
+.brand{ display:flex; align-items:center; gap:10px; font-family:var(--disp); font-weight:700; letter-spacing:.5px;}
+.brand .mark{ width:26px; height:26px; display:inline-flex; }
+.topbar-controls{ display:flex; align-items:center; gap:14px; }
+.icon-btn{
+  background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+  border-radius:8px; padding:8px 12px; cursor:pointer; font-size:.85rem; font-family:var(--body);
+  display:flex; align-items:center; gap:6px; transition:.2s;
+}
+.icon-btn:hover{ border-color:var(--amber); color:var(--amber); }
+.progress-pill{
+  font-family:var(--mono); font-size:.78rem; color:var(--muted);
+  background:var(--surface-2); padding:6px 12px; border-radius:20px; border:1px solid var(--line);
+}
+.progress-pill b{ color:var(--amber); }
+
+/* progress rail across top */
+.railwrap{ height:4px; width:100%; background:var(--surface-2); }
+.railfill{ height:100%; width:0%; background:linear-gradient(90deg,var(--amber),var(--teal)); transition:width .5s ease; }
+
+/* ---------- LAYOUT ---------- */
+.wrap{ max-width:980px; margin:0 auto; padding:0 24px; }
+section{ padding:70px 0; border-bottom:1px solid var(--line); }
+.eyebrow{ font-family:var(--mono); text-transform:uppercase; letter-spacing:3px; font-size:.72rem; color:var(--amber); margin-bottom:14px;}
+h1,h2,h3,h4{ font-family:var(--disp); font-weight:700; letter-spacing:.2px; }
+h1{ font-size:clamp(2.2rem,5vw,3.4rem); line-height:1.05; }
+h2{ font-size:clamp(1.6rem,3.5vw,2.2rem); margin-bottom:18px; }
+h3{ font-size:1.25rem; margin:22px 0 10px; color:var(--amber); }
+p{ color:var(--text); opacity:.92; margin-bottom:14px; }
+.muted{ color:var(--muted); }
+code, .mono{ font-family:var(--mono); }
+code{ background:var(--surface-2); padding:2px 6px; border-radius:5px; border:1px solid var(--line); font-size:.88em;}
+
+/* ---------- HERO ---------- */
+.hero{ padding-top:56px; }
+.hero-grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:40px; align-items:center;}
+@media(max-width:820px){ .hero-grid{ grid-template-columns:1fr; } }
+.hero-sub{ font-size:1.08rem; color:var(--muted); max-width:52ch; margin-bottom:26px;}
+.meta-row{ display:flex; flex-wrap:wrap; gap:10px; margin:22px 0; }
+.meta-chip{
+  font-family:var(--mono); font-size:.78rem; padding:7px 12px; border-radius:8px;
+  background:var(--surface); border:1px solid var(--line); color:var(--text);
+}
+.meta-chip b{ color:var(--teal); }
+.cta-row{ display:flex; gap:14px; margin-top:26px; flex-wrap:wrap;}
+.btn{
+  font-family:var(--body); font-weight:600; font-size:.95rem; padding:13px 24px; border-radius:10px;
+  border:1px solid transparent; cursor:pointer; transition:.2s; display:inline-flex; align-items:center; gap:8px;
+}
+.btn-primary{ background:var(--amber); color:#20140100; color:#181205; }
+.btn-primary:hover{ transform:translateY(-2px); box-shadow:0 8px 24px -8px var(--amber); }
+.btn-ghost{ background:transparent; border-color:var(--line); color:var(--text); }
+.btn-ghost:hover{ border-color:var(--teal); color:var(--teal); }
+.btn:disabled{ opacity:.4; cursor:not-allowed; transform:none !important; box-shadow:none !important;}
+
+/* hero visual: the array track (signature element) */
+.track-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px; }
+.track-title{ font-family:var(--mono); font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:14px;}
+.track{ display:flex; gap:6px; flex-wrap:wrap; }
+.cell{
+  width:52px; height:52px; border-radius:8px; background:var(--surface-2); border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:1.05rem;
+  position:relative; transition:.35s cubic-bezier(.4,0,.2,1); color:var(--text);
+}
+.cell .idx{ position:absolute; bottom:-19px; font-size:.65rem; color:var(--muted); font-weight:400; }
+.cell.filled{ background:linear-gradient(160deg,var(--amber),#c9840f); color:#181205; border-color:var(--amber); }
+.cell.pop{ animation:popOut .35s ease forwards; }
+.cell.push{ animation:pushIn .35s ease; }
+@keyframes popOut{ to{ transform:scale(0); opacity:0; } }
+@keyframes pushIn{ from{ transform:scale(0); opacity:0;} to{transform:scale(1); opacity:1;} }
+.track-ops{ display:flex; gap:8px; margin-top:30px; flex-wrap:wrap;}
+.op-btn{ font-family:var(--mono); font-size:.78rem; background:var(--surface-2); border:1px solid var(--line); color:var(--text); padding:8px 12px; border-radius:7px; cursor:pointer; }
+.op-btn:hover{ border-color:var(--teal); color:var(--teal); }
+
+/* ---------- REWARD SYSTEM ---------- */
+.reward-box{ display:flex; gap:16px; align-items:center; background:var(--surface); border:1px dashed var(--amber-dim); border-radius:var(--radius); padding:18px 22px; margin-top:16px;}
+.reward-box .star{ font-size:1.6rem; }
+#xpTrack{ font-family:var(--mono); font-size:.85rem; }
+.badges{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+.badge{ font-family:var(--mono); font-size:.72rem; padding:6px 10px; border-radius:20px; background:var(--surface-2); border:1px solid var(--line); color:var(--muted); }
+.badge.earned{ color:#181205; background:var(--amber); border-color:var(--amber); }
+
+/* ---------- MODULE ---------- */
+.module{ position:relative; }
+.module.locked{ opacity:.4; pointer-events:none; }
+.module-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:6px;}
+.mod-num{ font-family:var(--mono); font-size:.9rem; color:var(--teal); }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px; margin:18px 0;}
+.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media(max-width:760px){ .grid-2{ grid-template-columns:1fr; } }
+
+/* analogy box */
+.analogy{ border-left:3px solid var(--violet); background:var(--surface); padding:16px 20px; border-radius:0 10px 10px 0; margin:16px 0;}
+.analogy .lab{ font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:2px; color:var(--violet); margin-bottom:6px;}
+
+/* misconceptions */
+.misconception{ border-left:3px solid var(--rose); background:var(--surface); padding:16px 20px; border-radius:0 10px 10px 0; margin:10px 0;}
+.misconception .lab{ font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:2px; color:var(--rose); margin-bottom:4px;}
+
+/* takeaways */
+.takeaways{ background:var(--surface-2); border-radius:10px; padding:18px 20px; margin-top:16px;}
+.takeaways ul{ list-style:none; }
+.takeaways li{ padding:6px 0 6px 26px; position:relative; }
+.takeaways li:before{ content:"→"; position:absolute; left:0; color:var(--teal); font-family:var(--mono); }
+
+/* comparison table */
+table{ width:100%; border-collapse:collapse; font-size:.9rem; margin:14px 0;}
+th,td{ padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; }
+th{ font-family:var(--mono); color:var(--muted); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:1px;}
+tr:hover td{ background:var(--surface-2); }
+
+/* code block */
+pre{ background:#0A0F1C; border:1px solid var(--line); border-radius:10px; padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:.85rem; margin:14px 0; color:#D8E1F0;}
+[data-theme="light"] pre{ background:#1C2333; }
+pre .c{ color:#6D7BA3; } pre .k{ color:#F5A623;} pre .s{ color:#4ECDC4;} pre .f{color:#9B8CFF;}
+
+/* exercise / interactive */
+.exercise{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px; margin-top:16px;}
+.exercise .lab{ font-family:var(--mono); font-size:.72rem; color:var(--amber); text-transform:uppercase; letter-spacing:2px; margin-bottom:10px;}
+input[type=text], input[type=number], select, textarea{
+  background:var(--surface-2); border:1px solid var(--line); color:var(--text); padding:9px 12px; border-radius:8px; font-family:var(--mono); font-size:.88rem;
+}
+.feedback{ margin-top:12px; padding:10px 14px; border-radius:8px; font-size:.88rem; display:none; }
+.feedback.ok{ display:block; background:rgba(95,214,138,.12); border:1px solid var(--good); color:var(--good); }
+.feedback.bad{ display:block; background:rgba(240,101,101,.12); border:1px solid var(--rose); color:var(--rose); }
+
+/* diagram containers */
+.diagram{ background:var(--surface-2); border-radius:10px; padding:20px; margin:16px 0; overflow-x:auto; }
+.diagram svg{ display:block; margin:0 auto; }
+
+/* quiz */
+.quiz{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:26px; margin-top:26px;}
+.quiz h3{ margin-top:0;}
+.q-block{ margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid var(--line);}
+.q-block:last-of-type{ border-bottom:none; }
+.q-text{ font-weight:600; margin-bottom:12px; }
+.q-options{ display:flex; flex-direction:column; gap:8px; }
+.q-opt{
+  text-align:left; background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+  padding:11px 14px; border-radius:8px; cursor:pointer; font-family:var(--body); font-size:.92rem; transition:.15s;
+}
+.q-opt:hover{ border-color:var(--teal); }
+.q-opt.correct{ background:rgba(95,214,138,.15); border-color:var(--good); }
+.q-opt.incorrect{ background:rgba(240,101,101,.15); border-color:var(--rose); }
+.q-opt:disabled{ cursor:default; }
+.q-explain{ margin-top:10px; font-size:.85rem; color:var(--muted); background:var(--surface-2); padding:10px 12px; border-radius:8px; display:none;}
+.q-explain.show{ display:block; }
+.quiz-summary{ text-align:center; padding:20px; border-radius:10px; margin-top:10px; background:var(--surface-2); }
+.quiz-summary .score{ font-family:var(--mono); font-size:2.2rem; color:var(--amber); }
+
+/* final challenge / cheat sheet */
+.cheat-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+@media(max-width:700px){ .cheat-grid{ grid-template-columns:1fr; } }
+.cheat-card{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px;}
+.cheat-card h4{ color:var(--teal); margin-bottom:8px; font-size:.95rem;}
+.cheat-card table{ font-size:.8rem; margin:6px 0 0;}
+
+.resource-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+@media(max-width:700px){ .resource-grid{ grid-template-columns:1fr; } }
+.resource-card{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:18px;}
+.resource-card h4{ font-family:var(--mono); font-size:.78rem; text-transform:uppercase; letter-spacing:2px; color:var(--amber); margin-bottom:10px;}
+.resource-card ul{ list-style:none; }
+.resource-card li{ padding:5px 0; font-size:.9rem; color:var(--muted); }
+.resource-card li b{ color:var(--text); }
+.kw{ display:inline-block; background:var(--surface-2); border:1px solid var(--line); padding:4px 10px; border-radius:14px; font-family:var(--mono); font-size:.75rem; margin:3px 4px 0 0; color:var(--teal);}
+
+footer{ text-align:center; padding:40px 24px; color:var(--muted); font-size:.85rem;}
+
+@media print{
+  .topbar,.railwrap,.icon-btn,.op-btn,.btn,.q-options,.cta-row{ display:none !important; }
+  body{ background:#fff; color:#000; }
+  section{ border:none; page-break-inside:avoid; }
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="railwrap"><div class="railfill" id="railfill"></div></div>
+<div class="topbar">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 26 26" fill="none"><rect x="1" y="8" width="6" height="10" rx="1.5" fill="#F5A623"/><rect x="10" y="4" width="6" height="18" rx="1.5" fill="#4ECDC4"/><rect x="19" y="11" width="6" height="7" rx="1.5" fill="#9B8CFF"/></svg>
+    Interactive Learning Studio
+  </div>
+  <div class="topbar-controls">
+    <span class="progress-pill">XP <b id="xpVal">0</b> · Module <b id="modVal">1</b>/4</span>
+    <button class="icon-btn" onclick="window.print()">🖨️ Print notes</button>
+    <button class="icon-btn" id="themeToggle">🌙 Dark</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ============ HERO / INTRO ============ -->
+<section class="hero" id="intro">
+  <div class="eyebrow">Data Structures &amp; Algorithms · Single Topic Deep Dive</div>
+  <div class="hero-grid">
+    <div>
+      <h1>Arrays, Stacks &amp; Queues</h1>
+      <p class="hero-sub">The three linear data structures that quietly run everything from your browser's back button to your CPU's function calls. By the end of this tutorial you'll know exactly which one to reach for, and why.</p>
+
+      <div class="meta-row">
+        <span class="meta-chip">⏱ <b>~75 min</b> total</span>
+        <span class="meta-chip">🎯 <b>4</b> modules</span>
+        <span class="meta-chip">📋 <b>Beginner→Intermediate</b></span>
+        <span class="meta-chip">🧩 Prereqs: <b>basic programming, variables, loops</b></span>
+      </div>
+
+      <h3 style="margin-top:26px;">Learning objectives</h3>
+      <div class="takeaways">
+        <ul>
+          <li>Explain how arrays store data in contiguous memory and why that makes indexing O(1)</li>
+          <li>Implement a stack (LIFO) and trace push/pop/peek operations by hand</li>
+          <li>Implement a queue (FIFO) and explain the naive-array pitfall that circular queues fix</li>
+          <li>Compare arrays, stacks, and queues by time complexity and pick the right one for a scenario</li>
+          <li>Apply all three to solve realistic problems: balanced brackets, undo history, and task scheduling</li>
+        </ul>
+      </div>
+
+      <div class="reward-box">
+        <span class="star">🏆</span>
+        <div>
+          <div id="xpTrack">Earn <b>XP</b> for every quiz question and exercise. Unlock a badge per module and a Mastery badge at the end.</div>
+          <div class="badges" id="badgeRow">
+            <span class="badge" data-badge="0">🔹 Foundations</span>
+            <span class="badge" data-badge="1">📚 Stack Sense</span>
+            <span class="badge" data-badge="2">🚶 Queue Logic</span>
+            <span class="badge" data-badge="3">🛠 Practitioner</span>
+            <span class="badge" data-badge="4">👑 Mastery</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button class="btn btn-primary" onclick="scrollToId('module1')">Start Module 1 →</button>
+        <button class="btn btn-ghost" onclick="scrollToId('cheatsheet')">Jump to cheat sheet</button>
+      </div>
+    </div>
+
+    <div class="track-card">
+      <div class="track-title">Live demo — the array track</div>
+      <div class="track" id="heroTrack"></div>
+      <div class="track-ops">
+        <button class="op-btn" onclick="heroPush()">push()</button>
+        <button class="op-btn" onclick="heroPop()">pop()</button>
+        <button class="op-btn" onclick="heroReset()">reset</button>
+      </div>
+      <p class="muted" style="margin-top:16px; font-size:.85rem;">This is the same visual engine you'll use inside every module to run stack and queue operations yourself.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODULE 1: ARRAYS ============ -->
+<section class="module" id="module1">
+  <div class="module-head"><span class="mod-num">MODULE 01 / FOUNDATIONS</span></div>
+  <h2>Arrays — Contiguous Memory, Instant Access</h2>
+
+  <p>An <b>array</b> is a fixed-layout block of memory where elements sit back-to-back, each one reachable by an <b>index</b>. The defining trait isn't "a list of things" — plenty of structures are that — it's <i>contiguity</i>: because every element is the same size and they sit next to each other, the computer can jump straight to any slot using pure arithmetic.</p>
+
+  <div class="analogy">
+    <div class="lab">Analogy</div>
+    Think of an array like a row of numbered lockers in a school hallway. If you know it's locker <code>#12</code>, you walk straight there — you don't open lockers 1 through 11 first. That's exactly how array indexing works: <code>address = base_address + (index × element_size)</code>.
+  </div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 640 140" width="100%" height="140">
+      <text x="10" y="20" fill="#8A96AB" font-family="Consolas,monospace" font-size="11">MEMORY ADDRESSES (each slot = 4 bytes)</text>
+      <g id="arrDiagram"></g>
+    </svg>
+  </div>
+  <script>
+  (function(){
+    const svg = document.getElementById('arrDiagram');
+    const vals=[42,17,8,99,3,56];
+    let x=10;
+    vals.forEach((v,i)=>{
+      const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+      g.innerHTML = `
+        <rect x="${x}" y="35" width="90" height="55" rx="6" fill="${i===2?'#F5A623':'#16213A'}" stroke="#243252"/>
+        <text x="${x+45}" y="68" text-anchor="middle" fill="${i===2?'#181205':'#E8EDF5'}" font-family="Consolas,monospace" font-size="16" font-weight="700">${v}</text>
+        <text x="${x+45}" y="112" text-anchor="middle" fill="#8A96AB" font-family="Consolas,monospace" font-size="11">idx ${i}</text>
+        <text x="${x+45}" y="126" text-anchor="middle" fill="#4ECDC4" font-family="Consolas,monospace" font-size="10">0x${(1000+i*4).toString(16)}</text>
+      `;
+      svg.appendChild(g);
+      x+=100;
+    });
+  })();
+  </script>
+  <p class="muted" style="font-size:.85rem; margin-top:-6px;">Notice the address jumps by exactly 4 bytes each slot — that fixed jump is what makes <code>arr[i]</code> a single calculation instead of a search.</p>
+
+  <h3>Reading, writing, and the cost of resizing</h3>
+  <p>Reading (<code>arr[i]</code>) and writing (<code>arr[i] = x</code>) are both <b>O(1)</b> — constant time — because of that address arithmetic. But arrays have a size baked in at creation. Inserting or deleting in the <i>middle</i> forces every following element to shift, which is <b>O(n)</b>. This is the single most important trade-off to internalize about arrays.</p>
+
+  <pre><span class="c">// JavaScript — arrays are dynamic under the hood, but the cost pattern still applies</span>
+<span class="k">const</span> temps = [72, 75, 68, 80, 77];
+temps[2] = 70;              <span class="c">// O(1) write — direct index</span>
+temps.push(90);             <span class="c">// O(1) amortized — append at end</span>
+temps.splice(1, 0, 100);    <span class="c">// O(n) — everything after index 1 shifts right</span></pre>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--teal); margin-bottom:8px;">Try it: index arithmetic</h4>
+      <p style="font-size:.88rem;">An array starts at base address <code>1000</code>, with 4-byte elements. What's the address of <code>arr[7]</code>?</p>
+      <input type="number" id="idxAnswer" placeholder="address" style="width:120px;">
+      <button class="op-btn" onclick="checkIdx()">Check</button>
+      <div class="feedback" id="idxFeedback"></div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--teal); margin-bottom:8px;">Exercise: spot the cost</h4>
+      <p style="font-size:.88rem;">Which operation on a 1000-element array is <b>O(n)</b> rather than O(1)?</p>
+      <select id="costSelect">
+        <option value="">Choose...</option>
+        <option value="a">Read arr[500]</option>
+        <option value="b">Insert at the front</option>
+        <option value="c">Write arr[999] = 5</option>
+      </select>
+      <button class="op-btn" onclick="checkCost()">Check</button>
+      <div class="feedback" id="costFeedback"></div>
+    </div>
+  </div>
+
+  <div class="misconception">
+    <div class="lab">Common misconception</div>
+    "Arrays and lists are the same thing." In many languages (Python's <code>list</code>, JS arrays) the built-in type is a <i>dynamic array</i> that resizes and hides the resizing cost from you. The underlying contiguous-memory behavior is still there — that's why <code>list.insert(0, x)</code> is still O(n) in Python.
+  </div>
+
+  <div class="misconception">
+    <div class="lab">Common misconception</div>
+    "Appending is always O(1)." It's <i>amortized</i> O(1) — most pushes are cheap, but occasionally the array is full and must be copied into a bigger block, which is O(n) for that one call. Averaged over many pushes, it works out to O(1).
+  </div>
+
+  <div class="takeaways">
+    <h4 style="margin-bottom:8px; color:var(--text);">Key takeaways</h4>
+    <ul>
+      <li>Contiguous memory + fixed element size = O(1) indexed access</li>
+      <li>Insert/delete in the middle or front is O(n) due to shifting</li>
+      <li>Dynamic arrays (JS array, Python list) hide resizing but keep the same shift cost</li>
+    </ul>
+  </div>
+
+  <!-- QUIZ 1 -->
+  <div class="quiz" id="quiz1" data-total="4">
+    <h3>Module 1 Check — Arrays</h3>
+    <div class="q-block" data-correct="1">
+      <div class="q-text">1. Why is <code>arr[i]</code> O(1) instead of requiring a search?</div>
+      <div class="q-options">
+        <button class="q-opt">The computer caches every index in advance</button>
+        <button class="q-opt">The address is computed directly from base address + offset</button>
+        <button class="q-opt">Arrays are always small enough to search instantly</button>
+        <button class="q-opt">Modern CPUs guess the location</button>
+      </div>
+      <div class="q-explain">Correct answer: "The address is computed directly..." — contiguous, fixed-size storage means the address is pure arithmetic, no searching needed.</div>
+    </div>
+    <div class="q-block" data-correct="2">
+      <div class="q-text">2. Inserting an element at index 0 of a 10,000-element array is:</div>
+      <div class="q-options">
+        <button class="q-opt">O(1)</button>
+        <button class="q-opt">O(log n)</button>
+        <button class="q-opt">O(n)</button>
+        <button class="q-opt">O(n²)</button>
+      </div>
+      <div class="q-explain">Correct answer: O(n) — all 10,000 existing elements must shift one slot to the right to make room.</div>
+    </div>
+    <div class="q-block" data-correct="0">
+      <div class="q-text">3. What does "amortized O(1)" mean for array push?</div>
+      <div class="q-options">
+        <button class="q-opt">Most pushes are O(1); occasional resizes are O(n), averaging out to O(1)</button>
+        <button class="q-opt">It is always exactly O(1) with zero exceptions</button>
+        <button class="q-opt">It only applies to arrays smaller than 100 elements</button>
+        <button class="q-opt">It means the operation is O(1) only in the worst case</button>
+      </div>
+      <div class="q-explain">Correct answer: "Most pushes are O(1)..." — the rare full-copy resize is expensive, but spread across many pushes the average cost stays constant.</div>
+    </div>
+    <div class="q-block" data-correct="3">
+      <div class="q-text">4. Which best describes what makes something an "array" rather than just "a list of values"?</div>
+      <div class="q-options">
+        <button class="q-opt">It can only hold numbers</button>
+        <button class="q-opt">It has no maximum size</button>
+        <button class="q-opt">It never needs resizing</button>
+        <button class="q-opt">Its elements are stored contiguously in memory</button>
+      </div>
+      <div class="q-explain">Correct answer: "Its elements are stored contiguously..." — contiguity is the defining structural property, not the size limits or data type.</div>
+    </div>
+    <button class="btn btn-primary" id="submit1" onclick="submitQuiz(1)">Submit answers</button>
+    <div class="quiz-summary" id="summary1" style="display:none;"></div>
+  </div>
+</section>
+
+<!-- ============ MODULE 2: STACKS ============ -->
+<section class="module locked" id="module2">
+  <div class="module-head"><span class="mod-num">MODULE 02 / STACKS</span></div>
+  <h2>Stacks — Last In, First Out</h2>
+
+  <p>A <b>stack</b> restricts access to one end only. You can <code>push</code> onto the top, <code>pop</code> off the top, or <code>peek</code> at the top — nothing else is directly reachable. That single restriction is the whole point: it models any process where the most recent thing must be undone or finished first.</p>
+
+  <div class="analogy">
+    <div class="lab">Analogy</div>
+    A stack of dinner plates. You add a clean plate on top of the pile, and you take plates off the top too — the plate at the bottom won't be touched until every plate above it is gone. That's <b>LIFO</b>: Last In, First Out.
+  </div>
+
+  <div class="diagram">
+    <div class="track-title">Interactive stack — push/pop and watch it build vertically</div>
+    <div style="display:flex; gap:30px; align-items:flex-end; flex-wrap:wrap;">
+      <div id="stackViz" style="display:flex; flex-direction:column-reverse; gap:4px; min-height:220px;"></div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <input type="text" id="stackInput" placeholder="value" style="width:110px;">
+        <button class="op-btn" onclick="stackPush()">push(value)</button>
+        <button class="op-btn" onclick="stackPop()">pop()</button>
+        <button class="op-btn" onclick="stackPeek()">peek()</button>
+        <span class="muted mono" id="stackMsg" style="font-size:.78rem;"></span>
+      </div>
+    </div>
+  </div>
+
+  <h3>The call stack: stacks running your code right now</h3>
+  <p>Every time a function calls another function, the runtime pushes a new "frame" onto the <b>call stack</b>. When a function returns, its frame pops off. Recurse too deep with no base case and you exhaust the stack — that's exactly what a <code>"Maximum call stack size exceeded"</code> error means.</p>
+
+  <pre><span class="k">function</span> <span class="f">factorial</span>(n) {
+  <span class="k">if</span> (n <= 1) <span class="k">return</span> 1;      <span class="c">// base case: frame returns, pops off</span>
+  <span class="k">return</span> n * factorial(n - 1); <span class="c">// each call pushes a new frame</span>
+}
+factorial(4); <span class="c">// stack grows: f(4)→f(3)→f(2)→f(1), then unwinds/pops back down</span></pre>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--teal);">Comparison: Stack vs Array access</h4>
+      <table>
+        <tr><th>Operation</th><th>Array (any index)</th><th>Stack (top only)</th></tr>
+        <tr><td>Access middle element</td><td>O(1)</td><td>Not allowed directly</td></tr>
+        <tr><td>Add/remove at "active" end</td><td>O(n) if not at end</td><td>O(1) always</td></tr>
+        <tr><td>Use case</td><td>Random access data</td><td>Undo, recursion, parsing</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--teal);">Exercise: trace the stack</h4>
+      <p style="font-size:.88rem;">Given operations <code>push(1), push(2), pop(), push(3), pop()</code> — what remains on the stack?</p>
+      <input type="text" id="traceAnswer" placeholder="e.g. [1]">
+      <button class="op-btn" onclick="checkTrace()">Check</button>
+      <div class="feedback" id="traceFeedback"></div>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="lab">Practical exercise — balanced brackets</div>
+    <p style="font-size:.9rem;">Classic stack use case: check whether brackets in a string are balanced. Type a string of <code>() [] {}</code> and see the stack-based check run live.</p>
+    <input type="text" id="bracketInput" placeholder="e.g. {[()]}" style="width:220px;">
+    <button class="op-btn" onclick="checkBrackets()">Validate</button>
+    <div class="feedback" id="bracketFeedback"></div>
+  </div>
+
+  <div class="misconception">
+    <div class="lab">Common misconception</div>
+    "A stack is just an array with extra steps." Structurally in many implementations it <i>is</i> built on an array — but the value of a stack is the discipline of only touching the top. That restriction is what makes reasoning about undo/recursion/parsing correctness tractable.
+  </div>
+
+  <div class="takeaways">
+    <h4 style="margin-bottom:8px; color:var(--text);">Key takeaways</h4>
+    <ul>
+      <li>LIFO: last element pushed is the first popped</li>
+      <li>push/pop/peek are all O(1)</li>
+      <li>Powers recursion (call stack), undo history, and matching/parsing problems</li>
+    </ul>
+  </div>
+
+  <div class="quiz" id="quiz2" data-total="4">
+    <h3>Module 2 Check — Stacks</h3>
+    <div class="q-block" data-correct="2">
+      <div class="q-text">1. What does LIFO stand for?</div>
+      <div class="q-options">
+        <button class="q-opt">Least In, First Out</button>
+        <button class="q-opt">Last In, Final Out</button>
+        <button class="q-opt">Last In, First Out</button>
+        <button class="q-opt">Loop In, Fast Out</button>
+      </div>
+      <div class="q-explain">Correct answer: "Last In, First Out" — the most recently pushed item is always the next one popped.</div>
+    </div>
+    <div class="q-block" data-correct="1">
+      <div class="q-text">2. After push(5), push(9), pop(), what does peek() return?</div>
+      <div class="q-options">
+        <button class="q-opt">9</button>
+        <button class="q-opt">5</button>
+        <button class="q-opt">Empty</button>
+        <button class="q-opt">Both 5 and 9</button>
+      </div>
+      <div class="q-explain">Correct answer: 5 — push(5) then push(9) puts 9 on top; pop() removes 9, leaving 5 on top.</div>
+    </div>
+    <div class="q-block" data-correct="0">
+      <div class="q-text">3. What causes a "stack overflow" in recursion?</div>
+      <div class="q-options">
+        <button class="q-opt">Too many nested calls push frames faster than they pop, exhausting stack memory</button>
+        <button class="q-opt">The array behind the stack runs out of unique values</button>
+        <button class="q-opt">The CPU cache is full</button>
+        <button class="q-opt">Popping an empty stack silently</button>
+      </div>
+      <div class="q-explain">Correct answer: nested calls pushing frames without returning (popping) — usually a missing or broken base case.</div>
+    </div>
+    <div class="q-block" data-correct="3">
+      <div class="q-text">4. Which problem is a textbook fit for a stack?</div>
+      <div class="q-options">
+        <button class="q-opt">Printing tasks in the order they were submitted</button>
+        <button class="q-opt">Finding an element by index instantly</button>
+        <button class="q-opt">Serving customers in the order they arrived</button>
+        <button class="q-opt">Checking whether brackets in an expression are balanced</button>
+      </div>
+      <div class="q-explain">Correct answer: balanced brackets — you push opening brackets and pop-match them against closers, which is a direct LIFO fit.</div>
+    </div>
+    <button class="btn btn-primary" id="submit2" onclick="submitQuiz(2)">Submit answers</button>
+    <div class="quiz-summary" id="summary2" style="display:none;"></div>
+  </div>
+</section>
+
+<!-- ============ MODULE 3: QUEUES ============ -->
+<section class="module locked" id="module3">
+  <div class="module-head"><span class="mod-num">MODULE 03 / QUEUES</span></div>
+  <h2>Queues — First In, First Out</h2>
+
+  <p>A <b>queue</b> also restricts access, but at two ends: you <code>enqueue</code> at the back and <code>dequeue</code> from the front. Whoever got in line first gets served first — <b>FIFO</b>.</p>
+
+  <div class="analogy">
+    <div class="lab">Analogy</div>
+    A checkout line at a store. New customers join the back; the cashier serves whoever's at the front. Nobody gets served out of order just because they're impatient — that fairness guarantee is exactly what a queue enforces in code.
+  </div>
+
+  <div class="diagram">
+    <div class="track-title">Interactive queue — enqueue/dequeue</div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; min-height:70px;" id="queueViz"></div>
+    <div style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;">
+      <input type="text" id="queueInput" placeholder="value" style="width:110px;">
+      <button class="op-btn" onclick="queueEnqueue()">enqueue(value)</button>
+      <button class="op-btn" onclick="queueDequeue()">dequeue()</button>
+      <span class="muted mono" id="queueMsg" style="font-size:.78rem;"></span>
+    </div>
+  </div>
+
+  <h3>The naive-array pitfall — and the circular queue fix</h3>
+  <p>If you implement a queue by dequeuing from index 0 of a plain array, every dequeue shifts everything left — that's O(n), defeating the purpose. The fix: a <b>circular buffer</b>, where a "front" pointer just moves forward and wraps around to index 0 once it hits the end, instead of physically shifting data.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 500 140" width="100%" height="140">
+      <text x="10" y="18" fill="#8A96AB" font-family="Consolas,monospace" font-size="11">CIRCULAR BUFFER — front pointer wraps instead of shifting data</text>
+      <g id="circDiagram"></g>
+    </svg>
+  </div>
+  <script>
+  (function(){
+    const svg=document.getElementById('circDiagram');
+    const cx=250, cy=85, r=55;
+    const n=6;
+    for(let i=0;i<n;i++){
+      const ang = (Math.PI*2*i/n) - Math.PI/2;
+      const x = cx + r*Math.cos(ang), y = cy + r*Math.sin(ang);
+      const isFront = i===1;
+      svg.innerHTML += `<circle cx="${x}" cy="${y}" r="16" fill="${isFront?'#F5A623':'#16213A'}" stroke="#243252"/>
+      <text x="${x}" y="${y+4}" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="${isFront?'#181205':'#E8EDF5'}">${i}</text>`;
+    }
+    svg.innerHTML += `<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="#4ECDC4" font-family="Consolas,monospace" font-size="10">front→1</text>`;
+  })();
+  </script>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--teal);">Comparison: Stack vs Queue</h4>
+      <table>
+        <tr><th></th><th>Stack</th><th>Queue</th></tr>
+        <tr><td>Order</td><td>LIFO</td><td>FIFO</td></tr>
+        <tr><td>Insert</td><td>push (top)</td><td>enqueue (back)</td></tr>
+        <tr><td>Remove</td><td>pop (top)</td><td>dequeue (front)</td></tr>
+        <tr><td>Real-world fit</td><td>Undo, recursion</td><td>Task/print queues, BFS</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--teal);">Exercise: pick the structure</h4>
+      <p style="font-size:.88rem;">A print spooler must print documents in the exact order they were submitted. Stack or queue?</p>
+      <select id="pickSelect">
+        <option value="">Choose...</option>
+        <option value="stack">Stack</option>
+        <option value="queue">Queue</option>
+      </select>
+      <button class="op-btn" onclick="checkPick()">Check</button>
+      <div class="feedback" id="pickFeedback"></div>
+    </div>
+  </div>
+
+  <div class="misconception">
+    <div class="lab">Common misconception</div>
+    "Dequeuing from the front of a JavaScript array (<code>arr.shift()</code>) is fine performance-wise." It works correctly but is O(n) — every remaining element re-indexes. For high-throughput queues, use a circular buffer or a linked-list-backed queue instead.
+  </div>
+
+  <div class="takeaways">
+    <h4 style="margin-bottom:8px; color:var(--text);">Key takeaways</h4>
+    <ul>
+      <li>FIFO: first element enqueued is the first dequeued</li>
+      <li>Naive array-shift dequeue is O(n); circular buffers make it O(1)</li>
+      <li>Queues power task scheduling, print spoolers, and breadth-first search (BFS)</li>
+    </ul>
+  </div>
+
+  <div class="quiz" id="quiz3" data-total="4">
+    <h3>Module 3 Check — Queues</h3>
+    <div class="q-block" data-correct="0">
+      <div class="q-text">1. What does FIFO stand for?</div>
+      <div class="q-options">
+        <button class="q-opt">First In, First Out</button>
+        <button class="q-opt">Fast In, Fast Out</button>
+        <button class="q-opt">First In, Final Out</button>
+        <button class="q-opt">Filtered In, First Out</button>
+      </div>
+      <div class="q-explain">Correct answer: "First In, First Out" — the earliest-added item is always removed first.</div>
+    </div>
+    <div class="q-block" data-correct="2">
+      <div class="q-text">2. Why is naive front-dequeue on a plain array O(n)?</div>
+      <div class="q-options">
+        <button class="q-opt">Because queues can only hold numbers</button>
+        <button class="q-opt">Because arrays cannot be modified after creation</button>
+        <button class="q-opt">Because every remaining element must shift left to fill the gap</button>
+        <button class="q-opt">Because dequeue always resizes the array</button>
+      </div>
+      <div class="q-explain">Correct answer: shifting — removing from index 0 forces every other element to move one slot left.</div>
+    </div>
+    <div class="q-block" data-correct="1">
+      <div class="q-text">3. What problem does a circular buffer solve for queues?</div>
+      <div class="q-options">
+        <button class="q-opt">It sorts the queue automatically</button>
+        <button class="q-opt">It avoids shifting by wrapping the front pointer instead of moving data</button>
+        <button class="q-opt">It removes the need for a back pointer</button>
+        <button class="q-opt">It makes the queue infinite in size</button>
+      </div>
+      <div class="q-explain">Correct answer: wrapping the pointer — front/back indices move and wrap around the fixed buffer instead of shifting elements.</div>
+    </div>
+    <div class="q-block" data-correct="3">
+      <div class="q-text">4. Which scenario is the best fit for a queue rather than a stack?</div>
+      <div class="q-options">
+        <button class="q-opt">Undoing the last edit in a text editor</button>
+        <button class="q-opt">Tracking nested function calls</button>
+        <button class="q-opt">Matching opening and closing parentheses</button>
+        <button class="q-opt">Serving customer support tickets in the order they arrived</button>
+      </div>
+      <div class="q-explain">Correct answer: serving tickets in arrival order — that's fairness by arrival time, the defining FIFO use case.</div>
+    </div>
+    <button class="btn btn-primary" id="submit3" onclick="submitQuiz(3)">Submit answers</button>
+    <div class="quiz-summary" id="summary3" style="display:none;"></div>
+  </div>
+</section>
+
+<!-- ============ MODULE 4: MASTERY ============ -->
+<section class="module locked" id="module4">
+  <div class="module-head"><span class="mod-num">MODULE 04 / PRACTICAL MASTERY</span></div>
+  <h2>Choosing and Combining the Right Structure</h2>
+
+  <p>Real systems rarely use one structure in isolation. This module is about pattern recognition: given a problem, which structure (or combination) actually fits — and what happens when you get it wrong.</p>
+
+  <h3>Decision framework</h3>
+  <div class="diagram">
+    <svg viewBox="0 0 640 220" width="100%" height="220">
+      <g font-family="Consolas,monospace" font-size="12">
+        <rect x="230" y="10" width="180" height="40" rx="8" fill="#16213A" stroke="#F5A623"/>
+        <text x="320" y="35" text-anchor="middle" fill="#E8EDF5">Need random access by index?</text>
+        <line x1="270" y1="50" x2="130" y2="90" stroke="#243252"/>
+        <line x1="370" y1="50" x2="500" y2="90" stroke="#243252"/>
+        <text x="150" y="80" fill="#4ECDC4">yes</text><text x="470" y="80" fill="#4ECDC4">no</text>
+        <rect x="40" y="90" width="180" height="40" rx="8" fill="#16213A" stroke="#4ECDC4"/>
+        <text x="130" y="115" text-anchor="middle" fill="#E8EDF5">Use an Array</text>
+        <rect x="410" y="90" width="200" height="40" rx="8" fill="#16213A" stroke="#4ECDC4"/>
+        <text x="510" y="115" text-anchor="middle" fill="#E8EDF5">Need order preserved?</text>
+        <line x1="460" y1="130" x2="380" y2="170" stroke="#243252"/>
+        <line x1="560" y1="130" x2="600" y2="170" stroke="#243252"/>
+        <text x="390" y="160" fill="#4ECDC4">most-recent-first</text><text x="580" y="160" fill="#4ECDC4">first-in-first</text>
+        <rect x="290" y="170" width="180" height="40" rx="8" fill="#16213A" stroke="#F5A623"/>
+        <text x="380" y="195" text-anchor="middle" fill="#E8EDF5">Use a Stack</text>
+        <rect x="500" y="170" width="130" height="40" rx="8" fill="#16213A" stroke="#F5A623"/>
+        <text x="565" y="195" text-anchor="middle" fill="#E8EDF5">Use a Queue</text>
+      </g>
+    </svg>
+  </div>
+
+  <h3>Combined example — undo/redo (two stacks)</h3>
+  <p>An editor's undo/redo is two stacks working together: every edit pushes onto <code>undoStack</code>; pressing undo pops it and pushes the reversed action onto <code>redoStack</code>; a new edit clears <code>redoStack</code>.</p>
+  <pre><span class="k">function</span> <span class="f">applyEdit</span>(action) {
+  undoStack.push(action);
+  redoStack.length = 0;   <span class="c">// new edit invalidates redo history</span>
+}
+<span class="k">function</span> <span class="f">undo</span>() {
+  <span class="k">if</span> (!undoStack.length) <span class="k">return</span>;
+  <span class="k">const</span> action = undoStack.pop();
+  redoStack.push(action);
+  <span class="c">// ...reverse the action on the document</span>
+}</pre>
+
+  <h3>Combined example — BFS with a queue</h3>
+  <p>Breadth-first search visits the nearest nodes first — exactly a FIFO guarantee. This is why BFS implementations always use a queue, never a stack (that would be DFS instead).</p>
+  <pre><span class="k">function</span> <span class="f">bfs</span>(startNode) {
+  <span class="k">const</span> queue = [startNode], visited = <span class="k">new</span> Set([startNode]);
+  <span class="k">while</span> (queue.length) {
+    <span class="k">const</span> node = queue.shift(); <span class="c">// dequeue from front</span>
+    <span class="c">// process node...</span>
+    <span class="k">for</span> (<span class="k">const</span> neighbor <span class="k">of</span> node.neighbors) {
+      <span class="k">if</span> (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); }
+    }
+  }
+}</pre>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--teal);">Exercise: diagnose the bug</h4>
+      <p style="font-size:.88rem;">A developer implements undo with a <b>queue</b> instead of a stack. What breaks?</p>
+      <select id="bugSelect">
+        <option value="">Choose...</option>
+        <option value="a">Nothing — queue and stack behave identically for undo</option>
+        <option value="b">Undo removes the oldest edit instead of the most recent one</option>
+        <option value="c">The app crashes immediately</option>
+      </select>
+      <button class="op-btn" onclick="checkBug()">Check</button>
+      <div class="feedback" id="bugFeedback"></div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--teal);">Exercise: complexity check</h4>
+      <p style="font-size:.88rem;">A queue is implemented with <code>array.shift()</code> for dequeue, processing 100,000 items. What's the total cost?</p>
+      <select id="complexSelect">
+        <option value="">Choose...</option>
+        <option value="a">O(n) total</option>
+        <option value="b">O(n²) total — each shift is O(n), done n times</option>
+        <option value="c">O(log n) total</option>
+      </select>
+      <button class="op-btn" onclick="checkComplex()">Check</button>
+      <div class="feedback" id="complexFeedback"></div>
+    </div>
+  </div>
+
+  <div class="misconception">
+    <div class="lab">Common misconception</div>
+    "BFS and DFS just differ in traversal order for style reasons." They differ because of the underlying structure: swap a queue for a stack in the exact same traversal loop and you get depth-first behavior instead of breadth-first — same code shape, opposite guarantee.
+  </div>
+
+  <div class="takeaways">
+    <h4 style="margin-bottom:8px; color:var(--text);">Key takeaways</h4>
+    <ul>
+      <li>Random access need → array. Undo/most-recent-first → stack. Fairness/arrival-order → queue.</li>
+      <li>Complex features (undo/redo, BFS) are usually simple combinations of these primitives</li>
+      <li>The wrong structure doesn't always crash your program — it silently produces wrong order</li>
+    </ul>
+  </div>
+
+  <div class="quiz" id="quiz4" data-total="4">
+    <h3>Module 4 Check — Mastery</h3>
+    <div class="q-block" data-correct="1">
+      <div class="q-text">1. Why does BFS use a queue instead of a stack?</div>
+      <div class="q-options">
+        <button class="q-opt">Queues are faster to allocate in memory</button>
+        <button class="q-opt">A queue guarantees nodes are visited in the order they were discovered — nearest first</button>
+        <button class="q-opt">Stacks cannot store graph nodes</button>
+        <button class="q-opt">It's an arbitrary convention with no functional reason</button>
+      </div>
+      <div class="q-explain">Correct answer: FIFO order visits closer nodes before farther ones, which is the definition of breadth-first.</div>
+    </div>
+    <div class="q-block" data-correct="0">
+      <div class="q-text">2. In two-stack undo/redo, what must happen when a new edit is applied?</div>
+      <div class="q-options">
+        <button class="q-opt">The redo stack must be cleared</button>
+        <button class="q-opt">The undo stack must be cleared</button>
+        <button class="q-opt">Both stacks swap contents</button>
+        <button class="q-opt">Nothing — both stacks stay untouched</button>
+      </div>
+      <div class="q-explain">Correct answer: clear the redo stack — a fresh edit invalidates any "future" you could redo to.</div>
+    </div>
+    <div class="q-block" data-correct="2">
+      <div class="q-text">3. You need to look up a user's profile instantly by their numeric ID. Best fit?</div>
+      <div class="q-options">
+        <button class="q-opt">Stack</button>
+        <button class="q-opt">Queue</button>
+        <button class="q-opt">Array (indexed by ID)</button>
+        <button class="q-opt">Any of the three work equally well</button>
+      </div>
+      <div class="q-explain">Correct answer: Array — direct index lookup is exactly the O(1) random-access strength arrays provide.</div>
+    </div>
+    <div class="q-block" data-correct="1">
+      <div class="q-text">4. Repeatedly calling <code>array.shift()</code> to dequeue n items from an n-length array costs:</div>
+      <div class="q-options">
+        <button class="q-opt">O(n) total</button>
+        <button class="q-opt">O(n²) total</button>
+        <button class="q-opt">O(1) total</button>
+        <button class="q-opt">O(n log n) total</button>
+      </div>
+      <div class="q-explain">Correct answer: O(n²) — each shift is O(n) on average, and you do it n times.</div>
+    </div>
+    <button class="btn btn-primary" id="submit4" onclick="submitQuiz(4)">Submit answers</button>
+    <div class="quiz-summary" id="summary4" style="display:none;"></div>
+  </div>
+</section>
+
+<!-- ============ FINAL CHALLENGE ============ -->
+<section id="finalChallenge" class="module locked">
+  <div class="eyebrow">Final Practical Challenge</div>
+  <h2>Build a Browser History Simulator</h2>
+  <p>Combine everything: implement "back" and "forward" browser navigation using two stacks — <code>backStack</code> and <code>forwardStack</code> — exactly like the two-stack undo/redo pattern from Module 4, but applied to URLs.</p>
+  <div class="exercise">
+    <div class="lab">Challenge sandbox</div>
+    <p style="font-size:.88rem;">Type a URL and hit "Visit". Use Back/Forward to navigate. Watch both stacks update live.</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+      <input type="text" id="urlInput" placeholder="e.g. /pricing" style="width:160px;">
+      <button class="op-btn" onclick="visitUrl()">Visit</button>
+      <button class="op-btn" onclick="goBack()">← Back</button>
+      <button class="op-btn" onclick="goForward()">Forward →</button>
+    </div>
+    <div class="grid-2">
+      <div><div class="muted mono" style="font-size:.75rem; margin-bottom:6px;">CURRENT PAGE</div><div id="currentPage" class="card" style="padding:12px; text-align:center; font-family:var(--mono); color:var(--amber);">/home</div></div>
+      <div><div class="muted mono" style="font-size:.75rem; margin-bottom:6px;">BACK STACK (bottom→top) / FORWARD STACK</div>
+        <div class="card" style="padding:12px; font-family:var(--mono); font-size:.85rem;">
+          back: <span id="backStackView">[]</span><br>fwd: <span id="fwdStackView">[]</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:24px;">
+    <button class="btn btn-primary" onclick="completeChallenge()" id="completeBtn">Mark challenge complete 🏁</button>
+  </div>
+</section>
+
+<!-- ============ CHEAT SHEET ============ -->
+<section id="cheatsheet">
+  <div class="eyebrow">Reference</div>
+  <h2>Cheat Sheet</h2>
+  <div class="cheat-grid">
+    <div class="cheat-card">
+      <h4>Array</h4>
+      <table><tr><th>Op</th><th>Cost</th></tr>
+      <tr><td>Read/write by index</td><td>O(1)</td></tr>
+      <tr><td>Push to end</td><td>O(1) amortized</td></tr>
+      <tr><td>Insert/delete middle or front</td><td>O(n)</td></tr>
+      <tr><td>Search unsorted</td><td>O(n)</td></tr></table>
+    </div>
+    <div class="cheat-card">
+      <h4>Stack (LIFO)</h4>
+      <table><tr><th>Op</th><th>Cost</th></tr>
+      <tr><td>push</td><td>O(1)</td></tr>
+      <tr><td>pop</td><td>O(1)</td></tr>
+      <tr><td>peek</td><td>O(1)</td></tr>
+      <tr><td>Use case</td><td>undo, recursion, parsing</td></tr></table>
+    </div>
+    <div class="cheat-card">
+      <h4>Queue (FIFO)</h4>
+      <table><tr><th>Op</th><th>Cost</th></tr>
+      <tr><td>enqueue</td><td>O(1)</td></tr>
+      <tr><td>dequeue (circular buffer)</td><td>O(1)</td></tr>
+      <tr><td>dequeue (naive array shift)</td><td>O(n)</td></tr>
+      <tr><td>Use case</td><td>scheduling, BFS, spoolers</td></tr></table>
+    </div>
+    <div class="cheat-card">
+      <h4>Decision rule</h4>
+      <p style="font-size:.85rem;">Need index lookup → <b>array</b>.<br>Need most-recent-first → <b>stack</b>.<br>Need first-in-first-served → <b>queue</b>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTINUE LEARNING ============ -->
+<section id="continue">
+  <div class="eyebrow">Continue Learning</div>
+  <h2>Where to go next</h2>
+  <div class="resource-grid">
+    <div class="resource-card">
+      <h4>📚 Books</h4>
+      <ul>
+        <li><b>Introduction to Algorithms</b> — Cormen, Leiserson, Rivest, Stein (CLRS)</li>
+        <li><b>Grokking Algorithms</b> — Aditya Bhargava</li>
+        <li><b>The Algorithm Design Manual</b> — Steven Skiena</li>
+      </ul>
+    </div>
+    <div class="resource-card">
+      <h4>📄 Documentation</h4>
+      <ul>
+        <li><b>MDN Web Docs</b> — Array reference (developer.mozilla.org)</li>
+        <li><b>Python docs</b> — collections.deque for efficient queues</li>
+        <li><b>Java Docs</b> — java.util.Stack / java.util.Deque</li>
+      </ul>
+    </div>
+    <div class="resource-card">
+      <h4>🔬 Research &amp; deep dives</h4>
+      <ul>
+        <li>Cache-oblivious algorithms and array locality (memory hierarchy performance)</li>
+        <li>Amortized analysis — the accounting/potential method for dynamic array growth</li>
+        <li>Lock-free queue design for concurrent systems (Michael–Scott queue)</li>
+      </ul>
+    </div>
+    <div class="resource-card">
+      <h4>👥 Communities</h4>
+      <ul>
+        <li>r/learnprogramming, r/algorithms</li>
+        <li>Stack Overflow — data-structures tag</li>
+        <li>CS Discord servers (The Coding Den, freeCodeCamp)</li>
+      </ul>
+    </div>
+    <div class="resource-card">
+      <h4>🏋 Practice platforms</h4>
+      <ul>
+        <li>LeetCode — Arrays, Stack, Queue tags</li>
+        <li>HackerRank — Data Structures track</li>
+        <li>NeetCode.io — curated structure-by-structure roadmap</li>
+      </ul>
+    </div>
+    <div class="resource-card">
+      <h4>🔎 Search keywords</h4>
+      <div>
+        <span class="kw">circular buffer implementation</span>
+        <span class="kw">monotonic stack</span>
+        <span class="kw">sliding window with deque</span>
+        <span class="kw">amortized analysis dynamic array</span>
+        <span class="kw">BFS vs DFS traversal</span>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:30px;">Prompts for further AI-assisted learning</h3>
+  <div class="takeaways">
+    <ul>
+      <li>"Walk me through implementing a circular queue in [my language] with full code and comments."</li>
+      <li>"Give me 5 LeetCode-style problems that specifically require a monotonic stack, easiest to hardest."</li>
+      <li>"Explain how a lock-free queue works for multi-threaded producers/consumers, with a diagram."</li>
+      <li>"Quiz me on when to use an array vs a linked list vs a queue, with real system-design scenarios."</li>
+    </ul>
+  </div>
+</section>
+
+<footer>Interactive Learning Studio · Arrays, Stacks &amp; Queues · Built for hands-on mastery, not passive reading.</footer>
+</div>
+
+<script>
+/* ================= THEME ================= */
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', ()=>{
+  const html = document.body;
+  const isDark = html.getAttribute('data-theme') !== 'light';
+  html.setAttribute('data-theme', isDark ? 'light':'dark');
+  themeBtn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+});
+
+function scrollToId(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
+
+/* ================= XP / PROGRESS ================= */
+let xp = 0;
+let unlockedModule = 1; // modules unlocked up to this number
+function addXP(n){
+  xp += n;
+  document.getElementById('xpVal').textContent = xp;
+  updateRail();
+}
+function updateRail(){
+  document.getElementById('modVal').textContent = Math.min(unlockedModule,4);
+  const pct = ((unlockedModule-1)/4)*100 + (unlockedModule<=4? 0:0);
+  document.getElementById('railfill').style.width = Math.min(100, ((unlockedModule-1)/4)*100 + 5) + '%';
+}
+function earnBadge(i){
+  const b = document.querySelector('.badge[data-badge="'+i+'"]');
+  if(b) b.classList.add('earned');
+}
+function unlockModule(n){
+  const el = document.getElementById('module'+n);
+  if(el){ el.classList.remove('locked'); }
+  unlockedModule = Math.max(unlockedModule, n);
+  updateRail();
+}
+updateRail();
+
+/* ================= HERO ARRAY TRACK ================= */
+let heroArr = [12,45,7,90];
+function renderHeroTrack(){
+  const t = document.getElementById('heroTrack');
+  t.innerHTML='';
+  heroArr.forEach((v,i)=>{
+    const c=document.createElement('div');
+    c.className='cell filled';
+    c.innerHTML = v + '<span class="idx">'+i+'</span>';
+    t.appendChild(c);
+  });
+}
+function heroPush(){
+  const v = Math.floor(Math.random()*99);
+  heroArr.push(v);
+  renderHeroTrack();
+}
+function heroPop(){
+  if(heroArr.length===0) return;
+  heroArr.pop();
+  renderHeroTrack();
+}
+function heroReset(){ heroArr=[12,45,7,90]; renderHeroTrack(); }
+renderHeroTrack();
+
+/* ================= MODULE 1 EXERCISES ================= */
+function checkIdx(){
+  const val = parseInt(document.getElementById('idxAnswer').value);
+  const fb = document.getElementById('idxFeedback');
+  if(val === 1028){
+    fb.className='feedback ok'; fb.textContent='Correct! 1000 + 7×4 = 1028.'; addXP(5);
+  } else {
+    fb.className='feedback bad'; fb.textContent='Not quite. Formula: base + (index × size) = 1000 + 7×4 = 1028.';
+  }
+}
+function checkCost(){
+  const val = document.getElementById('costSelect').value;
+  const fb = document.getElementById('costFeedback');
+  if(val==='b'){ fb.className='feedback ok'; fb.textContent='Correct! Inserting at the front shifts every other element.'; addXP(5); }
+  else if(val===''){ fb.className='feedback bad'; fb.textContent='Pick an option first.'; }
+  else { fb.className='feedback bad'; fb.textContent='Not quite — direct reads/writes by index are O(1); only front/middle insertion forces a shift.'; }
+}
+
+/* ================= QUIZ ENGINE (generic) ================= */
+function submitQuiz(n){
+  const quiz = document.getElementById('quiz'+n);
+  const blocks = quiz.querySelectorAll('.q-block');
+  let score = 0;
+  blocks.forEach(block=>{
+    const correctIdx = parseInt(block.dataset.correct);
+    const opts = block.querySelectorAll('.q-opt');
+    const explain = block.querySelector('.q-explain');
+    let chosen = block.dataset.chosen;
+    opts.forEach((o,i)=>{
+      o.disabled = true;
+      if(i===correctIdx) o.classList.add('correct');
+      else if(chosen!==undefined && parseInt(chosen)===i) o.classList.add('incorrect');
+    });
+    explain.classList.add('show');
+    if(chosen!==undefined && parseInt(chosen)===correctIdx) score++;
+  });
+  const pct = Math.round((score/blocks.length)*100);
+  addXP(score*10);
+  const summary = document.getElementById('summary'+n);
+  summary.style.display='block';
+  summary.innerHTML = '<div class="score">'+score+'/'+blocks.length+'</div><div class="muted">'+pct+'% — '+(pct>=75?'Great work! Module unlocked.':'Review the explanations above, then continue — module unlocked either way.')+'</div>';
+  document.getElementById('submit'+n).disabled = true;
+  earnBadge(n-1);
+  if(n<4){ unlockModule(n+1); scrollTimeout(n+1); }
+  else { unlockModule(5); document.getElementById('finalChallenge').classList.remove('locked'); earnBadge(4); scrollFinal(); }
+}
+function scrollTimeout(next){ setTimeout(()=>{ scrollToId('module'+next); }, 900); }
+function scrollFinal(){ setTimeout(()=>{ scrollToId('finalChallenge'); }, 900); }
+
+// wire up option clicks (record chosen answer, don't reveal yet)
+document.querySelectorAll('.q-block').forEach(block=>{
+  block.querySelectorAll('.q-opt').forEach((opt,i)=>{
+    opt.addEventListener('click', ()=>{
+      block.querySelectorAll('.q-opt').forEach(o=>o.style.outline='none');
+      opt.style.outline = '2px solid var(--amber)';
+      block.dataset.chosen = i;
+    });
+  });
+});
+
+/* ================= MODULE 2: STACK VIZ ================= */
+let stackArr = [];
+function renderStack(){
+  const v = document.getElementById('stackViz');
+  v.innerHTML='';
+  stackArr.forEach((val,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='width:130px;height:40px;background:linear-gradient(160deg,var(--amber),#c9840f);color:#181205;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;';
+    d.textContent = val;
+    v.appendChild(d);
+  });
+}
+function stackPush(){
+  const inp = document.getElementById('stackInput');
+  if(!inp.value.trim()) return;
+  stackArr.push(inp.value.trim());
+  inp.value='';
+  renderStack();
+  document.getElementById('stackMsg').textContent = 'pushed. size='+stackArr.length;
+}
+function stackPop(){
+  if(!stackArr.length){ document.getElementById('stackMsg').textContent='stack empty'; return; }
+  const v = stackArr.pop();
+  renderStack();
+  document.getElementById('stackMsg').textContent = 'popped "'+v+'". size='+stackArr.length;
+}
+function stackPeek(){
+  document.getElementById('stackMsg').textContent = stackArr.length ? 'top = "'+stackArr[stackArr.length-1]+'"' : 'stack empty';
+}
+function checkTrace(){
+  const val = document.getElementById('traceAnswer').value.replace(/\s/g,'');
+  const fb = document.getElementById('traceFeedback');
+  if(val === '[1]'){ fb.className='feedback ok'; fb.textContent='Correct! push1,push2,pop(removes2),push3,pop(removes3) → [1] remains.'; addXP(5); }
+  else { fb.className='feedback bad'; fb.textContent='Trace again: push(1)→[1], push(2)→[1,2], pop()→[1], push(3)→[1,3], pop()→[1].'; }
+}
+function checkBrackets(){
+  const s = document.getElementById('bracketInput').value;
+  const fb = document.getElementById('bracketFeedback');
+  const pairs = {')':'(',']':'[','}':'{'};
+  const stack=[];
+  let balanced=true;
+  for(const ch of s){
+    if('([{'.includes(ch)) stack.push(ch);
+    else if(')]}'.includes(ch)){
+      if(stack.pop()!==pairs[ch]){ balanced=false; break; }
+    }
+  }
+  if(stack.length) balanced=false;
+  if(!s.trim()){ fb.className='feedback bad'; fb.textContent='Type a bracket string first.'; return; }
+  fb.className = balanced?'feedback ok':'feedback bad';
+  fb.textContent = balanced ? 'Balanced! Every open bracket found a matching close, in order.' : 'Not balanced — the stack couldn\\'t match a close bracket to the correct open one.';
+  if(balanced) addXP(5);
+}
+
+/* ================= MODULE 3: QUEUE VIZ ================= */
+let queueArr = ['A','B'];
+function renderQueue(){
+  const v = document.getElementById('queueViz');
+  v.innerHTML='';
+  queueArr.forEach((val,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='width:50px;height:50px;background:'+(i===0?'linear-gradient(160deg,var(--teal),#2a9d94)':'var(--surface-2)')+';color:'+(i===0?'#0B1220':'var(--text)')+';border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;';
+    d.textContent = val;
+    v.appendChild(d);
+  });
+  if(queueArr.length){
+    const lab=document.createElement('div');
+    lab.className='muted mono';
+    lab.style.fontSize='.75rem';
+    lab.textContent='↑ front';
+    v.appendChild(lab);
+  }
+}
+renderQueue();
+function queueEnqueue(){
+  const inp = document.getElementById('queueInput');
+  if(!inp.value.trim()) return;
+  queueArr.push(inp.value.trim());
+  inp.value='';
+  renderQueue();
+  document.getElementById('queueMsg').textContent='enqueued. size='+queueArr.length;
+}
+function queueDequeue(){
+  if(!queueArr.length){ document.getElementById('queueMsg').textContent='queue empty'; return; }
+  const v = queueArr.shift();
+  renderQueue();
+  document.getElementById('queueMsg').textContent='dequeued "'+v+'". size='+queueArr.length;
+}
+function checkPick(){
+  const val = document.getElementById('pickSelect').value;
+  const fb = document.getElementById('pickFeedback');
+  if(val==='queue'){ fb.className='feedback ok'; fb.textContent='Correct! Print order must match submission order — that\\'s FIFO.'; addXP(5); }
+  else if(val===''){ fb.className='feedback bad'; fb.textContent='Pick an option first.'; }
+  else { fb.className='feedback bad'; fb.textContent='A stack would print the most recent job first — wrong for a spooler. Queue is correct.'; }
+}
+
+/* ================= MODULE 4 EXERCISES ================= */
+function checkBug(){
+  const val = document.getElementById('bugSelect').value;
+  const fb = document.getElementById('bugFeedback');
+  if(val==='b'){ fb.className='feedback ok'; fb.textContent='Correct! A queue removes the oldest entry first, so "undo" would undo the earliest edit instead of the latest.'; addXP(5); }
+  else if(val===''){ fb.className='feedback bad'; fb.textContent='Pick an option first.'; }
+  else { fb.className='feedback bad'; fb.textContent='Think about FIFO vs LIFO: a queue dequeues the oldest item, not the most recent one.'; }
+}
+function checkComplex(){
+  const val = document.getElementById('complexSelect').value;
+  const fb = document.getElementById('complexFeedback');
+  if(val==='b'){ fb.className='feedback ok'; fb.textContent='Correct! O(n) per shift × n items = O(n²) total — a real performance trap at scale.'; addXP(5); }
+  else if(val===''){ fb.className='feedback bad'; fb.textContent='Pick an option first.'; }
+  else { fb.className='feedback bad'; fb.textContent='Each shift() is O(n) on its own; doing that n times compounds to O(n²).'; }
+}
+
+/* ================= FINAL CHALLENGE: BROWSER HISTORY ================= */
+let backStack=[], fwdStack=[], current='/home';
+function renderHistory(){
+  document.getElementById('currentPage').textContent = current;
+  document.getElementById('backStackView').textContent = JSON.stringify(backStack);
+  document.getElementById('fwdStackView').textContent = JSON.stringify(fwdStack);
+}
+renderHistory();
+function visitUrl(){
+  const inp = document.getElementById('urlInput');
+  if(!inp.value.trim()) return;
+  backStack.push(current);
+  current = inp.value.trim();
+  fwdStack = [];
+  inp.value='';
+  renderHistory();
+}
+function goBack(){
+  if(!backStack.length) return;
+  fwdStack.push(current);
+  current = backStack.pop();
+  renderHistory();
+}
+function goForward(){
+  if(!fwdStack.length) return;
+  backStack.push(current);
+  current = fwdStack.pop();
+  renderHistory();
+}
+function completeChallenge(){
+  addXP(25);
+  document.getElementById('completeBtn').textContent = '✅ Challenge complete — nice work!';
+  document.getElementById('completeBtn').disabled = true;
+  document.getElementById('railfill').style.width = '100%';
+}
+</script>
+</body>
+</html>
