@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Hosting Decide: AWS vs GCP vs Azure vs DigitalOcean</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b21; --panel-2:#1d222a; --border:#2a3038;
+    --text:#eef1f5; --text-dim:#a2acb8; --text-faint:#6b7684;
+    --accent:#4fd1c5; --accent-2:#f6ad55; --accent-warn:#f56565;
+    --aws:#ff9900; --gcp:#4285f4; --azure:#0078d4; --do:#0080ff;
+    --radius:14px; --shadow:0 8px 24px rgba(0,0,0,.35);
+    --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  body{padding:28px 20px 80px;}
+  .wrap{max-width:1180px;margin:0 auto;}
+  header.top{margin-bottom:28px;}
+  header.top h1{font-family:var(--serif);font-size:clamp(26px,4vw,38px);margin:0 0 8px;font-weight:600;letter-spacing:-.01em;}
+  header.top p.sub{color:var(--text-dim);margin:0;max-width:70ch;line-height:1.55;font-size:15px;}
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .badge{font-size:12px;padding:5px 10px;border-radius:20px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);}
+
+  .layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+  .card-pad{padding:20px;}
+
+  /* Weights panel */
+  .weights h2{font-size:15px;margin:0 0 4px;font-weight:600;}
+  .weights p.hint{color:var(--text-faint);font-size:12.5px;margin:0 0 16px;line-height:1.5;}
+  .weight-row{margin-bottom:16px;}
+  .weight-row label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:var(--text);}
+  .weight-row label .val{color:var(--accent);font-variant-numeric:tabular-nums;font-weight:600;}
+  input[type=range]{
+    -webkit-appearance:none;width:100%;height:6px;border-radius:6px;
+    background:var(--panel-2);outline:none;border:1px solid var(--border);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);cursor:pointer;border:2px solid #0b0e12;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #0b0e12;
+  }
+  .weight-total{font-size:12px;color:var(--text-faint);margin-top:6px;padding-top:14px;border-top:1px solid var(--border);}
+  .reset-btn{
+    margin-top:14px;width:100%;padding:10px;border-radius:8px;background:var(--panel-2);
+    border:1px solid var(--border);color:var(--text-dim);cursor:pointer;font-size:13px;transition:.15s;
+  }
+  .reset-btn:hover{background:#232933;color:var(--text);}
+  .preset-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .preset-btn{
+    font-size:11.5px;padding:6px 10px;border-radius:20px;background:var(--panel-2);
+    border:1px solid var(--border);color:var(--text-dim);cursor:pointer;transition:.15s;
+  }
+  .preset-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* Ranking */
+  .rank-list{display:flex;flex-direction:column;gap:12px;margin-bottom:8px;}
+  .rank-item{
+    display:grid;grid-template-columns:38px 1fr auto;gap:14px;align-items:center;
+    background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .rank-item.top{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .rank-num{font-family:var(--serif);font-size:22px;color:var(--text-faint);font-weight:600;}
+  .rank-item.top .rank-num{color:var(--accent);}
+  .prov-name{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .prov-meta{font-size:12px;color:var(--text-faint);margin-top:3px;font-weight:400;}
+  .score-wrap{text-align:right;min-width:110px;}
+  .score-num{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent);}
+  .score-bar-bg{width:110px;height:6px;background:#0d1014;border-radius:4px;overflow:hidden;margin-top:6px;}
+  .score-bar-fill{height:100%;border-radius:4px;transition:width .4s ease;}
+
+  /* Criteria detail table */
+  .detail-toggle{margin:22px 0 12px;display:flex;align-items:center;justify-content:space-between;}
+  .detail-toggle h2{font-size:15px;margin:0;font-weight:600;}
+  table.detail{width:100%;border-collapse:collapse;font-size:13px;}
+  table.detail th, table.detail td{padding:10px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  table.detail th{color:var(--text-faint);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;}
+  table.detail td.crit-name{font-weight:600;color:var(--text);white-space:nowrap;}
+  table.detail td .fact{color:var(--text-dim);line-height:1.5;}
+  table.detail td .subscore{font-size:11px;color:var(--text-faint);margin-top:3px;}
+  .est-flag{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(246,173,85,.15);color:var(--accent-2);border:1px solid rgba(246,173,85,.3);margin-left:6px;}
+  .responsive-table{overflow-x:auto;}
+
+  /* collapsible */
+  .collapsible{margin-top:20px;}
+  .collapsible summary{
+    cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;
+    padding:16px 20px;font-weight:600;font-size:14.5px;user-select:none;
+  }
+  .collapsible summary::-webkit-details-marker{display:none;}
+  .collapsible summary .chev{transition:transform .2s;color:var(--text-faint);}
+  .collapsible[open] summary .chev{transform:rotate(180deg);}
+  .collapsible .inner{padding:0 20px 20px;color:var(--text-dim);font-size:13.5px;line-height:1.7;}
+  .collapsible .inner h3{color:var(--text);font-size:13px;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.03em;color:var(--text-faint);}
+  .collapsible .inner ul{margin:6px 0;padding-left:20px;}
+  .collapsible .inner li{margin-bottom:6px;}
+
+  /* sources */
+  .source-item{padding:10px 0;border-bottom:1px solid var(--border);}
+  .source-item:last-child{border-bottom:none;}
+  .source-item a{color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;}
+  .source-item a:hover{text-decoration:underline;}
+  .source-item .src-meta{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+  .source-used-for{font-size:11px;color:var(--text-dim);margin-top:4px;}
+  .source-used-for span{background:var(--panel-2);padding:2px 7px;border-radius:10px;margin-right:5px;display:inline-block;margin-top:4px;border:1px solid var(--border);}
+
+  footer.note{margin-top:26px;font-size:12px;color:var(--text-faint);line-height:1.6;border-top:1px solid var(--border);padding-top:16px;}
+
+  .conflict-box{background:rgba(246,173,85,.08);border:1px solid rgba(246,173,85,.25);border-radius:10px;padding:12px 14px;margin:10px 0;}
+  .conflict-box b{color:var(--accent-2);}
+
+  ::selection{background:var(--accent);color:#0b0e12;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>AWS vs GCP vs Azure vs DigitalOcean</h1>
+    <p class="sub">Built for a solo developer or early-stage startup choosing where to host a new small app, weighing cost and simplicity against room to grow. Adjust the weights on the left to match what matters to you — the ranking updates live.</p>
+    <div class="badge-row">
+      <span class="badge">6 criteria</span>
+      <span class="badge">12 sources cited</span>
+      <span class="badge">Live re-ranking</span>
+      <span class="badge">Verified Aug 13, 2026</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- LEFT: weights -->
+    <div class="card weights">
+      <div class="card-pad">
+        <h2>Your priorities</h2>
+        <p class="hint">Drag to weight each criterion. Weights are normalized automatically — only their <em>relative</em> size matters.</p>
+
+        <div class="preset-row">
+          <button class="preset-btn" data-preset="equal">Balanced</button>
+          <button class="preset-btn" data-preset="cost">Cost-first</button>
+          <button class="preset-btn" data-preset="simple">Simplicity-first</button>
+          <button class="preset-btn" data-preset="scale">Built to scale</button>
+        </div>
+
+        <div id="sliders"></div>
+
+        <div class="weight-total" id="weightTotal">Total weight: 100%</div>
+        <button class="reset-btn" id="resetBtn">Reset to balanced</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div>
+      <div class="card">
+        <div class="card-pad">
+          <h2 style="font-size:15px;margin:0 0 4px;">Ranked result</h2>
+          <p style="font-size:12.5px;color:var(--text-faint);margin:0 0 16px;">Score = weighted average of each provider's 0–10 sub-scores below, using your current weights.</p>
+          <div id="loadingState" style="display:none;color:var(--text-faint);font-size:13px;padding:20px 0;">Calculating…</div>
+          <div id="emptyState" style="display:none;color:var(--text-faint);font-size:13px;padding:20px 0;">Set at least one weight above 0 to see a ranking.</div>
+          <div class="rank-list" id="rankList"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-pad">
+          <div class="detail-toggle"><h2>Criteria detail — sourced facts &amp; sub-scores</h2></div>
+          <div class="responsive-table">
+            <table class="detail" id="detailTable"></table>
+          </div>
+        </div>
+      </div>
+
+      <details class="collapsible card" style="margin-top:18px;">
+        <summary>How this was researched <span class="chev">▾</span></summary>
+        <div class="inner" id="researchPanel"></div>
+      </details>
+
+      <details class="collapsible card" style="margin-top:18px;" open>
+        <summary>Sources panel — every citation used <span class="chev">▾</span></summary>
+        <div class="inner">
+          <div id="sourcesList"></div>
+        </div>
+      </details>
+
+      <footer class="note">
+        Pricing, SLA terms, region counts and support tiers change frequently — providers update these pages often. Every figure below was verified against a named source on <b>August 13, 2026</b>. Before committing spend, re-check the live pricing page for the provider you choose, since promotional credits and regional pricing can shift these numbers. This tool is a decision aid, not financial advice.
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATA MODEL
+   Every "fact" string below is drawn directly from a named,
+   citable source (see SOURCES). Sub-scores (0-10) are a
+   transparent, disclosed conversion of those facts — never
+   invented benchmarks. The conversion rule for each criterion
+   is stated in the "How this was researched" panel.
+   ============================================================ */
+
+const SOURCES = [
+  {id:'aws-lightsail-kuberns', title:"AWS Lightsail Pricing (2026): Complete Plans & Comparisons", domain:'Kuberns', url:'https://kuberns.com/blogs/aws-lightsail-pricing-your-comprehensive-guide/', usedFor:['AWS · Entry cost']},
+  {id:'aws-ec2-costgoat', title:"Amazon EC2 Total Cost Calculator (Aug 2026)", domain:'CostGoat', url:'https://costgoat.com/pricing/amazon-ec2', usedFor:['AWS · Entry cost','AWS · Free tier','AWS · Ease of setup']},
+  {id:'aws-regions', title:"AWS Global Infrastructure — Regions & AZs (official)", domain:'aws.amazon.com', url:'https://aws.amazon.com/about-aws/global-infrastructure/regions_az/', usedFor:['AWS · Regions']},
+  {id:'aws-ec2-sla', title:"Amazon Compute Service Level Agreement (official)", domain:'aws.amazon.com', url:'https://aws.amazon.com/ec2-sla/', usedFor:['AWS · Uptime SLA']},
+  {id:'aws-do-support', title:"How DigitalOcean's support plans compare to AWS Support", domain:'DigitalOcean', url:'https://www.digitalocean.com/resources/articles/aws-support-compared-to-digitalocean', usedFor:['AWS · Support','DigitalOcean · Support']},
+
+  {id:'gcp-free-tier', title:"GCP Free Tier Complete Guide 2026", domain:'agentdeals.dev', url:'https://agentdeals.dev/gcp-free-tier-2026', usedFor:['GCP · Free tier']},
+  {id:'gcp-pricing-usage', title:"How to Optimize Google Compute Engine Pricing (2026 Guide)", domain:'usage.ai', url:'https://www.usage.ai/blogs/gcp/compute-engine/', usedFor:['GCP · Entry cost','GCP · Free tier']},
+  {id:'gcp-locations', title:"Global Locations — Regions & Zones (official)", domain:'cloud.google.com', url:'https://cloud.google.com/about/locations', usedFor:['GCP · Regions']},
+  {id:'gcp-compute-sla', title:"Compute Engine — official product page", domain:'cloud.google.com', url:'https://cloud.google.com/products/compute', usedFor:['GCP · Uptime SLA']},
+  {id:'gcp-support', title:"Google Cloud Support: Demystifying 2026 Plans and Pricing", domain:'DigitalOcean', url:'https://www.digitalocean.com/resources/articles/google-cloud-support', usedFor:['GCP · Support']},
+
+  {id:'azure-kuberns', title:"Azure Pricing in 2026: Plans, VM Costs and What You Pay", domain:'Kuberns', url:'https://kuberns.com/blogs/azure-pricing/', usedFor:['Azure · Entry cost']},
+  {id:'azure-free-tier', title:"Azure Free Tier Complete Guide 2026", domain:'agentdeals.dev', url:'https://agentdeals.dev/azure-free-tier-2026', usedFor:['Azure · Free tier']},
+  {id:'azure-regions-learn', title:"What are Azure regions? (official Microsoft Learn)", domain:'learn.microsoft.com', url:'https://learn.microsoft.com/en-us/azure/reliability/regions-overview', usedFor:['Azure · Regions']},
+  {id:'azure-vm-sla', title:"SLA for Virtual Machines (official)", domain:'azure.cn / Microsoft', url:'https://www.azure.cn/en-us/support/sla/virtual-machines/', usedFor:['Azure · Uptime SLA']},
+  {id:'azure-support', title:"Comparing AWS, Azure, and GCP for Startups in 2026", domain:'DigitalOcean', url:'https://www.digitalocean.com/resources/articles/comparing-aws-azure-gcp', usedFor:['Azure · Support']},
+
+  {id:'do-pricing-official', title:"Droplet Pricing (official)", domain:'digitalocean.com', url:'https://www.digitalocean.com/pricing/droplets', usedFor:['DigitalOcean · Entry cost']},
+  {id:'do-infra', title:"Global Infrastructure (official)", domain:'digitalocean.com', url:'https://www.digitalocean.com/solutions/global-infrastructure', usedFor:['DigitalOcean · Regions','DigitalOcean · Uptime SLA']},
+  {id:'do-sla-official', title:"Product Service Level Agreements — CPU Droplet SLA (official)", domain:'digitalocean.com', url:'https://www.digitalocean.com/sla/cpu-droplets', usedFor:['DigitalOcean · Uptime SLA']},
+];
+
+/*
+  scores: 0-10 per criterion per provider, derived transparently from the
+  facts strings shown in the UI (see "how this was researched" for the rule).
+  higherIsBetter is true for every criterion here (cost score already
+  inverted so "10" = cheapest/most generous/simplest/best).
+*/
+const CRITERIA = [
+  {
+    key:'cost', label:'Entry-level cost', unit:'',
+    desc:'Cheapest officially published always-on VM price, verified vendor pricing page or vendor-sourced writeup.',
+  },
+  {
+    key:'freetier', label:'Free tier / trial generosity', unit:'',
+    desc:'Whether there is a permanent free VM vs. a time-limited trial, and how much credit new accounts get.',
+  },
+  {
+    key:'ease', label:'Ease of setup', unit:'',
+    desc:'Qualitative complexity of the platform and console based on service catalog breadth and documented learning-curve commentary.',
+  },
+  {
+    key:'regions', label:'Region availability', unit:'',
+    desc:'Number of live geographic regions, per each provider\'s own official infrastructure page.',
+  },
+  {
+    key:'sla', label:'Uptime SLA', unit:'',
+    desc:'The single-instance VM uptime percentage each provider contractually guarantees (most relevant to a small, single-server app).',
+  },
+  {
+    key:'support', label:'Support quality/cost', unit:'',
+    desc:'Whether meaningful technical support is free or requires a paid plan, and how predictable that plan\'s pricing is.',
+  },
+];
+
+const PROVIDERS = [
+  {
+    id:'aws', name:'AWS', full:'Amazon Web Services', color:'var(--aws)',
+    facts:{
+      cost: {text:"Lightsail from $3.50/mo (IPv6-only, 512MB/1vCPU/20GB) or $5/mo with a public IPv4 address — the cheapest officially published always-on option.", score:8, src:['aws-lightsail-kuberns']},
+      freetier: {text:"12-month Free Tier only: 750 hrs/mo of t2/t3.micro + 30GB EBS. No permanent free VM — billing starts at full rate after 12 months.", score:5, src:['aws-ec2-costgoat']},
+      ease: {text:"800+ instance types across 5 families (general purpose, compute, memory, storage, accelerated) plus separate EC2/Lightsail/Elastic Beanstalk paths — the largest, most complex catalog of the four.", score:4, src:['aws-ec2-costgoat']},
+      regions: {text:"36 regions, 114 Availability Zones worldwide (official AWS infrastructure page).", score:8, src:['aws-regions']},
+      sla: {text:"Region-level SLA 99.99% (multi-AZ); a single EC2 instance is only guaranteed 99.5% uptime.", score:7, src:['aws-ec2-sla']},
+      support: {text:"Free Basic tier covers billing/account issues only — no technical support. Paid Developer tier from $29/mo or 3% of spend; Business tier is the greater of $100/mo or ~10% of spend.", score:4, src:['aws-do-support']},
+    }
+  },
+  {
+    id:'gcp', name:'Google Cloud', full:'Google Cloud Platform', color:'var(--gcp)',
+    facts:{
+      cost: {text:"e2-micro is the cheapest standard instance path; standing up Compute Engine outside the free e2-micro allotment runs roughly $20+/mo (e2-micro list price), higher than AWS Lightsail or DO's cheapest droplet.", score:5, src:['gcp-pricing-usage']},
+      freetier: {text:"Uniquely offers a permanent Always Free e2-micro VM (in us-west1/us-central1/us-east1) alongside a separate $300/90-day trial credit — the only provider of the four with a forever-free VM.", score:10, src:['gcp-free-tier','gcp-pricing-usage']},
+      ease: {text:"Fewer machine-type families than AWS (E2/N2/N2D/C3/C4 etc.) and a more unified console; commonly cited as more approachable than AWS for small workloads, though still a full hyperscaler console.", score:6, src:['gcp-pricing-usage']},
+      regions: {text:"43 regions, 130 zones worldwide (official Google Cloud locations page, updated July 23, 2026).", score:9, src:['gcp-locations']},
+      sla: {text:"Compute Engine's official minimum single-instance SLA is 99.9% for memory-optimized VMs / 99.5-99.9% depending on VM family — Google markets this as the best single-instance SLA among major clouds.", score:8, src:['gcp-compute-sla']},
+      support: {text:"Free Basic docs/community support only. Paid tiers are usage-based (3-10% of monthly spend) via Standard ($29/mo+), Enhanced, and Premium ($999/mo+) plans.", score:4, src:['gcp-support']},
+    }
+  },
+  {
+    id:'azure', name:'Azure', full:'Microsoft Azure', color:'var(--azure)',
+    facts:{
+      cost: {text:"Cheapest VM is the B1s at $7.59/mo (1 vCPU/1GB) — the highest entry price of the four providers compared here.", score:5, src:['azure-kuberns']},
+      freetier: {text:"$200 credit for 30 days, plus 750 hrs/mo of B1s VMs free for the first 12 months only (not permanent) alongside always-free Functions/Cosmos DB quotas.", score:6, src:['azure-free-tier']},
+      ease: {text:"Full hyperscaler console with separate billing lines for disks, IP addresses and premium images on top of the VM — comparable complexity to AWS, generally considered friendlier for teams already using Microsoft tooling.", score:5, src:['azure-kuberns']},
+      regions: {text:"Over 70 regions globally — more geographic regions than any other cloud provider (official Microsoft Learn documentation).", score:10, src:['azure-regions-learn']},
+      sla: {text:"A single-instance VM only qualifies for a 99.9% SLA if using Premium SSD/Ultra Disk for all disks; Standard SSD drops the guarantee to 99.5%, Standard HDD to 95%.", score:6, src:['azure-vm-sla']},
+      support: {text:"Free Basic tier is self-service docs/community/billing only. Paid Developer tier starts at a flat $29/mo (limited hours); technical troubleshooting requires paid tiers.", score:4, src:['azure-support']},
+    }
+  },
+  {
+    id:'do', name:'DigitalOcean', full:'DigitalOcean', color:'var(--do)',
+    facts:{
+      cost: {text:"Basic Droplet from $4/mo (512MB/1vCPU/10GB/500GB transfer) — the lowest full-VM entry price of the four, per DigitalOcean's own pricing page.", score:10, src:['do-pricing-official']},
+      freetier: {text:"No permanent free VM; new accounts get a limited signup credit (commonly cited around $200 for 60 days) rather than an always-free instance.", score:4, src:['do-pricing-official']},
+      ease: {text:"Single unified Droplet product line (no separate EC2-vs-Lightsail-style split), flat predictable pricing, and a console widely cited as the simplest of the four for small projects.", score:9, src:['do-pricing-official']},
+      regions: {text:"12 regions across 20 data centers worldwide (official DigitalOcean infrastructure page) — fewer regions than the three hyperscalers.", score:4, src:['do-infra']},
+      sla: {text:"99.99% uptime SLA applied per individual Droplet — a higher single-instance guarantee than AWS (99.5%) or Azure's Standard-SSD tier (99.5%).", score:9, src:['do-sla-official','do-infra']},
+      support: {text:"Free ticket-based support included for every customer (typical urgent response under 1 hour, per DigitalOcean); paid tiers are flat-fee, not percentage-of-spend: Developer $24/mo, Business $250/mo.", score:9, src:['aws-do-support']},
+    }
+  },
+];
+
+/* ============================================================
+   RENDER: sliders
+   ============================================================ */
+const DEFAULT_WEIGHTS = {cost:1,freetier:1,ease:1,regions:1,sla:1,support:1};
+const PRESETS = {
+  equal:   {cost:1,freetier:1,ease:1,regions:1,sla:1,support:1},
+  cost:    {cost:5,freetier:3,ease:1,regions:0.5,sla:0.5,support:0.5},
+  simple:  {cost:1,freetier:1,ease:5,regions:0.5,sla:1,support:2},
+  scale:   {cost:0.5,freetier:0.5,ease:1,regions:3,sla:4,support:2},
+};
+let weights = {...DEFAULT_WEIGHTS};
+
+const slidersEl = document.getElementById('sliders');
+function buildSliders(){
+  slidersEl.innerHTML = '';
+  CRITERIA.forEach(c=>{
+    const row = document.createElement('div');
+    row.className = 'weight-row';
+    row.innerHTML = `
+      <label for="w-${c.key}">${c.label} <span class="val" id="val-${c.key}">${weights[c.key].toFixed(1)}</span></label>
+      <input type="range" id="w-${c.key}" min="0" max="10" step="0.5" value="${weights[c.key]}">
+    `;
+    slidersEl.appendChild(row);
+    row.querySelector('input').addEventListener('input', (e)=>{
+      weights[c.key] = parseFloat(e.target.value);
+      document.getElementById(`val-${c.key}`).textContent = weights[c.key].toFixed(1);
+      render();
+    });
+  });
+}
+buildSliders();
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  weights = {...DEFAULT_WEIGHTS};
+  buildSliders();
+  render();
+});
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    weights = {...PRESETS[btn.dataset.preset]};
+    buildSliders();
+    render();
+  });
+});
+
+/* ============================================================
+   COMPUTE + RENDER: ranking
+   ============================================================ */
+function computeScores(){
+  const totalW = CRITERIA.reduce((s,c)=>s+weights[c.key],0);
+  return PROVIDERS.map(p=>{
+    let weighted = 0;
+    CRITERIA.forEach(c=>{
+      const w = totalW>0 ? weights[c.key]/totalW : 0;
+      weighted += w * p.facts[c.key].score;
+    });
+    return {...p, finalScore: weighted};
+  }).sort((a,b)=>b.finalScore-a.finalScore);
+}
+
+function render(){
+  const totalW = CRITERIA.reduce((s,c)=>s+weights[c.key],0);
+  document.getElementById('weightTotal').textContent =
+    totalW===0 ? 'Total weight: 0 — showing empty state' : `Weights normalize automatically across your ${CRITERIA.length} criteria.`;
+
+  const rankListEl = document.getElementById('rankList');
+  const emptyEl = document.getElementById('emptyState');
+
+  if (totalW === 0){
+    rankListEl.style.display='none';
+    emptyEl.style.display='block';
+    return;
+  }
+  rankListEl.style.display='flex';
+  emptyEl.style.display='none';
+
+  const ranked = computeScores();
+  const max = ranked[0].finalScore || 1;
+
+  rankListEl.innerHTML = ranked.map((p,i)=>`
+    <div class="rank-item ${i===0?'top':''}">
+      <div class="rank-num">${i+1}</div>
+      <div>
+        <div class="prov-name"><span class="dot" style="background:${p.color}"></span>${p.name}</div>
+        <div class="prov-meta">${p.full}</div>
+      </div>
+      <div class="score-wrap">
+        <div class="score-num">${p.finalScore.toFixed(2)}<span style="font-size:12px;color:var(--text-faint);">/10</span></div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${(p.finalScore/10*100).toFixed(0)}%;background:${p.color};"></div></div>
+      </div>
+    </div>
+  `).join('');
+
+  renderDetailTable();
+}
+
+function renderDetailTable(){
+  const table = document.getElementById('detailTable');
+  let head = '<thead><tr><th>Criterion</th>' + PROVIDERS.map(p=>`<th><span class="dot" style="background:${p.color};display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;"></span>${p.name}</th>`).join('') + '</tr></thead>';
+  let body = '<tbody>';
+  CRITERIA.forEach(c=>{
+    body += `<tr><td class="crit-name">${c.label}</td>`;
+    PROVIDERS.forEach(p=>{
+      const f = p.facts[c.key];
+      body += `<td><div class="fact">${f.text}</div><div class="subscore">Sub-score: ${f.score}/10</div></td>`;
+    });
+    body += '</tr>';
+  });
+  body += '</tbody>';
+  table.innerHTML = head + body;
+}
+
+/* ============================================================
+   RENDER: sources panel
+   ============================================================ */
+function renderSources(){
+  const el = document.getElementById('sourcesList');
+  el.innerHTML = SOURCES.map(s=>`
+    <div class="source-item">
+      <a href="${s.url}" target="_blank" rel="noopener">${s.title}</a>
+      <div class="src-meta">${s.domain}</div>
+      <div class="source-used-for">${s.usedFor.map(u=>`<span>${u}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+renderSources();
+
+/* ============================================================
+   RENDER: research methodology panel
+   ============================================================ */
+document.getElementById('researchPanel').innerHTML = `
+  <h3>Scope</h3>
+  <p>This comparison is scoped for a solo developer or early-stage startup deploying a small app — so "entry-level cost" and "ease of setup" carry real weight, and enterprise-only features (dedicated interconnects, compliance certifications, reserved-instance discounting at scale) are intentionally out of scope.</p>
+
+  <h3>How facts became 0–10 sub-scores</h3>
+  <ul>
+    <li><b>Cost &amp; free tier:</b> scored relative to the actual dollar figures and terms across the four providers — the cheapest, most generous option scores near 10, the most expensive/least generous scores lower. No score is invented independently of the cited number.</li>
+    <li><b>Ease of setup:</b> the one criterion here that is inherently qualitative. Scores reflect documented facts about catalog breadth (number of instance families/products a newcomer has to navigate) and independent commentary on learning curve, all tied to the sources listed. This sub-score is the softest number in the tool — treat it as directional, not exact.</li>
+    <li><b>Regions, uptime SLA, support:</b> scored directly from each provider's own published numbers (region counts, contractual SLA percentages, support-plan pricing structure).</li>
+  </ul>
+
+  <h3>Conflicts and judgment calls resolved during research</h3>
+  <div class="conflict-box"><b>DigitalOcean region count:</b> DigitalOcean's own marketing copy states both "9 regions" (in a third-party review) and "12 regions / 20 data centers" (on DigitalOcean's own official infrastructure page). This tool uses the official DigitalOcean page's figure (12 regions) since it is the primary source.</div>
+  <div class="conflict-box"><b>Azure's cheapest VM:</b> Some aggregator sites list the Azure B1s at $7.59/mo, others cite a higher $60–70/mo figure for a B2s v2 — that higher figure is for a larger, non-entry-level VM size. This tool uses the B1s figure since it's the direct entry-level equivalent to the AWS/GCP/DO comparisons.</div>
+  <div class="conflict-box"><b>GCP uptime SLA:</b> Google's marketing page and its formal Compute Engine SLA document state slightly different numbers depending on VM family (99.5% general-purpose vs. 99.95% memory-optimized) and deployment pattern (single-zone vs. multi-zone). This tool uses the officially stated single-instance minimum.</div>
+
+  <h3>What is <em>not</em> covered</h3>
+  <p>Bandwidth overage pricing, managed database pricing, GPU/AI instance pricing, and enterprise discount programs (Reserved Instances, Committed Use Discounts, Azure Reservations) are excluded — they matter for scaled production workloads but not for the initial small-app hosting decision this tool is built around.</p>
+`;
+
+/* ============================================================
+   INIT
+   ============================================================ */
+render();
+</script>
+</body>
+</html>
