@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>60 Days to RoundsAI — Skills Evolution</title>
+<style>
+  :root{
+    --ink:#0f1115;
+    --paper:#f7f5f0;
+    --line:#d8d3c7;
+    --accent:#1f6f5c;
+    --accent2:#b5502e;
+    --muted:#6b6558;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Georgia',ui-serif,serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:56px 32px 80px;}
+
+  .masthead{
+    border-top:3px solid var(--ink);
+    border-bottom:1px solid var(--ink);
+    padding:18px 0;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+  }
+  .masthead .kicker{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .masthead .issue{
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  h1.title{
+    font-size:52px;
+    font-weight:400;
+    letter-spacing:-0.01em;
+    margin:34px 0 10px;
+    line-height:1.05;
+  }
+  h1.title em{ font-style:italic; color:var(--accent2); }
+  .subtitle{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:16px;
+    color:var(--muted);
+    max-width:640px;
+    margin-bottom:36px;
+  }
+
+  .timeline{
+    position:relative;
+    margin:40px 0 56px;
+    padding-left:26px;
+    border-left:2px solid var(--ink);
+  }
+  .stage{
+    position:relative;
+    padding:0 0 34px 22px;
+  }
+  .stage:last-child{padding-bottom:0;}
+  .stage::before{
+    content:'';
+    position:absolute;
+    left:-33px;
+    top:4px;
+    width:12px;height:12px;
+    border-radius:50%;
+    background:var(--paper);
+    border:2px solid var(--accent);
+  }
+  .stage.capstone::before{
+    background:var(--accent2);
+    border-color:var(--accent2);
+    width:16px;height:16px;
+    left:-35px;
+    top:2px;
+  }
+  .stage-range{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:700;
+    margin-bottom:4px;
+  }
+  .stage.capstone .stage-range{ color:var(--accent2); }
+  .stage-title{
+    font-size:22px;
+    margin-bottom:6px;
+  }
+  .stage-desc{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:14.5px;
+    color:#3a382f;
+    max-width:620px;
+  }
+
+  .capstone-block{
+    margin-top:8px;
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:2px;
+    padding:36px;
+  }
+  .capstone-block h2{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:#e3a98e;
+    margin-bottom:10px;
+  }
+  .capstone-block h3{
+    font-size:30px;
+    font-weight:400;
+    margin-bottom:14px;
+  }
+  .capstone-block p{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:14.5px;
+    color:#cfcbc0;
+    max-width:640px;
+    margin-bottom:22px;
+  }
+
+  .grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-top:8px;
+  }
+  .grid-item{
+    flex:1 1 calc(33.333% - 11px);
+    min-width:160px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.14);
+    padding:16px 16px 14px;
+  }
+  .grid-item .n{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#8fbfae;
+    margin-bottom:6px;
+  }
+  .grid-item .d{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    color:#e7e4da;
+    line-height:1.45;
+  }
+
+  .proof{
+    margin-top:44px;
+    border-top:1px solid var(--line);
+    padding-top:30px;
+  }
+  .proof h2{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:18px;
+  }
+  .proof-row{
+    display:grid;
+    grid-template-columns:110px 1fr;
+    gap:18px;
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .proof-row:last-child{ border-bottom:none; }
+  .proof-day{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    font-weight:700;
+    color:var(--accent2);
+  }
+  .proof-text{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:14px;
+    color:#2b2a24;
+  }
+  .proof-text b{ color:var(--ink); }
+
+  .footer{
+    margin-top:50px;
+    padding-top:20px;
+    border-top:3px solid var(--ink);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11.5px;
+    color:var(--muted);
+  }
+  .footer a{ color:var(--accent); text-decoration:none; }
+
+  @media (max-width: 680px){
+    h1.title{ font-size:34px; }
+    .grid{ grid-template-columns:1fr; }
+    .proof-row{ grid-template-columns:1fr; gap:4px; }
+    .wrap{ padding:32px 18px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <span class="kicker">AB Talks · 60-Day Claude AI Challenge</span>
+    <span class="issue">Graduation Record</span>
+  </div>
+
+  <h1 class="title">Sixty days of learning,<br>one <em>live product</em> to show for it.</h1>
+  <p class="subtitle">A record of how AI fundamentals, prompting discipline, and agentic workflows compounded — over sixty days — into a production application a real user could open right now.</p>
+
+  <div class="timeline">
+    <div class="stage">
+      <div class="stage-range">Weeks 1–2</div>
+      <div class="stage-title">AI Foundations &amp; Effective Prompting</div>
+      <div class="stage-desc">Learning how models actually reason, and how precise instruction — not just clever wording — shapes reliable output.</div>
+    </div>
+    <div class="stage">
+      <div class="stage-range">Weeks 3–4</div>
+      <div class="stage-title">Reasoning &amp; Research Workflows</div>
+      <div class="stage-desc">Moving from single prompts to structured, multi-step reasoning chains and research-driven problem solving.</div>
+    </div>
+    <div class="stage">
+      <div class="stage-range">Weeks 5–6</div>
+      <div class="stage-title">Automation &amp; Product Thinking</div>
+      <div class="stage-desc">Connecting AI capability to real workflows — and learning to scope a product, not just a script.</div>
+    </div>
+    <div class="stage">
+      <div class="stage-range">Weeks 7–8</div>
+      <div class="stage-title">Multimodal AI &amp; Knowledge Systems</div>
+      <div class="stage-desc">Working across formats and building systems that retain and structure knowledge, not just respond once.</div>
+    </div>
+    <div class="stage">
+      <div class="stage-range">Week 8–9</div>
+      <div class="stage-title">Autonomous Agents &amp; Multi-Agent Collaboration</div>
+      <div class="stage-desc">Designing systems where AI takes multi-step initiative — the direct precursor to building a real, reliable AI feature under production constraints.</div>
+    </div>
+    <div class="stage capstone">
+      <div class="stage-range">Days 51–60 · The Capstone</div>
+      <div class="stage-title">RoundsAI — Every Skill, Converged</div>
+      <div class="stage-desc">Ten days, full SDLC, one production application. This is where sixty days of learning became something you can visit at a URL.</div>
+    </div>
+  </div>
+
+  <div class="capstone-block">
+    <h2>The Convergence</h2>
+    <h3>RoundsAI — an AI doctor workflow platform</h3>
+    <p>Requirements → Design → Setup → Implementation → Testing → Deployment. A single 10-day sprint that required every capability built across the preceding fifty days — not as separate skills, but working together under real constraints.</p>
+    <div class="grid">
+      <div class="grid-item">
+        <div class="n">Prompt Engineering</div>
+        <div class="d">A strict, safety-bounded system prompt constraining Claude to summarization only — never diagnosis.</div>
+      </div>
+      <div class="grid-item">
+        <div class="n">Product Thinking</div>
+        <div class="d">A locked PRD and scope boundary held for all nine build days — no drift, no unscoped features.</div>
+      </div>
+      <div class="grid-item">
+        <div class="n">Reliability Engineering</div>
+        <div class="d">A fallback architecture designed before it was needed — then proven against a real live API failure.</div>
+      </div>
+      <div class="grid-item">
+        <div class="n">Full-Stack Execution</div>
+        <div class="d">React, Node/Express, MongoDB, JWT auth — designed, built, and deployed end-to-end.</div>
+      </div>
+      <div class="grid-item">
+        <div class="n">Security Judgment</div>
+        <div class="d">Audited unfamiliar commits line-by-line and corrected a real vulnerability before public launch.</div>
+      </div>
+      <div class="grid-item">
+        <div class="n">Production Discipline</div>
+        <div class="d">Verified via a 23-point checklist run directly against the live URL — not just localhost.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="proof">
+    <h2>Where the Learning Showed Up — Not in Theory, in the Build</h2>
+    <div class="proof-row">
+      <div class="proof-day">Day 6</div>
+      <div class="proof-text">The Claude API returned a real <b>"insufficient credit balance"</b> error in production. The fallback — designed in advance, not improvised — caught it and produced a clearly labeled summary instead of a crash.</div>
+    </div>
+    <div class="proof-row">
+      <div class="proof-day">Day 8</div>
+      <div class="proof-text">A live end-to-end walkthrough surfaced a <b>genuine release-blocking gap</b> in visit creation. It was root-caused, fixed minimally and idempotently, and re-verified — the same day.</div>
+    </div>
+    <div class="proof-row">
+      <div class="proof-day">Day 9</div>
+      <div class="proof-text">Three unexplained commits were found in the git history. Rather than trust or revert blindly, each was <b>audited file-by-file</b> — surfacing and fixing a real JWT-in-localStorage exposure before launch.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>RoundsAI · v1.0.0 · Built with Claude</span>
+    <span>AB Talks 60-Day Claude AI Challenge</span>
+  </div>
+
+</div>
+</body>
+</html>

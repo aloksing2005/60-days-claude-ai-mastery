@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Certificate of Completion — RoundsAI Capstone</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{
+    width:297mm; height:210mm;
+    font-family:'Georgia',ui-serif,serif;
+    background:#faf8f3;
+    color:#1a1a1a;
+  }
+  .cert{
+    width:100%; height:100%;
+    position:relative;
+    padding:14mm;
+  }
+  .border-outer{
+    position:absolute; inset:8mm;
+    border:2px solid #1f6f5c;
+  }
+  .border-inner{
+    position:absolute; inset:11mm;
+    border:1px solid #b5502e;
+  }
+  .content{
+    position:relative;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:20mm 22mm 12mm;
+    text-align:center;
+  }
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border:1.5px solid #1a1a1a;
+    border-radius:999px;
+    padding:6px 18px;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:#1a1a1a;
+    margin-bottom:14mm;
+  }
+  .badge .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:#b5502e;
+  }
+
+  .eyebrow{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:#6b6558;
+    margin-bottom:6mm;
+  }
+
+  h1.cert-title{
+    font-size:34px;
+    font-weight:400;
+    letter-spacing:0.02em;
+    margin-bottom:10mm;
+    color:#1a1a1a;
+  }
+
+  .presented-to{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:#6b6558;
+    margin-bottom:4mm;
+  }
+
+  .recipient{
+    font-size:42px;
+    font-style:italic;
+    color:#1f6f5c;
+    margin-bottom:10mm;
+    border-bottom:1px solid #d8d3c7;
+    padding-bottom:6mm;
+    min-width:160mm;
+  }
+
+  .body-text{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13.5px;
+    line-height:1.7;
+    color:#2b2a24;
+    max-width:190mm;
+    margin-bottom:10mm;
+  }
+  .body-text b{ color:#1a1a1a; }
+  .body-text .project{
+    font-style:italic;
+    color:#b5502e;
+    font-weight:bold;
+  }
+
+  .meta-row{
+    display:flex;
+    flex-wrap:nowrap;
+    justify-content:center;
+    gap:16mm;
+    margin-bottom:12mm;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+  }
+  .meta-item{
+    flex:0 0 auto;
+    text-align:center;
+  }
+  .meta-item .label{
+    font-size:9.5px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:#6b6558;
+    margin-bottom:2mm;
+  }
+  .meta-item .value{
+    font-size:14px;
+    font-weight:700;
+    color:#1a1a1a;
+  }
+
+  .footer-row{
+    margin-top:auto;
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    padding-top:8mm;
+    border-top:1px solid #d8d3c7;
+  }
+  .footer-col{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    text-align:left;
+  }
+  .footer-col.right{ text-align:right; }
+  .footer-label{
+    font-size:9px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:#6b6558;
+    margin-bottom:2mm;
+  }
+  .footer-value{
+    font-size:12px;
+    color:#1a1a1a;
+  }
+  .footer-value a{ color:#1f6f5c; text-decoration:none; }
+
+  .logo-placeholder{
+    width:34mm; height:16mm;
+    border:1.5px dashed #b5b0a0;
+    border-radius:3px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:8.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#9a9484;
+    text-align:center;
+    line-height:1.3;
+  }
+
+  @media print {
+    .no-print{ display:none; }
+  }
+  .print-hint{
+    position:fixed;
+    top:6px; left:50%;
+    transform:translateX(-50%);
+    background:#1a1a1a;
+    color:#fff;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11px;
+    padding:6px 14px;
+    border-radius:6px;
+    z-index:99;
+  }
+</style>
+</head>
+<body>
+
+<div class="print-hint no-print">Press Ctrl+P / Cmd+P → Save as PDF (Landscape, A4) for the final certificate</div>
+
+<div class="cert">
+  <div class="border-outer"></div>
+  <div class="border-inner"></div>
+
+  <div class="content">
+    <div class="badge"><span class="dot"></span> AB Talks · 60-Day Claude AI Challenge</div>
+
+    <div class="eyebrow">Certificate of Completion</div>
+    <h1 class="cert-title">10-Day Capstone Sprint</h1>
+
+    <div class="presented-to">This certifies that</div>
+    <div class="recipient">Alok Singh</div>
+
+    <div class="body-text">
+      has successfully completed the <b>AB Talks 10-Day Capstone Sprint</b>, the final practical milestone of the
+      <b>AB Talks 60-Day Claude AI Challenge</b> — designing, building, testing, securing, and deploying a complete,
+      production-ready application, <span class="project">RoundsAI</span>, an AI-powered doctor workflow platform,
+      following a full Software Development Lifecycle from requirements gathering through public production release.
+    </div>
+
+    <div class="meta-row">
+      <div class="meta-item">
+        <div class="label">Project</div>
+        <div class="value">RoundsAI</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Version</div>
+        <div class="value">v1.0.0</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Completion Date</div>
+        <div class="value">August 25, 2026</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Co-Creator / Mentor</div>
+        <div class="value">Claude (free tier)</div>
+      </div>
+    </div>
+
+    <div class="footer-row">
+      <div class="footer-col">
+        <div class="footer-label">Learn More</div>
+        <div class="footer-value"><a href="https://www.abtalks.in/">www.abtalks.in</a></div>
+        <div class="footer-value"><a href="https://www.linkedin.com/company/abtalks-on-ai/">linkedin.com/company/abtalks-on-ai</a></div>
+      </div>
+
+      <div class="logo-placeholder">AB TALKS<br>LOGO HERE</div>
+
+      <div class="footer-col right">
+        <div class="footer-label">Live Project</div>
+        <div class="footer-value"><a href="https://roundsai-tau.vercel.app">roundsai-tau.vercel.app</a></div>
+        <div class="footer-value"><a href="https://github.com/aloksing2005/roundsai">github.com/aloksing2005/roundsai</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
